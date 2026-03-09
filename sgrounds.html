@@ -37,6 +37,16 @@ const getTimeTheme = () => {
   const bg = _lr(lo.bg, hi.bg, p), tx = _lr(lo.t, hi.t, p);
   return { bg: `rgb(${bg})`, t: `${tx}` };
 };
+// Apply the correct theme synchronously at module load — before React's first
+// paint. Without this, the page starts from the dark :root defaults and the
+// CSS transition takes 2+ minutes to reach the correct time-of-day color.
+(function applyInitialTheme() {
+  try {
+    const th = getTimeTheme();
+    document.documentElement.style.setProperty('--sg-bg', th.bg);
+    document.documentElement.style.setProperty('--sg-t', th.t);
+  } catch (_) {}
+}());
 
 const S = window.storage;
 const ld = async (k, fb) => { try { const r = await S.get(k); return r ? JSON.parse(r.value) : fb; } catch { return fb; } };
@@ -1000,13 +1010,13 @@ function MeaningProbability({ passage }) {
 
 function Shell({ children }) {
   return (
-    <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 120s ease, color 120s ease" }}>
+    <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 60s ease, color 60s ease" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
         :root { --sg-bg: rgb(9,9,10); --sg-t: 255,255,255; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { background: var(--sg-bg); transition: background 120s ease; }
-        textarea, input { transition: background-color 120s ease, border-color 120s ease, color 120s ease; }
+        html, body { background: var(--sg-bg); transition: background 60s ease; }
+        textarea, input { transition: background-color 60s ease, border-color 60s ease, color 60s ease; }
         @keyframes breathe { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         textarea:focus, input:focus { outline: none; border-color: rgba(201,169,110,0.25) !important; }
