@@ -45,6 +45,16 @@
     const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
 
     const QUOTE_TYPES = ["lyric", "scripture", "film", "poem", "other"];
+
+    // ── Day/night background by hour ─────────────────────────────────────────
+    const getDayBg = (hour) => {
+      if (hour >= 5  && hour < 7)  return "linear-gradient(175deg,#1a0e08 0%,#0d0907 100%)"; // pre-dawn
+      if (hour >= 7  && hour < 9)  return "linear-gradient(175deg,#231408 0%,#130e08 100%)"; // dawn
+      if (hour >= 9  && hour < 17) return "linear-gradient(175deg,#211d14 0%,#181510 100%)"; // day
+      if (hour >= 17 && hour < 19) return "linear-gradient(175deg,#1e1008 0%,#100908 100%)"; // golden hour
+      if (hour >= 19 && hour < 21) return "linear-gradient(175deg,#130907 0%,#09090a 100%)"; // dusk
+      return "#09090a"; // night
+    };
     const WISDOM_LENSES = [
       { k:"general",      l:"general" },
       { k:"parental",     l:"parental" },
@@ -179,13 +189,13 @@ Respond as plain text only.`;
     }
 
     // ── Shell ────────────────────────────────────────────────────────────────
-    function Shell({ children }) {
+    function Shell({ children, bg }) {
       return (
-        <div style={{ height:"100dvh", overflow:"hidden", background:"#09090a", color:"#fff", fontFamily:F.b, display:"flex", flexDirection:"column" }}>
+        <div style={{ height:"100dvh", overflow:"hidden", background: bg || "#09090a", color:"#fff", fontFamily:F.b, display:"flex", flexDirection:"column", transition:"background 2s ease" }}>
           <style>{`
             @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
             * { box-sizing:border-box; margin:0; padding:0; }
-            html,body { background:#09090a; height:100%; overflow:hidden; }
+            html,body { background:#09090a; height:100%; overflow:hidden; transition:background 2s ease; }
             @keyframes breathe { 0%,100%{opacity:0.35} 50%{opacity:0.85} }
             @keyframes slideUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
             @keyframes fortuneIn { 0%{opacity:0;transform:scale(0.97) translateY(16px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
@@ -281,7 +291,12 @@ Respond as plain text only.`;
       const [wisdomLens, setWisdomLens]   = useState("general");
       const [amplifying, setAmplifying]   = useState(false);
       const [location, setLocation]       = useState(null);
-      const fileRef = useRef(null);
+      const fileRef        = useRef(null);
+      const passageRef     = useRef(null);
+      const quoteTimerRef  = useRef(null);
+
+      // iTunes autocomplete state
+      const [quoteSuggestions, setQuoteSuggestions] = useState([]);
 
       const dk = dateKey();
 
@@ -290,6 +305,14 @@ Respond as plain text only.`;
         const t = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(t);
       }, []);
+
+      // Auto-grow passage textarea
+      useEffect(() => {
+        if (passageRef.current) {
+          passageRef.current.style.height = "auto";
+          passageRef.current.style.height = passageRef.current.scrollHeight + "px";
+        }
+      }, [passage]);
 
       // Load
       useEffect(() => {
@@ -351,7 +374,7 @@ Respond as plain text only.`;
       const reflect = async () => {
         if (!passage.trim()) return;
         const key = localStorage.getItem("sg-apikey");
-        if (!key) { setShowKeyModal(true); return; }
+        if (!key) { setShowSettings(true); return; }
         setReflecting(true);
         setReflection(null);
         try {
@@ -399,7 +422,7 @@ Respond as plain text only.`;
       const amplifyDesc = async () => {
         if (!picDesc.trim()) return;
         const key = localStorage.getItem("sg-apikey");
-        if (!key) { setShowKeyModal(true); return; }
+        if (!key) { setShowSettings(true); return; }
         setAmplifying(true);
         try {
           const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -426,6 +449,26 @@ Respond as plain text only.`;
         setAmplifying(false);
       };
 
+      // iTunes autocomplete
+      const fetchQuoteSuggestions = async (term, type) => {
+        if (term.length < 3) { setQuoteSuggestions([]); return; }
+        const entity = type === "lyric" ? "song" : "movie";
+        try {
+          const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=${entity}&limit=6`);
+          const data = await r.json();
+          setQuoteSuggestions(data.results || []);
+        } catch { setQuoteSuggestions([]); }
+      };
+      const handleQuoteChange = (val) => {
+        setQuote(val); setSaved(false);
+        if (quoteType === "lyric" || quoteType === "film") {
+          clearTimeout(quoteTimerRef.current);
+          quoteTimerRef.current = setTimeout(() => fetchQuoteSuggestions(val, quoteType), 480);
+        } else {
+          setQuoteSuggestions([]);
+        }
+      };
+
       // Time
       const h    = String(now.getHours() % 12 || 12).padStart(2, "0");
       const min  = String(now.getMinutes()).padStart(2, "0");
@@ -445,8 +488,10 @@ Respond as plain text only.`;
         </Shell>
       );
 
+      const dayBg = getDayBg(now.getHours());
+
       return (
-        <Shell>
+        <Shell bg={dayBg}>
           {showSettings && (
             <SettingsModal
               initialProfile={profile}
@@ -520,14 +565,15 @@ Respond as plain text only.`;
                   }}>{charsLeft}</span>
                 </div>
                 <textarea
+                  ref={passageRef}
                   value={passage}
                   onChange={e => { if (e.target.value.length <= CHAR_LIMIT) { setPassage(e.target.value); setSaved(false); } }}
                   placeholder="Begin anywhere. The signal doesn't have to be clean to be true."
-                  rows={4}
+                  rows={1}
                   spellCheck={false}
                   autoCorrect="off"
                   autoCapitalize="off"
-                  style={{ ...inputStyle, fontSize:16, fontFamily:F.h, lineHeight:1.6 }}
+                  style={{ ...inputStyle, fontSize:16, fontFamily:F.h, lineHeight:1.6, overflow:"hidden", minHeight:42, transition:"height 0.12s ease" }}
                 />
                 {/* Inline word suggestions from past entries */}
                 {(() => {
@@ -569,12 +615,12 @@ Respond as plain text only.`;
                 </div>
                 {picMode === "upload" ? (
                   picture ? (
-                    <div style={{ position:"relative", height:54 }}>
-                      <img src={picture} alt="Today" style={{ width:"100%", height:54, objectFit:"cover", borderRadius:8, border:"1px solid rgba(201,169,110,0.08)" }}/>
+                    <div style={{ position:"relative" }}>
+                      <img src={picture} alt="Today" style={{ width:"100%", height:"auto", maxHeight:240, objectFit:"contain", borderRadius:9, border:"1px solid rgba(201,169,110,0.08)", display:"block", background:"rgba(0,0,0,0.3)" }}/>
                       <button onClick={() => { setPicture(null); setSaved(false); }} style={{
-                        position:"absolute", top:4, right:4, background:"rgba(0,0,0,0.65)",
-                        border:"none", color:"rgba(255,255,255,0.5)", width:18, height:18,
-                        borderRadius:9, cursor:"pointer", fontSize:11, lineHeight:"18px",
+                        position:"absolute", top:6, right:6, background:"rgba(0,0,0,0.7)",
+                        border:"none", color:"rgba(255,255,255,0.6)", width:20, height:20,
+                        borderRadius:10, cursor:"pointer", fontSize:12, lineHeight:"20px",
                       }}>×</button>
                     </div>
                   ) : (
@@ -657,7 +703,7 @@ Respond as plain text only.`;
                   <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                     <div style={{ display:"flex", gap:4, alignItems:"center" }}>
                       {QUOTE_TYPES.map(qt => (
-                        <button key={qt} onClick={() => setQuoteType(qt)} style={{
+                        <button key={qt} onClick={() => { setQuoteType(qt); setQuoteSuggestions([]); }} style={{
                           background: quoteType === qt ? "rgba(201,169,110,0.08)" : "none",
                           border:"1px solid rgba(201,169,110,0.1)",
                           color: quoteType === qt ? G : "rgba(255,255,255,0.15)",
@@ -668,12 +714,38 @@ Respond as plain text only.`;
                         marginLeft:"auto", background:"none", border:"none", color:"rgba(255,255,255,0.1)", fontSize:14, cursor:"pointer",
                       }}>×</button>
                     </div>
-                    <input
-                      value={quote}
-                      onChange={e => { setQuote(e.target.value); setSaved(false); }}
-                      placeholder={`A ${quoteType} that's with you today...`}
-                      style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", padding:"8px 12px" }}
-                    />
+                    <div style={{ position:"relative" }}>
+                      <input
+                        value={quote}
+                        onChange={e => handleQuoteChange(e.target.value)}
+                        placeholder={`A ${quoteType} that's with you today...`}
+                        style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", padding:"8px 12px" }}
+                      />
+                      {quoteSuggestions.length > 0 && (quoteType === "lyric" || quoteType === "film") && (
+                        <div style={{ position:"absolute", left:0, right:0, top:"100%", zIndex:20, background:"#121110", border:"1px solid rgba(201,169,110,0.12)", borderRadius:8, marginTop:2, overflow:"hidden", boxShadow:"0 8px 24px rgba(0,0,0,0.5)" }}>
+                          {quoteSuggestions.map((s, i) => {
+                            const title = s.trackName || s.collectionName || "";
+                            const artist = s.artistName || "";
+                            return (
+                              <button key={s.trackId || s.collectionId || i} onClick={() => {
+                                setQuote(title);
+                                setQuoteSource(artist);
+                                setQuoteSuggestions([]);
+                                setSaved(false);
+                              }} style={{
+                                width:"100%", textAlign:"left", padding:"8px 11px", background:"none",
+                                border:"none", borderBottom:"1px solid rgba(255,255,255,0.03)",
+                                cursor:"pointer", display:"block",
+                              }}>
+                                <div style={{ fontSize:12, fontFamily:F.h, fontStyle:"italic", color:"rgba(255,255,255,0.55)" }}>{title}</div>
+                                {artist && <div style={{ fontSize:10, fontFamily:F.b, color:"rgba(201,169,110,0.35)", marginTop:1 }}>{artist}</div>}
+                              </button>
+                            );
+                          })}
+                          <button onClick={() => setQuoteSuggestions([])} style={{ width:"100%", padding:"5px", background:"none", border:"none", cursor:"pointer", fontSize:8, fontFamily:F.m, color:"rgba(255,255,255,0.07)", letterSpacing:"0.1em" }}>dismiss</button>
+                        </div>
+                      )}
+                    </div>
                     <input
                       value={quoteSource}
                       onChange={e => { setQuoteSource(e.target.value); setSaved(false); }}
@@ -781,7 +853,7 @@ Respond as plain text only.`;
                           <span style={{ fontSize:12, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.45 }}>{day.lastWord}</span>
                         )}
                       </div>
-                      {day.picture && <img src={day.picture} alt="" style={{ width:"100%", maxHeight:200, objectFit:"cover" }}/>}
+                      {day.picture && <img src={day.picture} alt="" style={{ width:"100%", height:"auto", maxHeight:280, objectFit:"contain", display:"block", background:"rgba(0,0,0,0.3)" }}/>}
                       {day.picDesc?.trim() && !day.picture && (
                         <div style={{ padding:"8px 14px", borderBottom:"1px solid rgba(255,255,255,0.01)" }}>
                           <p style={{ fontSize:11, color:"rgba(255,255,255,0.2)", fontFamily:F.h, fontStyle:"italic", margin:0, lineHeight:1.6 }}>{day.picDesc}</p>
