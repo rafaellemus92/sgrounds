@@ -96,6 +96,12 @@ export default function App() {
   const [bookReflections, setBookReflections] = useState({});
   const [bookReflecting, setBookReflecting] = useState({});
 
+  // Lens — media bias / signal reader
+  const [lensUrl, setLensUrl] = useState("");
+  const [lensText, setLensText] = useState("");
+  const [lensResult, setLensResult] = useState(null);
+  const [lensLoading, setLensLoading] = useState(false);
+
   const passageRef = useRef(null);
   const dk = dateKey();
 
@@ -280,6 +286,52 @@ Name what signal this thread carries. If it rhymes with another thread, name the
     setBookReflecting(prev => ({ ...prev, [key]: false }));
   };
 
+  const readSignal = async () => {
+    if (!lensText.trim()) return;
+    setLensLoading(true);
+    setLensResult(null);
+    try {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 900,
+          system: `You are a clear-eyed signal reader. A Loki figure — the revealer, not the destroyer. You read through the frame so the reader can think for themselves.
+
+Analyze the bias, framing, and perspective of the news article or text provided.
+
+Return EXACTLY this structure as plain text. No markdown. No asterisks. No headers other than the labels below:
+
+SOURCE: [publication name if URL given, otherwise "Unknown"] · [lean: Left / Center-Left / Center / Center-Right / Right]
+
+THE SIGNAL:
+[2-3 sentences — just the verifiable facts as stated, stripped of framing]
+
+THE FRAME:
+[2-3 sentences — word choices, what's foregrounded, emotional tone, what's treated as given]
+
+THE SHADOW:
+[2-3 sentences — what a reader from the other side would add, what's minimized or absent]
+
+THE LOKI-MOMENT:
+[1 sentence — the single most revealing thing about how this piece is constructed]
+
+THE QUESTION:
+[1 open question that helps the reader hold the article at arm's length and think]
+
+Be honest about the lean without contempt for either direction. Your task is clarity, not ideology. The goal is a reader who can see the thread, not be pulled by it.`,
+          messages: [{ role: "user", content: `Source URL: ${lensUrl.trim() || "not provided"}\n\nArticle text:\n\n${lensText}` }],
+        }),
+      });
+      const d = await r.json();
+      setLensResult(d.content?.map(i => i.text || "").join("\n") || "Signal unclear. Try a longer excerpt.");
+    } catch {
+      setLensResult("The lens could not focus. Check your connection and try again.");
+    }
+    setLensLoading(false);
+  };
+
   if (loading) return (
     <Shell>
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -304,6 +356,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
             {[
               { k: "today", l: "Today" },
               { k: "book", l: `Book (${allDays.length})` },
+              { k: "lens", l: "Lens" },
               { k: "about", l: "?" },
             ].map(t => (
               <button key={t.k} onClick={() => setPage(t.k)} style={{
@@ -618,6 +671,106 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                 })}
               </>
             )}
+          </div>
+        )}
+
+        {/* ═══ LENS ═══ */}
+        {page === "lens" && (
+          <div style={{ paddingTop: 24, paddingBottom: 50 }}>
+            <h2 style={{
+              fontFamily: F.h, fontSize: 18, fontWeight: 400,
+              color: "rgba(var(--sg-t),0.7)", marginBottom: 4,
+            }}>The Lens</h2>
+            <p style={{
+              fontSize: 10, color: "rgba(var(--sg-t),0.2)", fontFamily: F.m, marginBottom: 24, lineHeight: 1.6,
+            }}>
+              Paste a news article. See the signal, the frame, and the shadow. Read through the bias without surrendering to it.
+            </p>
+
+            {/* URL */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{
+                fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+              }}>Source URL</label>
+              <input
+                value={lensUrl}
+                onChange={e => setLensUrl(e.target.value)}
+                placeholder="https://nytimes.com/... or foxnews.com/..."
+                spellCheck={false}
+                style={{ ...inputStyle, fontSize: 13 }}
+              />
+            </div>
+
+            {/* Article text */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{
+                fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+              }}>Article text</label>
+              <p style={{
+                fontSize: 10, color: "rgba(var(--sg-t),0.12)", marginBottom: 8,
+                fontStyle: "italic", lineHeight: 1.55,
+              }}>
+                Browsers can't fetch external articles directly — copy and paste the text here. The URL tells the lens which publication it's reading.
+              </p>
+              <textarea
+                value={lensText}
+                onChange={e => setLensText(e.target.value)}
+                placeholder="Paste the article text or a key excerpt here..."
+                rows={8}
+                spellCheck={false}
+                style={{ ...inputStyle, fontSize: 13, fontFamily: F.h, lineHeight: 1.7, minHeight: 160 }}
+              />
+            </div>
+
+            <button onClick={readSignal} disabled={lensLoading || !lensText.trim()} style={{
+              width: "100%", padding: "13px",
+              background: lensText.trim() ? "rgba(201,169,110,0.12)" : "rgba(var(--sg-t),0.02)",
+              border: `1px solid ${lensText.trim() ? "rgba(201,169,110,0.25)" : "rgba(var(--sg-t),0.04)"}`,
+              color: lensText.trim() ? G : "rgba(201,169,110,0.25)",
+              borderRadius: 10, fontSize: 13, cursor: lensText.trim() ? "pointer" : "default",
+              fontFamily: F.b, transition: "all 0.3s",
+            }}>
+              {lensLoading ? "Reading the signal…" : "Read the signal ;"}
+            </button>
+
+            {/* Result */}
+            {lensResult && (
+              <div style={{
+                marginTop: 20, padding: 20,
+                background: "rgba(201,169,110,0.02)",
+                border: "1px solid rgba(201,169,110,0.07)",
+                borderRadius: 10, animation: "slideUp 0.25s ease",
+              }}>
+                <div style={{
+                  fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
+                  letterSpacing: "0.14em", marginBottom: 14, fontFamily: F.m,
+                }}>· ) ) ) the lens</div>
+                <p style={{
+                  fontSize: 13, color: "rgba(var(--sg-t),0.6)", lineHeight: 1.9,
+                  fontFamily: F.h, margin: 0, whiteSpace: "pre-wrap",
+                }}>{lensResult}</p>
+              </div>
+            )}
+
+            {/* Bias spectrum note */}
+            <div style={{
+              marginTop: 24, padding: "12px 14px",
+              background: "rgba(var(--sg-t),0.015)",
+              border: "1px solid rgba(var(--sg-t),0.03)",
+              borderRadius: 8,
+            }}>
+              <div style={{
+                fontSize: 8, color: "rgba(201,169,110,0.15)", textTransform: "uppercase",
+                letterSpacing: "0.12em", marginBottom: 8, fontFamily: F.m,
+              }}>On reading the news</div>
+              <p style={{
+                fontSize: 10, color: "rgba(var(--sg-t),0.15)", lineHeight: 1.7, fontFamily: F.h, fontStyle: "italic",
+              }}>
+                Every publication has a wyrd thread — a perspective woven from its history, ownership, and audience. That thread isn't a lie; it's a frame. The Lens doesn't tell you which frame is right. It shows you the frame so you can decide what to do with what's inside it.
+              </p>
+            </div>
           </div>
         )}
 
