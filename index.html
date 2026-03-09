@@ -92,7 +92,10 @@
 
     const buildSystemPrompt = (prevPassages, lastWord, quote, quoteType, quoteSource, lens, location, profile) => `You are the Lighthouse of sgrounds — reader of threads, keeper of The Book.
 ${profile?.name ? `You are speaking to ${profile.name}.` : ""}
-${profile?.context ? `Who they are: ${profile.context}` : ""}
+${profile?.age ? `Age: ${profile.age}.` : ""}
+${profile?.role ? `Roles: ${profile.role}.` : ""}
+${profile?.faith ? `Faith/Tradition: ${profile.faith}.` : ""}
+${profile?.context ? `Context: ${profile.context}` : ""}
 
 The person writes raw, fast, with typos. Read THROUGH the noise. Find the signal. If an image is included, read it as part of the entry — a picture is worth a thousand words; let it inform your reflection.
 
@@ -141,7 +144,8 @@ Respond as plain text only.`;
     }
 
     // ── Fortune Modal ────────────────────────────────────────────────────────
-    function FortuneModal({ text, verseRef, onDismiss }) {
+    function FortuneModal({ text, verseRef, onDismiss, weaveText, onWeave, weaving, canWeave }) {
+      const stopProp = (e) => e.stopPropagation();
       return (
         <div
           onClick={onDismiss}
@@ -152,7 +156,7 @@ Respond as plain text only.`;
             overflowY:"auto",
           }}
         >
-          {/* Header — fixed within the scroll container */}
+          {/* Header */}
           <div style={{ textAlign:"center", padding:"32px 28px 0", flexShrink:0 }}>
             <Logo size={22}/>
             <div style={{ fontSize:7, color:"rgba(201,169,110,0.3)", textTransform:"uppercase", letterSpacing:"0.22em", marginTop:8, animation:"breathe 4s ease-in-out infinite" }}>
@@ -161,7 +165,7 @@ Respond as plain text only.`;
             <div style={{ width:24, height:1, background:"rgba(201,169,110,0.12)", margin:"18px auto 0" }}/>
           </div>
 
-          {/* Scrollable text */}
+          {/* Daily reflection */}
           <div style={{ flex:1, padding:"24px 32px", maxWidth:420, margin:"0 auto", width:"100%" }}>
             <p style={{
               fontSize:18, fontFamily:F.h,
@@ -170,6 +174,31 @@ Respond as plain text only.`;
             }}>
               {text}
             </p>
+
+            {/* Weave section */}
+            {weaveText ? (
+              <div style={{ marginTop:28, paddingTop:20, borderTop:"1px solid rgba(201,169,110,0.08)" }}>
+                <div style={{ fontSize:7, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.2em", marginBottom:12, textAlign:"center" }}>
+                  Urðr · Verðandi · Skuld — the long thread
+                </div>
+                <p style={{ fontSize:15, fontFamily:F.h, color:"rgba(255,255,255,0.65)", lineHeight:2, letterSpacing:"0.01em" }}>
+                  {weaveText}
+                </p>
+              </div>
+            ) : canWeave ? (
+              <div style={{ marginTop:24, textAlign:"center" }} onClick={stopProp}>
+                <div style={{ width:24, height:1, background:"rgba(201,169,110,0.06)", margin:"0 auto 16px" }}/>
+                <button onClick={onWeave} disabled={weaving} style={{
+                  background:"none", border:"1px solid rgba(201,169,110,0.08)",
+                  color: weaving ? "rgba(201,169,110,0.15)" : "rgba(201,169,110,0.25)",
+                  borderRadius:8, padding:"7px 16px", fontSize:10, cursor:"pointer",
+                  fontFamily:F.m, letterSpacing:"0.1em",
+                }}>
+                  {weaving ? "The Norns are reading..." : "Read the full weave ∞"}
+                </button>
+                <div style={{ fontSize:8, color:"rgba(255,255,255,0.04)", marginTop:6, fontFamily:F.m }}>reads across all your threads</div>
+              </div>
+            ) : null}
           </div>
 
           {/* Footer */}
@@ -217,10 +246,13 @@ Respond as plain text only.`;
     function SettingsModal({ initialProfile, onSave, onClose }) {
       const [name, setName]       = useState(initialProfile?.name || "");
       const [context, setContext] = useState(initialProfile?.context || "");
+      const [age, setAge]         = useState(initialProfile?.age || "");
+      const [role, setRole]       = useState(initialProfile?.role || "");
+      const [faith, setFaith]     = useState(initialProfile?.faith || "");
       const [apiKey, setApiKey]   = useState(localStorage.getItem("sg-apikey") || "");
       const save = () => {
         if (apiKey.trim()) localStorage.setItem("sg-apikey", apiKey.trim());
-        onSave({ name: name.trim(), context: context.trim() });
+        onSave({ name: name.trim(), context: context.trim(), age: age.trim(), role: role.trim(), faith: faith.trim() });
       };
       return (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:16, overflowY:"auto" }}>
@@ -234,9 +266,26 @@ Respond as plain text only.`;
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Rafael"
               style={{ ...inputStyle, marginBottom:10, fontSize:16, fontFamily:F.h }} />
 
+            <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+              <div style={{ flex:"0 0 70px" }}>
+                <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Age</div>
+                <input value={age} onChange={e => setAge(e.target.value)} placeholder="33"
+                  style={{ ...inputStyle, textAlign:"center" }} />
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Roles / Identities</div>
+                <input value={role} onChange={e => setRole(e.target.value)} placeholder="father, husband, neonatologist..."
+                  style={{ ...inputStyle, fontSize:12 }} />
+              </div>
+            </div>
+
+            <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Faith / Tradition</div>
+            <input value={faith} onChange={e => setFaith(e.target.value)} placeholder="Catholic, Christian, spiritual but not religious..."
+              style={{ ...inputStyle, marginBottom:10, fontSize:13, fontFamily:F.h, fontStyle:"italic" }} />
+
             <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>About you</div>
             <textarea value={context} onChange={e => setContext(e.target.value)} rows={3}
-              placeholder="Who you are, what you're working through, what lens matters most right now..."
+              placeholder="What you're working through, what lens matters most right now..."
               style={{ ...inputStyle, marginBottom:10, fontSize:13, fontFamily:F.h, fontStyle:"italic", lineHeight:1.6 }}/>
 
             <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Lighthouse key (API)</div>
@@ -271,12 +320,13 @@ Respond as plain text only.`;
       const [now, setNow]                 = useState(new Date());
 
       // Today fields
-      const [passage, setPassage]     = useState("");
-      const [lastWord, setLastWord]   = useState("");
-      const [picture, setPicture]     = useState(null);
-      const [picMode, setPicMode]     = useState("upload");
-      const [picDesc, setPicDesc]     = useState("");
-      const [saved, setSaved]         = useState(false);
+      const [passage, setPassage]         = useState("");
+      const [chapterTitle, setChapterTitle] = useState("");
+      const [lastWord, setLastWord]       = useState("");
+      const [picture, setPicture]         = useState(null);
+      const [picMode, setPicMode]         = useState("upload");
+      const [picDesc, setPicDesc]         = useState("");
+      const [saved, setSaved]             = useState(false);
 
       // Quote
       const [quote, setQuote]             = useState("");
@@ -288,6 +338,8 @@ Respond as plain text only.`;
       const [reflection, setReflection]   = useState(null);
       const [reflecting, setReflecting]   = useState(false);
       const [showFortune, setShowFortune] = useState(false);
+      const [weaveText, setWeaveText]     = useState(null);
+      const [weaving, setWeaving]         = useState(false);
       const [wisdomLens, setWisdomLens]   = useState("general");
       const [amplifying, setAmplifying]   = useState(false);
       const [location, setLocation]       = useState(null);
@@ -322,6 +374,7 @@ Respond as plain text only.`;
           const ex = all.find(d => d.key === dk);
           if (ex) {
             setPassage(ex.passage || "");
+            setChapterTitle(ex.chapterTitle || "");
             setLastWord(ex.lastWord || "");
             setPicture(ex.picture || null);
             setPicDesc(ex.picDesc || "");
@@ -330,6 +383,7 @@ Respond as plain text only.`;
             setQuoteSource(ex.quoteSource || "");
             if (ex.quote) setShowQuote(true);
             if (ex.reflection) setReflection(ex.reflection);
+            if (ex.weaveText) setWeaveText(ex.weaveText);
             setSaved(true);
           }
           setApiKey(localStorage.getItem("sg-apikey") || "");
@@ -348,13 +402,15 @@ Respond as plain text only.`;
         })();
       }, []);
 
-      const saveDay = async (withReflection) => {
+      const saveDay = async (withReflection, withWeave) => {
         const day = {
           key: dk, date: todayStr(),
+          chapterTitle: chapterTitle.trim(),
           passage: passage.trim(), lastWord: lastWord.trim(),
           picture, picDesc: picDesc.trim(),
           quote: quote.trim(), quoteType, quoteSource: quoteSource.trim(),
           reflection: withReflection || reflection || null,
+          weaveText: withWeave || weaveText || null,
           ts: new Date().toISOString(),
         };
         const updated = [day, ...allDays.filter(d => d.key !== dk)];
@@ -449,6 +505,61 @@ Respond as plain text only.`;
         setAmplifying(false);
       };
 
+      // The Weave — multi-stage Lighthouse synthesis across all threads
+      const weave = async () => {
+        const key = localStorage.getItem("sg-apikey");
+        if (!key) { setShowSettings(true); return; }
+        if (allDays.length < 5) return; // need enough entries to find patterns
+        setWeaving(true);
+        try {
+          const threads = allDays
+            .filter(d => d.passage?.trim())
+            .slice(0, 30)
+            .map(d => `[${d.date}] "${d.passage.trim()}"${d.lastWord ? ` — last word: ${d.lastWord}` : ""}${d.chapterTitle ? ` — chapter: ${d.chapterTitle}` : ""}`)
+            .join("\n");
+
+          const weaveSystem = `You are the three Norns — Urðr, Verðandi, Skuld — reading the full tapestry of this person's threads.
+${profile?.name ? `This is ${profile.name}'s book.` : ""}
+${profile?.role ? `Their roles: ${profile.role}.` : ""}
+${profile?.faith ? `Their faith: ${profile.faith}.` : ""}
+
+You have read ALL ${allDays.length} threads. Now name what the tapestry reveals — the wyrd.
+
+Look for:
+— Words or images that recur across entries (echoes)
+— The emotional arc (where are they now vs. where they began?)
+— A hidden thread they may not have noticed
+— The pattern mathematics calls a recurrence relation
+
+Speak with the weight of deep time. Under 150 words. Plain text only. No list formatting.`;
+
+          const r = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": key,
+              "anthropic-version": "2023-06-01",
+              "anthropic-dangerous-direct-browser-access": "true",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 400,
+              system: weaveSystem,
+              messages: [{ role: "user", content: `All threads:\n\n${threads}` }],
+            }),
+          });
+          const d = await r.json();
+          const text = d.error
+            ? "The tapestry is too vast to read right now."
+            : (d.content?.map(i => i.text || "").join("\n") || "The pattern resists naming — but it is there.");
+          setWeaveText(text);
+          await saveDay(null, text);
+        } catch {
+          setWeaveText("The Norns are silent. The pattern waits.");
+        }
+        setWeaving(false);
+      };
+
       // iTunes autocomplete
       const fetchQuoteSuggestions = async (term, type) => {
         if (term.length < 3) { setQuoteSuggestions([]); return; }
@@ -479,6 +590,7 @@ Respond as plain text only.`;
 
       const charsLeft = CHAR_LIMIT - passage.length;
       const pctUsed   = passage.length / CHAR_LIMIT;
+      const priorDay  = allDays.find(d => d.key !== dk && (d.lastWord?.trim() || d.chapterTitle?.trim()));
 
       if (loading) return (
         <Shell>
@@ -512,6 +624,10 @@ Respond as plain text only.`;
                 return `${profile.name} ${m}:${d}:${y}`;
               })() : null}
               onDismiss={() => setShowFortune(false)}
+              weaveText={weaveText}
+              onWeave={weave}
+              weaving={weaving}
+              canWeave={allDays.length >= 5}
             />
           )}
 
@@ -550,6 +666,28 @@ Respond as plain text only.`;
                 <p style={{ fontSize:13, color:"rgba(255,255,255,0.25)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.4 }}>
                   {prompt}
                 </p>
+                {/* Prior day echo */}
+                {priorDay && (
+                  <div style={{ marginTop:6, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                    <div style={{ width:16, height:"1px", background:"rgba(201,169,110,0.08)" }}/>
+                    <span style={{ fontSize:9, color:"rgba(201,169,110,0.18)", fontFamily:F.m, letterSpacing:"0.08em" }}>
+                      {priorDay.chapterTitle ? `"${priorDay.chapterTitle}"` : ""}
+                      {priorDay.chapterTitle && priorDay.lastWord ? " · " : ""}
+                      {priorDay.lastWord ? `yesterday: ${priorDay.lastWord}` : ""}
+                    </span>
+                    <div style={{ width:16, height:"1px", background:"rgba(201,169,110,0.08)" }}/>
+                  </div>
+                )}
+              </div>
+
+              {/* Chapter title */}
+              <div style={{ marginBottom:7, flexShrink:0 }}>
+                <input
+                  value={chapterTitle}
+                  onChange={e => { setChapterTitle(e.target.value); setSaved(false); }}
+                  placeholder="Today's chapter title — optional"
+                  style={{ ...inputStyle, fontSize:14, fontFamily:F.h, fontStyle:"italic", textAlign:"center", padding:"7px 12px", color:"rgba(201,169,110,0.5)", letterSpacing:"0.02em" }}
+                />
               </div>
 
               {/* Passage */}
@@ -847,10 +985,17 @@ Respond as plain text only.`;
                       borderLeft:"2px solid rgba(201,169,110,0.1)",
                     }}>
                       {/* Verse reference header */}
-                      <div style={{ padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.015)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:9, color:"rgba(201,169,110,0.4)", fontFamily:F.m, letterSpacing:"0.08em" }}>{verseRef}</span>
-                        {day.lastWord?.trim() && (
-                          <span style={{ fontSize:12, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.45 }}>{day.lastWord}</span>
+                      <div style={{ padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.015)" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                          <span style={{ fontSize:9, color:"rgba(201,169,110,0.4)", fontFamily:F.m, letterSpacing:"0.08em" }}>{verseRef}</span>
+                          {day.lastWord?.trim() && (
+                            <span style={{ fontSize:12, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.45 }}>{day.lastWord}</span>
+                          )}
+                        </div>
+                        {day.chapterTitle?.trim() && (
+                          <div style={{ fontSize:15, color:"rgba(201,169,110,0.55)", fontFamily:F.h, fontStyle:"italic", marginTop:4 }}>
+                            {day.chapterTitle}
+                          </div>
                         )}
                       </div>
                       {day.picture && <img src={day.picture} alt="" style={{ width:"100%", height:"auto", maxHeight:280, objectFit:"contain", display:"block", background:"rgba(0,0,0,0.3)" }}/>}
@@ -878,6 +1023,14 @@ Respond as plain text only.`;
                           <div style={{ fontSize:7, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:6 }}>The Lighthouse</div>
                           <p style={{ fontSize:13, color:"rgba(255,255,255,0.4)", fontFamily:F.h, lineHeight:1.8, margin:0 }}>
                             {day.reflection}
+                          </p>
+                        </div>
+                      )}
+                      {day.weaveText?.trim() && (
+                        <div style={{ padding:"10px 14px 12px", borderTop:"1px solid rgba(201,169,110,0.03)", background:"rgba(201,169,110,0.008)" }}>
+                          <div style={{ fontSize:7, color:"rgba(201,169,110,0.15)", textTransform:"uppercase", letterSpacing:"0.15em", marginBottom:6 }}>Urðr · Verðandi · Skuld</div>
+                          <p style={{ fontSize:12, color:"rgba(255,255,255,0.3)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.9, margin:0 }}>
+                            {day.weaveText}
                           </p>
                         </div>
                       )}
