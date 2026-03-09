@@ -51,9 +51,14 @@ export default function App() {
   const [picture, setPicture] = useState(null); // base64
   const [saved, setSaved] = useState(false);
 
-  // Reflection
+  // Reflection (today)
   const [reflection, setReflection] = useState(null);
   const [reflecting, setReflecting] = useState(false);
+
+  // Book entry expansion + per-entry beacon
+  const [expanded, setExpanded] = useState({});
+  const [bookReflections, setBookReflections] = useState({});
+  const [bookReflecting, setBookReflecting] = useState({});
 
   const passageRef = useRef(null);
   const dk = dateKey();
@@ -146,6 +151,44 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
       setReflection("The lighthouse received your signal. Sometimes that's enough.");
     }
     setReflecting(false);
+  };
+
+  const toggleEntry = (key) => {
+    const opening = !expanded[key];
+    setExpanded(prev => ({ ...prev, [key]: opening }));
+    if (opening && !bookReflections[key]) {
+      reflectEntry(key);
+    }
+  };
+
+  const reflectEntry = async (key) => {
+    const day = allDays.find(d => d.key === key);
+    if (!day?.passage?.trim()) return;
+    setBookReflecting(prev => ({ ...prev, [key]: true }));
+    try {
+      const ctx = allDays
+        .filter(d => d.key !== key && d.passage?.trim())
+        .slice(0, 10)
+        .map(d => `[${d.date}] "${d.passage}" (last word: ${d.lastWord || "none"})`)
+        .join("\n");
+
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 300,
+          system: `You are a pattern-finder reading a journal entry. Context from other entries:\n${ctx || "No other entries."}\n\nLast word for this entry: "${day.lastWord || "none"}"\n\nIdentify what signal this entry carries and whether it rhymes with any other entries. Under 60 words. Plain text. No formatting.`,
+          messages: [{ role: "user", content: `Entry:\n\n"${day.passage}"` }],
+        }),
+      });
+      const d = await r.json();
+      const text = d.content?.map(i => i.text || "").join("\n") || "Signal received.";
+      setBookReflections(prev => ({ ...prev, [key]: text }));
+    } catch {
+      setBookReflections(prev => ({ ...prev, [key]: "Signal received." }));
+    }
+    setBookReflecting(prev => ({ ...prev, [key]: false }));
   };
 
   if (loading) return (
@@ -396,55 +439,94 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                 )}
 
                 {/* Day entries */}
-                {allDays.map(day => (
-                  <div key={day.key} style={{
-                    background: "rgba(255,255,255,0.012)",
-                    border: "1px solid rgba(255,255,255,0.025)",
-                    borderRadius: 9, marginBottom: 8, overflow: "hidden",
-                    borderLeft: "3px solid rgba(201,169,110,0.08)",
-                  }}>
-                    {/* Date header */}
-                    <div style={{
-                      padding: "8px 12px",
-                      borderBottom: "1px solid rgba(255,255,255,0.01)",
-                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                {allDays.map(day => {
+                  const isOpen = !!expanded[day.key];
+                  const beacon = bookReflections[day.key];
+                  const loading = !!bookReflecting[day.key];
+                  return (
+                    <div key={day.key} style={{
+                      background: "rgba(255,255,255,0.012)",
+                      border: `1px solid ${isOpen ? "rgba(201,169,110,0.1)" : "rgba(255,255,255,0.025)"}`,
+                      borderRadius: 9, marginBottom: 8, overflow: "hidden",
+                      borderLeft: `3px solid ${isOpen ? "rgba(201,169,110,0.25)" : "rgba(201,169,110,0.08)"}`,
+                      transition: "border-color 0.2s",
                     }}>
-                      <span style={{
-                        fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: F.b,
-                      }}>{day.date}</span>
-                      {day.lastWord?.trim() && (
+                      {/* Tappable date header */}
+                      <button onClick={() => toggleEntry(day.key)} style={{
+                        width: "100%", background: "none", border: "none",
+                        padding: "10px 12px", cursor: "pointer",
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        borderBottom: isOpen ? "1px solid rgba(255,255,255,0.025)" : "none",
+                      }}>
                         <span style={{
-                          fontSize: 12, color: G, fontFamily: F.h, fontStyle: "italic",
-                          opacity: 0.4,
-                        }}>
-                          {day.lastWord}
-                        </span>
+                          fontSize: 10, color: isOpen ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)",
+                          fontFamily: F.b, transition: "color 0.2s",
+                        }}>{day.date}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {day.lastWord?.trim() && (
+                            <span style={{
+                              fontSize: 12, color: G, fontFamily: F.h, fontStyle: "italic",
+                              opacity: 0.4,
+                            }}>{day.lastWord}</span>
+                          )}
+                          <span style={{
+                            fontSize: 9, color: "rgba(201,169,110,0.2)", fontFamily: F.m,
+                            transition: "transform 0.2s",
+                            display: "inline-block",
+                            transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
+                          }}>›</span>
+                        </div>
+                      </button>
+
+                      {/* Expanded content */}
+                      {isOpen && (
+                        <div style={{ animation: "slideUp 0.2s ease" }}>
+                          {day.picture && (
+                            <img src={day.picture} alt="" style={{
+                              width: "100%", maxHeight: 200, objectFit: "cover",
+                            }} />
+                          )}
+
+                          {day.passage?.trim() && (
+                            <div style={{ padding: "12px 14px" }}>
+                              <p style={{
+                                fontSize: 13, color: "rgba(255,255,255,0.5)",
+                                lineHeight: 1.8, fontFamily: F.h, margin: 0,
+                                whiteSpace: "pre-wrap",
+                              }}>{day.passage}</p>
+                            </div>
+                          )}
+
+                          {/* Beacon */}
+                          <div style={{
+                            margin: "0 12px 12px",
+                            padding: "10px 12px",
+                            background: "rgba(201,169,110,0.02)",
+                            border: "1px solid rgba(201,169,110,0.06)",
+                            borderRadius: 7,
+                          }}>
+                            <div style={{
+                              fontSize: 8, color: "rgba(201,169,110,0.25)",
+                              fontFamily: F.m, letterSpacing: "0.14em",
+                              textTransform: "uppercase", marginBottom: 6,
+                            }}>· ) ) ) beacon</div>
+                            {loading ? (
+                              <div style={{
+                                fontSize: 11, color: "rgba(201,169,110,0.18)",
+                                fontFamily: F.m, animation: "breathe 1.5s ease-in-out infinite",
+                              }}>reading signal…</div>
+                            ) : (
+                              <p style={{
+                                fontSize: 12, color: "rgba(255,255,255,0.4)",
+                                lineHeight: 1.75, fontFamily: F.h, margin: 0,
+                              }}>{beacon || "—"}</p>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
-
-                    {/* Picture */}
-                    {day.picture && (
-                      <img src={day.picture} alt="" style={{
-                        width: "100%", maxHeight: 160, objectFit: "cover",
-                      }} />
-                    )}
-
-                    {/* Passage */}
-                    {day.passage?.trim() && (
-                      <div style={{ padding: "10px 12px" }}>
-                        <p style={{
-                          fontSize: 13, color: "rgba(255,255,255,0.5)",
-                          lineHeight: 1.75, fontFamily: F.h, margin: 0,
-                          whiteSpace: "pre-wrap",
-                        }}>
-                          {day.passage.length > 200
-                            ? day.passage.slice(0, 200) + "..."
-                            : day.passage}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </>
             )}
           </div>
