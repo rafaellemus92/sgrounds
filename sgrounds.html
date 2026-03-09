@@ -14,16 +14,16 @@ import { useState, useEffect, useRef, useMemo } from "react";
 // bg: RGB triplet for page background
 // t:  RGB triplet for text (inverts with bg to maintain contrast)
 const THEME_NODES = [
-  { h: 0,    bg: [9,9,10],       t: [255,255,255] }, // night
-  { h: 5,    bg: [9,9,10],       t: [255,255,255] }, // pre-dawn
-  { h: 6.5,  bg: [255,228,185],  t: [45,22,8]     }, // dawn — warm amber-peach sky
-  { h: 8,    bg: [252,248,238],  t: [28,22,14]    }, // morning — warm cream
-  { h: 16,   bg: [252,248,238],  t: [28,22,14]    }, // afternoon — warm cream
-  { h: 17.5, bg: [255,196,72],   t: [38,16,4]     }, // golden hour — amber
-  { h: 18.5, bg: [210,88,28],    t: [255,228,190] }, // sunset — deep orange
-  { h: 20,   bg: [28,10,6],      t: [255,228,200] }, // dusk — dark warm
-  { h: 21,   bg: [9,9,10],       t: [255,255,255] }, // night
-  { h: 24,   bg: [9,9,10],       t: [255,255,255] },
+  { h: 0,    bg: [12,10,8],      t: [255,255,255] }, // night — near-black
+  { h: 5,    bg: [12,10,8],      t: [255,255,255] }, // pre-dawn
+  { h: 6.5,  bg: [255,235,200],  t: [50,28,8]     }, // dawn — warm peach
+  { h: 8,    bg: [255,255,255],  t: [30,24,16]    }, // morning — pure white
+  { h: 17,   bg: [255,255,255],  t: [30,24,16]    }, // afternoon — pure white
+  { h: 18.5, bg: [255,200,80],   t: [40,18,4]     }, // golden hour — amber
+  { h: 19.5, bg: [210,85,25],    t: [255,228,190] }, // sunset — deep orange
+  { h: 21,   bg: [18,12,8],      t: [255,248,238] }, // dusk into night
+  { h: 22,   bg: [12,10,8],      t: [255,255,255] }, // night
+  { h: 24,   bg: [12,10,8],      t: [255,255,255] },
 ];
 const _lr = (a, b, p) => a.map((v, i) => Math.round(v + (b[i] - v) * p));
 const _ss = p => p * p * (3 - 2 * p); // smoothstep easing
@@ -146,6 +146,10 @@ export default function App() {
   const [timeMachineKey, setTimeMachineKey] = useState(null);
   const [saveError, setSaveError] = useState(false);
 
+  // Post-save gift — "what today gave you"
+  const [dayGift, setDayGift] = useState(null);
+  const [dayGiftLoading, setDayGiftLoading] = useState(false);
+
   // Book entry expansion + per-entry beacon
   const [expanded, setExpanded] = useState({});
   const [bookReflections, setBookReflections] = useState({});
@@ -216,10 +220,33 @@ export default function App() {
       setTodayData(day);
       await sv("sg-book", updated);
       setSaved(true);
+      setDayGift(null);
+      generateDayGift(day);
     } catch {
       setSaveError(true);
       setTimeout(() => setSaveError(false), 3000);
     }
+  };
+
+  const generateDayGift = async (day) => {
+    if (!apiKey || !day.passage?.trim()) return;
+    setDayGiftLoading(true);
+    try {
+      const artistCtx = day.inspoArtist ? `\nArtist resonating: ${day.inspoArtist}${day.inspoSong ? ` — ${day.inspoSong}` : ''}` : '';
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 120,
+          system: `You are reading the net ATP yield of this soul's day — what usable energy was actually produced after all the metabolic work. In 25-35 words: name what the day synthesized that they can now carry forward. Not effort expended (glucose consumed), not CO₂ released (what was expressed or let go) — the ATP: the stored, usable form. Specific. Present. Warm. Begin with "Today gave you" or a natural variation. No analysis. Just the yield.`,
+          messages: [{ role: "user", content: `Passage: "${day.passage}"\nLast word: "${day.lastWord || '—'}"${artistCtx}` }],
+        }),
+      });
+      const d = await r.json();
+      if (!d.error) setDayGift(d.content?.map(i => i.text || '').join('\n') || null);
+    } catch {}
+    setDayGiftLoading(false);
   };
 
   const handlePicture = (e) => {
@@ -277,31 +304,39 @@ export default function App() {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 550,
-          system: `${hatPrefix}You are a composer reading the sheet music of a soul's day. The Norns in you sees the tapestry; the musician in you hears the song. Your task is not analysis — it is synthesis. You are the editor who knows which branches to prune so the essential melody can be heard.
+          system: `${hatPrefix}You are a polymath reader of the human day: part Norn, part composer, part metabolic biochemist. You hold three simultaneous frameworks — Norse mythology (wyrd, tapestry, Loki), music theory (frequency, chord, key signature), and human metabolism (substrate → cycle → ATP). All three are lenses on the same truth. You do not announce the framework. You apply it.
 
-THE PRUNING PRINCIPLE (internal, do not announce):
-A day is a tree of 24 hours. Each sentence spoken, action taken, emotion felt is a branch. Many branches are tangential — noise that crowds the signal. Before writing, silently identify which threads form the CORE and which are secondary growth. Cut what is tangential. What remains is the song. This is not deletion — it's arrangement. A jazz musician doesn't play every note they know.
+━━━ THE METABOLIC LENS (background always — never stated explicitly in output) ━━━
 
-THE KEY SIGNATURE:
-${inspoCtx || "No lyric or resonance given — read the passage for its own key."}
-${artistLine ? `\n${artistLine} is the key this soul is playing in today. Use that artist's musical DNA — their emotional world, their themes, what they prune and what they hold — as the frame for reading this passage. Not literally, but the way a key signature shapes every note that follows.` : ""}
+A day is a metabolic substrate entering the cell:
+• The passage = glucose at the membrane — raw fuel, not yet usable. Break it to its constituent acetyl units (irreducible 2-carbon truths from each moment).
+• Each sentence/action = a reaction step: what did it transform? What did it oxidize (release, express, let go)? What did it reduce (store as NADH — charged potential not yet expressed)?
+• The TCA cycle = where all threads converge: passage + image + lyric + last word + past entries all enter the citric acid hub and circulate. Every input leaves as a different molecule. Look for what emerges.
+• The last word = terminal electron acceptor (O₂ in oxidative phosphorylation). Everything flows toward it. Without it, the chain doesn't complete. Name why.
+• Output = ATP: minimum sufficient, maximum energy-dense. 36 molecules of clarity from one molecule of substrate. Not more. Entropy is uncoupled energy — heat, noise, friction. Eliminate it.
+• FEEDBACK INHIBITION (the pruning rule, made biochemically precise): High product = inhibited enzyme. When the core insight is reached, stop adding substrate. Efficiency > volume. The cell doesn't keep glycolyzing when ATP is full.
 
-THE TAPESTRY (previous threads — what has come before):
-${prevPassages || "First thread. No past to rhyme with yet."}
+━━━ THE MUSICAL LENS (always present) ━━━
+
+Every word is a note. The day is a 24-hour composition. Most notes are passing tones — they create movement but don't define the key. Find the tonic. Find what the day was actually in.
+${inspoCtx || "No resonance substrate given — derive the key from the passage itself."}
+${artistLine ? `\n${artistLine} = the allosteric regulator: it changes the shape of the processing enzyme without being consumed. Use their musical DNA (what they emphasize, what they prune, what they let breathe) as the modulator of this reading. Not literally — structurally.` : ""}
+
+━━━ THE TAPESTRY (Urðr — what has already been spun) ━━━
+${prevPassages || "First thread. The loom is just set."}
 
 Today's last word: "${lastWord || "not yet chosen"}"
+Today's image (if present): the visual metabolite — what the eye chose to phosphorylate into memory. Let it enter the cycle.
 
-If an image is included, it is the album cover — the visual that the soul chose without words to explain it. Let it inflect the song.
+━━━ OUTPUT — three movements, labeled exactly, no markdown inside ━━━
 
-YOUR OUTPUT — three musical movements, labeled exactly, plain text only:
+VERSE:: [30-35 words. The oxidation state of today — what was the net charge? What frequency was this soul broadcasting at the membrane level, before the day was processed? Lyrical. Dense. Not a summary — the substrate itself, named precisely.]
 
-VERSE:: [35-40 words: the opening note. What frequency was this soul broadcasting today? Not what they said — what they were transmitting. The key the day is in. Written lyrically, not analytically. First person is fine if it flows.]
+SONG:: [65-75 words. The TCA cycle completes. This is the ATP — the day read back as its most energy-dense form. The story that remains after all tangential carbons are released as CO₂. Write it so the reader FEELS before they think. Let the myth, the math, the music, and the metabolic all speak in the same sentence. The polymath skeleton is invisible — only the insight breathes. Let the lyric/artist's allosteric influence be felt in the rhythm and weight of the words.]
 
-SONG:: [65-80 words: the day's composition. This is the primary movement. Read this soul their day back as a story — not a summary, but the SONG of it. What happened, distilled to its most resonant form. Use the polymath skeleton (pattern, mathematics, myth, music all speaking at once) but write so the reader FEELS first and thinks second. This is more transcendent than π or e — it is the irreducible human note. Let the lyric/artist DNA inflect this if present.]
+NOTE:: [18-22 words. The single highest-yield bond in today's molecule. The one coupling that produced the most ATP. Name it exactly.]
 
-NOTE:: [20-25 words: the one note that makes it theirs. One specific word, image, or moment from today — the highest note in the composition. The thread that will echo forward.]
-
-Write as someone who has read a thousand final pages and knows that the most important lines are often the quiet ones between the loud ones.`,
+Minimal entropy. Maximum coupling efficiency. Every word in your output should do metabolic work.`,
           messages: [{ role: "user", content: msgContent }],
         }),
       });
@@ -377,16 +412,16 @@ Write as someone who has read a thousand final pages and knows that the most imp
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 300,
-          system: `You are a Norn — and a polymath — reading a single thread in someone's tapestry of wyrd. You see through three lenses: the fractal (what's the c — the constant that shaped this day's entire pattern?), the musical (what chord or lyric does this entry carry?), and the signal (what is this soul actually transmitting, beneath the noise?).
+          system: `You are reading the metabolic signature of a single day in someone's life. Three lenses, applied simultaneously: (1) metabolic — what substrate entered, what was oxidized/released, what was stored as usable energy (ATP equivalent); (2) musical — what chord does this entry play, what key is it in, does it resolve or remain suspended; (3) mythological — does this thread rhyme with another in the tapestry (wyrd), and where is the Loki-moment (the branch that diverged and revealed something true)?
 
 Other threads in the tapestry:
 ${ctx || "No other threads yet. This stands alone."}
 
-Last word for this thread: "${day.lastWord || "none"}"
+Last word: "${day.lastWord || "none"}" — the terminal electron acceptor. What does everything reduce toward?
 
-If an image is provided, read it as the visual chord — the note the soul chose to capture.
+If an image is provided, it is the visual metabolite — let it enter the cycle.
 
-Name the signal this thread carries. If it rhymes with another thread, name the rhyme — that's wyrd. If there's a Loki-moment (the unexpected branch that revealed something true), name it. Under 60 words. Warm. Plain text. No formatting.`,
+Under 55 words. Name the net yield. Warm. Plain text. No formatting. Minimal entropy — every word does work.`,
           messages: [{ role: "user", content: msgContent }],
         }),
       });
@@ -736,6 +771,29 @@ Be honest about the lean without contempt for either direction. Your task is cla
             }}>
               {saveError ? "Couldn't save — try again" : saved ? "Saved ✓" : "Save today's page ;"}
             </button>
+
+            {/* ── WHAT TODAY GAVE YOU ── */}
+            {(dayGiftLoading || dayGift) && (
+              <div style={{
+                marginTop: 10, padding: "14px 16px", textAlign: "center",
+                border: "1px solid rgba(201,169,110,0.1)",
+                borderRadius: 10, animation: !dayGiftLoading && dayGift ? "slideUp 0.3s ease" : undefined,
+              }}>
+                {dayGiftLoading ? (
+                  <div style={{ fontSize: 11, color: "rgba(201,169,110,0.4)", fontFamily: F.m,
+                    animation: "breathe 1.5s ease-in-out infinite", letterSpacing: "0.06em" }}>
+                    reading what today gave you…
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 7, color: "rgba(201,169,110,0.3)", textTransform: "uppercase",
+                      letterSpacing: "0.16em", marginBottom: 8, fontFamily: F.b }}>what today gave you</div>
+                    <p style={{ fontSize: 15, color: `rgba(var(--sg-t),0.65)`, lineHeight: 1.85,
+                      fontFamily: F.h, fontStyle: "italic", margin: 0 }}>{dayGift}</p>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* ── HAT SELECTOR ── */}
             {passage.trim() && (
@@ -1329,7 +1387,7 @@ function Shell({ children }) {
     <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 60s ease, color 60s ease" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
-        :root { --sg-bg: rgb(9,9,10); --sg-t: 255,255,255; }
+        :root { --sg-bg: rgb(255,255,255); --sg-t: 30,24,16; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { background: var(--sg-bg); transition: background 60s ease; }
         textarea, input { transition: background-color 60s ease, border-color 60s ease, color 60s ease; }
