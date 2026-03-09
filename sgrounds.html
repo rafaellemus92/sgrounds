@@ -1690,6 +1690,90 @@ Be honest about the lean without contempt for either direction. Your task is cla
             <details style={{ marginTop: 16 }}>
               <summary style={{
                 fontSize: 9, color: "rgba(201,169,110,0.15)", cursor: "pointer",
+              }}>The signals</summary>
+              <div style={{
+                marginTop: 8, padding: 12,
+                background: "rgba(201,169,110,0.015)",
+                border: "1px solid rgba(201,169,110,0.03)",
+                borderRadius: 7,
+              }}>
+                <p style={{
+                  fontSize: 10, color: "rgba(var(--sg-t),0.2)", lineHeight: 1.7, marginBottom: 10,
+                  fontFamily: F.h, fontStyle: "italic",
+                }}>
+                  Every sense is a different wave arriving at a different gate — but inside, every gate opens onto the same corridor: electrical impulses in neurons.
+                </p>
+                {[
+                  ["Hearing", "Sound waves", "Mechanical pressure · 20 Hz – 20 kHz", "Cochlea"],
+                  ["Seeing", "Light", "Electromagnetic radiation · 400–700 nm", "Retina"],
+                  ["Touch", "Force & heat", "Mechanical deformation · thermal energy", "Skin receptors"],
+                  ["Smell", "Airborne molecules", "Volatile chemicals binding to receptors", "Olfactory bulb"],
+                  ["Taste", "Dissolved molecules", "Sweet · sour · bitter · salty · umami", "Taste buds"],
+                  ["Thinking", "Electrical + chemical", "Action potentials · neurotransmitters", "Neurons"],
+                ].map(([sense, signal, physics, receptor], i) => (
+                  <div key={i} style={{
+                    display: "flex", gap: 8, marginBottom: 6,
+                    padding: "4px 0",
+                    borderBottom: i < 5 ? "1px solid rgba(201,169,110,0.02)" : "none",
+                  }}>
+                    <div style={{
+                      fontSize: 9, color: G, opacity: 0.35, fontFamily: F.m,
+                      minWidth: 52, flexShrink: 0,
+                    }}>{sense}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontSize: 9, color: "rgba(var(--sg-t),0.25)", fontWeight: 500,
+                      }}>{signal}</div>
+                      <div style={{
+                        fontSize: 8, color: "rgba(var(--sg-t),0.1)", lineHeight: 1.5,
+                      }}>{physics} → {receptor}</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{
+                  marginTop: 10, padding: "8px 10px",
+                  background: "rgba(201,169,110,0.01)",
+                  border: "1px solid rgba(201,169,110,0.02)",
+                  borderRadius: 5,
+                }}>
+                  <div style={{
+                    fontSize: 8, color: "rgba(201,169,110,0.2)", fontFamily: F.m,
+                    textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 5,
+                  }}>time as hidden dimension</div>
+                  <p style={{
+                    fontSize: 9, color: "rgba(var(--sg-t),0.12)", lineHeight: 1.7,
+                  }}>
+                    Every signal has frequency — cycles per second. But a second is not absolute. Near the speed of light or strong gravity, time dilates. Change time → change the apparent frequency of every signal. The universe may be oscillations in spacetime, and time dilation changes only the tempo — not the music.
+                  </p>
+                </div>
+                <div style={{
+                  marginTop: 10, padding: "8px 10px",
+                  background: "rgba(201,169,110,0.01)",
+                  border: "1px solid rgba(201,169,110,0.02)",
+                  borderRadius: 5,
+                }}>
+                  <div style={{
+                    fontSize: 8, color: "rgba(201,169,110,0.2)", fontFamily: F.m,
+                    textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 5,
+                  }}>the deep analogy</div>
+                  <p style={{
+                    fontSize: 9, color: "rgba(var(--sg-t),0.12)", lineHeight: 1.7,
+                  }}>
+                    Light : eye · Sound : ear · Chemicals : nose · Force : skin · Patterns : brain. The brain's true sense may be pattern recognition across signals — which is why music, math, and language feel strangely related. And why the Norns can read your tapestry: every thread is the same electricity, shaped differently.
+                  </p>
+                </div>
+                <p style={{
+                  fontSize: 8, color: "rgba(var(--sg-t),0.06)", lineHeight: 1.7, marginTop: 8,
+                  fontStyle: "italic",
+                }}>
+                  Perception = signals / local time. The symphony of the universe plays in light, sound, matter, and thought. Time is the tempo. The brain is the conductor.
+                </p>
+              </div>
+            </details>
+
+            <details style={{ marginTop: 10 }}>
+              <summary style={{
+                fontSize: 9, color: "rgba(201,169,110,0.15)", cursor: "pointer",
               }}>The equation</summary>
               <div style={{
                 marginTop: 8, padding: 12,
