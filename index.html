@@ -45,9 +45,35 @@
     const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
 
     const QUOTE_TYPES = ["lyric", "scripture", "film", "poem", "other"];
+    const WISDOM_LENSES = [
+      { k:"general",      l:"general" },
+      { k:"parental",     l:"parental" },
+      { k:"financial",    l:"financial" },
+      { k:"health",       l:"health" },
+      { k:"creative",     l:"creative" },
+      { k:"spiritual",    l:"spiritual" },
+      { k:"relational",   l:"relational" },
+      { k:"career",       l:"career" },
+    ];
+
+    // Word suggestions from past entries
+    const getWordSuggestions = (text, pastDays) => {
+      const words = text.split(/\s+/);
+      const partial = words[words.length - 1] || "";
+      if (!partial || partial.length < 2) return [];
+      const bank = new Set();
+      pastDays.forEach(d => {
+        [d.passage, d.picDesc].filter(Boolean).forEach(s =>
+          s.split(/\W+/).forEach(w => { if (w.length > 3) bank.add(w.toLowerCase()); })
+        );
+      });
+      return [...bank]
+        .filter(w => w.startsWith(partial.toLowerCase()) && w !== partial.toLowerCase())
+        .slice(0, 5);
+    };
 
     // ── AI system prompt ─────────────────────────────────────────────────────
-    const buildSystemPrompt = (prevPassages, lastWord, quote, quoteType, quoteSource) => `You are the Lighthouse of sgrounds — reader of threads, keeper of The Book.
+    const buildSystemPrompt = (prevPassages, lastWord, quote, quoteType, quoteSource, lens, location) => `You are the Lighthouse of sgrounds — reader of threads, keeper of The Book.
 
 The person writes raw, fast, with typos. Read THROUGH the noise. Find the signal.
 
@@ -56,15 +82,17 @@ ${prevPassages || "This is their first thread. The book is new."}
 
 Today's last word: "${lastWord || "not yet chosen"}"
 ${quote ? `Today's ${quoteType}: "${quote}"${quoteSource ? ` — ${quoteSource}` : ""}` : ""}
+${location?.city ? `Writing from: ${location.city}` : ""}
 
 YOUR ROLE:
 1. Translate what their soul is saying, not what their fingers typed
-2. If you see patterns across previous threads — echoes, recurring themes — name them
+2. If you see patterns across previous threads — echoes, recurring words, recurring feelings — name them. That IS the mathematical pattern across their entries.
 3. Use humility language: "this thread may carry..." not "you are..."
 4. If this connects to a previous day, say so explicitly. That is the pattern emerging.
 5. End with one question that opens tomorrow
 6. Keep it under 100 words. Warm. True. Brief.
-
+${lens && lens !== "general" ? `
+WISDOM LENS — ${lens.toUpperCase()}: Frame the core insight through ${lens} life. Note: the deepest wisdom is domain-agnostic — the same principle that applies in ${lens} almost always applies across parenting, finance, health, and creative work simultaneously. Name the universal law, then show how it applies to their situation through the ${lens} lens specifically.` : ""}
 Respond as plain text only.`;
 
     // ── Shared input style ───────────────────────────────────────────────────
@@ -93,6 +121,40 @@ Respond as plain text only.`;
       );
     }
 
+    // ── Fortune Modal ────────────────────────────────────────────────────────
+    function FortuneModal({ text, onDismiss }) {
+      return (
+        <div
+          onClick={onDismiss}
+          style={{
+            position:"fixed", inset:0, background:"rgba(4,4,6,0.97)", zIndex:60,
+            display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+            padding:"40px 28px", animation:"fortuneIn 0.55s cubic-bezier(0.16,1,0.3,1)",
+          }}
+        >
+          <div style={{ maxWidth:320, width:"100%", textAlign:"center" }}>
+            <div style={{ marginBottom:22 }}>
+              <Logo size={24}/>
+              <div style={{ fontSize:7, color:"rgba(201,169,110,0.35)", textTransform:"uppercase", letterSpacing:"0.22em", marginTop:10, animation:"breathe 4s ease-in-out infinite" }}>
+                The Lighthouse
+              </div>
+            </div>
+            <div style={{ width:28, height:1, background:"rgba(201,169,110,0.15)", margin:"0 auto 24px" }}/>
+            <p style={{
+              fontSize:19, fontFamily:F.h, fontStyle:"italic",
+              color:"rgba(255,255,255,0.88)", lineHeight:1.85, letterSpacing:"0.01em",
+            }}>
+              {text}
+            </p>
+            <div style={{ width:28, height:1, background:"rgba(201,169,110,0.15)", margin:"24px auto 0" }}/>
+            <div style={{ marginTop:20, fontSize:8, color:"rgba(255,255,255,0.08)", fontFamily:F.m, letterSpacing:"0.12em" }}>
+              tap to close
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // ── Shell ────────────────────────────────────────────────────────────────
     function Shell({ children }) {
       return (
@@ -103,6 +165,7 @@ Respond as plain text only.`;
             html,body { background:#09090a; height:100%; overflow:hidden; }
             @keyframes breathe { 0%,100%{opacity:0.35} 50%{opacity:0.85} }
             @keyframes slideUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+            @keyframes fortuneIn { 0%{opacity:0;transform:scale(0.97) translateY(16px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
             textarea:focus,input:focus { outline:none; border-color:rgba(201,169,110,0.25)!important; }
             textarea,input { -webkit-text-size-adjust:100%; }
             ::selection { background:rgba(201,169,110,0.2); }
@@ -180,7 +243,10 @@ Respond as plain text only.`;
       // Reflection
       const [reflection, setReflection]   = useState(null);
       const [reflecting, setReflecting]   = useState(false);
+      const [showFortune, setShowFortune] = useState(false);
+      const [wisdomLens, setWisdomLens]   = useState("general");
       const [amplifying, setAmplifying]   = useState(false);
+      const [location, setLocation]       = useState(null);
       const fileRef = useRef(null);
 
       const dk = dateKey();
@@ -211,6 +277,15 @@ Respond as plain text only.`;
           }
           setApiKey(localStorage.getItem("sg-apikey") || "");
           setLoading(false);
+          // Soft location request — used only for Lighthouse context, never stored remotely
+          const tzCity = Intl.DateTimeFormat().resolvedOptions().timeZone.split("/").pop().replace(/_/g, " ");
+          setLocation({ city: tzCity });
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              pos => setLocation({ city: tzCity, lat: pos.coords.latitude.toFixed(3), lng: pos.coords.longitude.toFixed(3) }),
+              () => {} // silently ignore denial
+            );
+          }
         })();
       }, []);
 
@@ -261,7 +336,7 @@ Respond as plain text only.`;
             body: JSON.stringify({
               model: "claude-sonnet-4-20250514",
               max_tokens: 1000,
-              system: buildSystemPrompt(prevPassages, lastWord, quote, quoteType, quoteSource),
+              system: buildSystemPrompt(prevPassages, lastWord, quote, quoteType, quoteSource, wisdomLens, location),
               messages: [{ role: "user", content: `Today's passage:\n\n"${passage}"` }],
             }),
           });
@@ -270,9 +345,12 @@ Respond as plain text only.`;
             ? "The key didn't connect. Tap ⚙ to update it."
             : (d.content?.map(i => i.text || "").join("\n") || "Present but resists translation.");
           setReflection(text);
+          setShowFortune(true);
           await saveDay(text); // persist reflection with the day
         } catch {
-          setReflection("The lighthouse received your signal. Sometimes that's enough.");
+          const fallback = "The lighthouse received your signal. Sometimes that's enough.";
+          setReflection(fallback);
+          setShowFortune(true);
         }
         setReflecting(false);
       };
@@ -335,6 +413,9 @@ Respond as plain text only.`;
               onClose={() => setShowKeyModal(false)}
             />
           )}
+          {showFortune && reflection && (
+            <FortuneModal text={reflection} onDismiss={() => setShowFortune(false)} />
+          )}
 
           {/* ── Header ── */}
           <header style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 16px", borderBottom:"1px solid rgba(255,255,255,0.025)", flexShrink:0 }}>
@@ -395,6 +476,27 @@ Respond as plain text only.`;
                   autoCapitalize="off"
                   style={{ ...inputStyle, fontSize:16, fontFamily:F.h, lineHeight:1.6 }}
                 />
+                {/* Inline word suggestions from past entries */}
+                {(() => {
+                  const suggestions = getWordSuggestions(passage, allDays);
+                  return suggestions.length > 0 ? (
+                    <div style={{ display:"flex", gap:4, marginTop:4, flexWrap:"wrap" }}>
+                      {suggestions.map(w => (
+                        <button key={w} onClick={() => {
+                          const parts = passage.split(/\s+/);
+                          parts[parts.length - 1] = w;
+                          setPassage(parts.join(" ") + " ");
+                          setSaved(false);
+                        }} style={{
+                          fontSize:11, padding:"3px 9px", borderRadius:6, cursor:"pointer",
+                          fontFamily:F.h, fontStyle:"italic",
+                          background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.05)",
+                          color:"rgba(255,255,255,0.3)",
+                        }}>{w}</button>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
               </div>
 
               {/* Picture / Describe */}
@@ -424,7 +526,7 @@ Respond as plain text only.`;
                     </div>
                   ) : (
                     <>
-                      <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handlePicture} style={{ display:"none" }}/>
+                      <input ref={fileRef} type="file" accept="image/*" onChange={handlePicture} style={{ display:"none" }}/>
                       <div
                         onClick={() => fileRef.current && fileRef.current.click()}
                         style={{
@@ -543,30 +645,36 @@ Respond as plain text only.`;
                 </button>
 
                 {passage.trim() && (
-                  <button onClick={reflect} disabled={reflecting} style={{
-                    width:"100%", padding:"9px",
-                    background:"rgba(255,255,255,0.02)",
-                    border:"1px solid rgba(255,255,255,0.04)",
-                    color:"rgba(201,169,110,0.3)",
-                    borderRadius:10, fontSize:11, cursor:"pointer", fontFamily:F.b,
-                  }}>
-                    {reflecting ? "The Lighthouse is reading..." : "Ask the Lighthouse to reflect"}
-                  </button>
-                )}
-
-                {reflection && (
-                  <div style={{
-                    marginTop:7, padding:12,
-                    background:"rgba(201,169,110,0.02)",
-                    border:"1px solid rgba(201,169,110,0.06)",
-                    borderRadius:10, animation:"slideUp 0.3s ease",
-                    maxHeight:110, overflowY:"auto",
-                  }}>
-                    <div style={{ fontSize:7, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>The Lighthouse</div>
-                    <p style={{ fontSize:13, color:"rgba(255,255,255,0.55)", lineHeight:1.7, fontFamily:F.h, margin:0 }}>
-                      {reflection}
-                    </p>
-                  </div>
+                  <>
+                    {/* Wisdom lens */}
+                    <div style={{ display:"flex", gap:4, marginBottom:5, overflowX:"auto", paddingBottom:2 }}>
+                      {WISDOM_LENSES.map(lens => (
+                        <button key={lens.k} onClick={() => setWisdomLens(lens.k)} style={{
+                          flexShrink:0, fontSize:9, padding:"3px 9px", borderRadius:6, cursor:"pointer", fontFamily:F.b,
+                          background: wisdomLens === lens.k ? "rgba(201,169,110,0.1)" : "none",
+                          border:`1px solid ${wisdomLens === lens.k ? "rgba(201,169,110,0.2)" : "rgba(255,255,255,0.04)"}`,
+                          color: wisdomLens === lens.k ? G : "rgba(255,255,255,0.15)",
+                          whiteSpace:"nowrap",
+                        }}>{lens.l}</button>
+                      ))}
+                    </div>
+                    <button onClick={reflect} disabled={reflecting} style={{
+                      width:"100%", padding:"9px",
+                      background:"rgba(255,255,255,0.02)",
+                      border:"1px solid rgba(255,255,255,0.04)",
+                      color:"rgba(201,169,110,0.3)",
+                      borderRadius:10, fontSize:11, cursor:"pointer", fontFamily:F.b,
+                    }}>
+                      {reflecting ? "The Lighthouse is reading..." : "Ask the Lighthouse to reflect"}
+                    </button>
+                    {reflection && !showFortune && (
+                      <button onClick={() => setShowFortune(true)} style={{
+                        marginTop:4, width:"100%", padding:"6px",
+                        background:"none", border:"1px dashed rgba(201,169,110,0.08)",
+                        color:"rgba(201,169,110,0.2)", borderRadius:8, fontSize:9, cursor:"pointer", fontFamily:F.m,
+                      }}>read again ;</button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
