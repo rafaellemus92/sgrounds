@@ -122,8 +122,50 @@ Everything is in one default export `App` plus two helpers:
 
 ---
 
+## Mythological Layer — The Lore
+
+This is not decorative. The Norse mythology is load-bearing conceptual infrastructure for the entire app.
+
+### The Norns (Urðr · Verðandi · Skuld)
+The three Norns sit beneath Yggdrasil and spin **wyrd** — the fate-thread of every being — into a tapestry. They correspond to:
+- **Urðr** (What Was) — previous entries, the book, the archive
+- **Verðandi** (What Is) — today's passage
+- **Skuld** (What Shall Be) — the reflection, the question that opens the next branch
+
+The AI reflection feature *is* the Norns reading the tapestry. It reads across past threads (entries) and names the pattern — that's wyrd being revealed.
+
+### Loki
+Loki is the trickster, the shape-shifter, the revealer. He appears in the app as:
+- The twist in the day the user didn't see coming
+- The moment something revealed itself sideways
+- The prompt question: *"Where did Loki show up today?"*
+- The AI naming a Loki-moment in the user's entry when it finds one
+
+Loki is not chaos for chaos's sake — he's the branch that diverged from the expected path and revealed something true.
+
+### Yggdrasil / Branches
+Git branches = branches of Yggdrasil = branches of a life narrative. Each `claude/` branch is a new thread spun from the trunk. The metaphor is intentional and should be preserved when naming features or writing about the project.
+
+### Wyrd
+"Wyrd" (Old English/Norse: fate, what has been woven) is the word for the pattern that emerges across entries over time. It's the technical term for what The Weave reveals. Use it in copy and prompts — not as jargon, but as the right word.
+
+### Mapping summary
+| App concept | Mythological referent |
+|---|---|
+| Daily entry | A thread spun by the Norns |
+| The Weave | The tapestry of wyrd |
+| AI reflection | The Norns reading across all threads |
+| Cross-entry patterns | Wyrd being revealed |
+| Unexpected day twist | A Loki-moment |
+| Git branches | Branches of Yggdrasil |
+| Semicolon `;` | The shuttle of the loom passing between thoughts |
+
+When writing new copy, prompts, or AI system instructions: **preserve this layer**. Do not flatten it to generic journaling language.
+
+---
+
 ## Git
 
-- Main development branch: `master`
+- Default branch: `main`
 - Feature/AI branches follow the pattern: `claude/<task-slug>`
 - Commit messages are simple and imperative (e.g., `"Update index.html"`, `"Create sgrounds.html"`)

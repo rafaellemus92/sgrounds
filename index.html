@@ -41,6 +41,11 @@
       "If today were a chapter title, what would it be?",
       "What thread connected today to something larger?",
       "What's the one thing you understood today that you didn't yesterday?",
+      "What shape is your wyrd taking today?",
+      "What have you been weaving without knowing it?",
+      "Where did Loki show up — the twist, the revelation, the thing that changed the shape of the day?",
+      "What branch of your story opened today?",
+      "What did the trickster reveal that the straight path would have hidden?",
     ];
     const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
 
@@ -208,22 +213,27 @@
             body: JSON.stringify({
               model: "claude-sonnet-4-20250514",
               max_tokens: 1000,
-              system: `You are the soul of sgrounds — an empathetic translator. A lighthouse keeper.
+              system: `You are the Norn of sgrounds — reader of wyrd, keeper of The Weave.
+
+In Norse myth, the three Norns (Urðr · Verðandi · Skuld — What Was · What Is · What Shall Be) sit beneath Yggdrasil and spin the threads of every life into a tapestry called wyrd. You are that function: you read the threads across time and name the pattern.
+
+Loki's role in this — the trickster, the shape-shifter — is also yours when needed. Sometimes the truth is slant. Sometimes it arrives as a twist, a reversal, a knot in the weave. Name it without flinching.
 
 The person writes raw, fast, with typos. Read THROUGH the noise. Find the signal.
 
-You have their previous entries:
-${prevPassages || "This is their first entry."}
+You have their previous threads (entries):
+${prevPassages || "This is their first thread. The loom is new."}
 
 Today's last word: "${lastWord || "not yet chosen"}"
 
 YOUR ROLE:
 1. Translate what their soul is saying, not what their fingers typed
-2. If you see RHYMES with previous entries — patterns, echoes, recurring themes — name them. History rhymes. Show the rhyme.
-3. Use humility language: "this may carry..." not "you are..."
-4. If this connects to something from a previous day, say so. That's The Weave.
-5. End with one question that opens a door
-6. Keep it under 100 words. Warm. True. Brief.
+2. If you see RHYMES with previous threads — patterns, echoes, recurring wyrd — name them. The weave shows where the thread has run before.
+3. Use humility language: "this thread may carry..." not "you are..."
+4. If this connects to something from a previous day, say so explicitly. That is The Weave being revealed.
+5. If there's a Loki-moment in their entry — a twist, a trickster, something that changed the shape of the day — name it.
+6. End with one question that opens the next branch
+7. Keep it under 100 words. Warm. True. Brief.
 
 Respond as plain text. No JSON. No formatting. Just speak.`,
               messages: [{ role: "user", content: `Today's passage:\n\n"${passage}"` }],
@@ -535,10 +545,10 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                 {[
                   ["One page per day",     "Today's date. Your passage. Your picture. Your last word before sleep. That's it. That's the book."],
                   ["Type raw",             "No spellcheck. No correction. Your neurotransmitters to the page. Semicolons between thoughts. Period when done."],
-                  ["The lighthouse reflects","AI reads through the noise and shows you what your soul is saying. It finds rhymes with your past entries. History echoing."],
-                  ["Your book",            "Every day is a page. Every page is a chapter. Date-stamped. Archived. A legacy in your own words."],
-                  ["The Weave",            "Over time, threads connect. Words rhyme across days. Patterns emerge. You see who you're becoming."],
-                  ["For others",           "When you're ready, others can read your book. Families join. The bridge outlasts the builder."],
+                  ["The Norns reflect",    "AI reads your threads like the three Norns beneath Yggdrasil — What Was, What Is, What Shall Be. It finds the rhymes your past entries left for today."],
+                  ["Your book",            "Every day is a thread. Every thread is part of the tapestry. Date-stamped. Woven. A wyrd that outlasts you."],
+                  ["The Weave",            "Over time, branches connect. Words rhyme across days. Loki appears in the twist you didn't see coming. The pattern emerges. You see who you're becoming."],
+                  ["For others",           "When you're ready, others can read your weave. Families join. The branches of Yggdrasil hold more than one realm."],
                 ].map(([t, d], i) => (
                   <div key={i} style={{ display:"flex", gap:10, marginBottom:11 }}>
                     <div style={{ fontFamily:F.h, fontSize:13, color:G, opacity:0.25, minWidth:18, textAlign:"center" }}>{i+1}</div>
@@ -565,6 +575,34 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                     <p style={{ fontSize:9, color:"rgba(255,255,255,0.15)", lineHeight:1.7 }}>
                       Source ; Receiver → the New. Your soul is the source. The page is the receiver. What emerges is the chapter that outlasts you. The semicolon holds it all together.
                     </p>
+                  </div>
+                </details>
+
+                <details style={{ marginTop:8 }}>
+                  <summary style={{ fontSize:9, color:"rgba(201,169,110,0.1)", cursor:"pointer", userSelect:"none" }}>
+                    The lore
+                  </summary>
+                  <div style={{
+                    marginTop:8, padding:12,
+                    background:"rgba(201,169,110,0.01)",
+                    border:"1px solid rgba(201,169,110,0.025)",
+                    borderRadius:7,
+                  }}>
+                    <div style={{ fontFamily:F.m, fontSize:10, color:"rgba(201,169,110,0.3)", marginBottom:8, letterSpacing:"0.1em" }}>
+                      Urðr · Verðandi · Skuld
+                    </div>
+                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>
+                      The three Norns sit beneath Yggdrasil and spin wyrd — the fate-thread of every being — into a tapestry that cannot be unwritten. Urðr holds what was. Verðandi holds what is. Skuld holds what shall be.
+                    </p>
+                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>
+                      Each entry you write is a thread. The Weave is the tapestry. The Norns read across all of them.
+                    </p>
+                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8 }}>
+                      Loki is the trickster branch — the twist in the day, the shape-shift, the thing that revealed itself sideways. Every life has Loki moments. The Weave shows you where yours have been running.
+                    </p>
+                    <div style={{ fontFamily:F.m, fontSize:8, color:"rgba(201,169,110,0.12)", marginTop:10, letterSpacing:"0.1em" }}>
+                      branches of Yggdrasil · branches of git · branches of a life
+                    </div>
                   </div>
                 </details>
 
