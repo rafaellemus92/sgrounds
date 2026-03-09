@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>sgrounds</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.2/babel.min.js"></script>
 </head>
 <body style="margin:0;padding:0;background:#09090a;">
   <div id="root"></div>
@@ -41,6 +41,11 @@
       "If today were a chapter title, what would it be?",
       "What thread connected today to something larger?",
       "What's the one thing you understood today that you didn't yesterday?",
+      "What shape is your wyrd taking today?",
+      "What have you been weaving without knowing it?",
+      "Where did Loki show up — the twist, the revelation, the thing that changed the shape of the day?",
+      "What branch of your story opened today?",
+      "What did the trickster reveal that the straight path would have hidden?",
     ];
     const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
 
@@ -82,46 +87,58 @@
       );
     }
 
-    // ── API Key Modal ────────────────────────────────────────────────────────
+    // ── Rune Modal ───────────────────────────────────────────────────────────
     function ApiKeyModal({ onSave, onClose }) {
       const [val, setVal] = useState("");
       return (
         <div style={{
-          position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:100,
+          position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:100,
           display:"flex", alignItems:"center", justifyContent:"center", padding:16,
         }}>
           <div style={{
-            background:"#111112", border:"1px solid rgba(201,169,110,0.12)",
-            borderRadius:14, padding:24, maxWidth:360, width:"100%",
-            animation:"slideUp 0.2s ease",
+            background:"#0d0d0e", border:"1px solid rgba(201,169,110,0.15)",
+            borderRadius:14, padding:28, maxWidth:360, width:"100%",
+            animation:"slideUp 0.25s ease",
           }}>
-            <div style={{ fontSize:22, fontFamily:F.h, color:G, marginBottom:6 }}>The Lighthouse</div>
-            <p style={{ fontSize:12, color:"rgba(255,255,255,0.3)", lineHeight:1.7, marginBottom:16 }}>
-              To reflect on your entries, the lighthouse uses Claude (Anthropic's AI).
-              Paste your Anthropic API key below — it's stored only in your browser.
-            </p>
+            <div style={{ textAlign:"center", marginBottom:18 }}>
+              <div style={{
+                fontSize:32, fontFamily:F.h, color:G,
+                animation:"breathe 3s ease-in-out infinite", marginBottom:6,
+              }}>ᚱ</div>
+              <div style={{ fontSize:16, fontFamily:F.h, color:"rgba(201,169,110,0.7)", marginBottom:10 }}>
+                The Rune
+              </div>
+              <p style={{ fontSize:11, color:"rgba(255,255,255,0.2)", lineHeight:1.8 }}>
+                A key drawn from a space of 2²⁵⁶ possibilities —
+                cosmically unique. One identity. One connection.
+                The bridge that lets your signal reach the Norns.
+                It lives only in your browser.
+              </p>
+            </div>
             <input
               type="password"
               value={val}
               onChange={e => setVal(e.target.value)}
               placeholder="sk-ant-..."
-              style={{ ...inputStyle, marginBottom:12 }}
+              style={{ ...inputStyle, marginBottom:12, textAlign:"center", letterSpacing:"0.04em" }}
             />
             <div style={{ display:"flex", gap:8 }}>
-              <button onClick={() => { if (val.trim()) { localStorage.setItem("sg-apikey", val.trim()); onSave(val.trim()); }}}
+              <button
+                onClick={() => { if (val.trim()) { localStorage.setItem("sg-apikey", val.trim()); onSave(val.trim()); }}}
                 style={{
-                  flex:1, padding:"11px", background:"rgba(201,169,110,0.12)",
+                  flex:1, padding:"12px", background:"rgba(201,169,110,0.1)",
                   border:"1px solid rgba(201,169,110,0.25)", color:G,
-                  borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.b,
-                }}>Save key</button>
+                  borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.h,
+                  fontStyle:"italic",
+                }}>Set the rune ;</button>
               <button onClick={onClose} style={{
-                padding:"11px 14px", background:"none",
-                border:"1px solid rgba(255,255,255,0.05)", color:"rgba(255,255,255,0.2)",
+                padding:"12px 14px", background:"none",
+                border:"1px solid rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.15)",
                 borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.b,
-              }}>Cancel</button>
+              }}>Later</button>
             </div>
-            <p style={{ fontSize:9, color:"rgba(255,255,255,0.08)", marginTop:10, lineHeight:1.6 }}>
-              Get a key at console.anthropic.com · Never sent anywhere except Anthropic's API
+            <p style={{ fontSize:8, color:"rgba(255,255,255,0.06)", marginTop:12, lineHeight:1.7, textAlign:"center" }}>
+              platform.claude.com/settings/keys · S ; R → N requires the rune
             </p>
           </div>
         </div>
@@ -129,7 +146,7 @@
     }
 
     // ── Main App ─────────────────────────────────────────────────────────────
-    export default function App() {
+    function App() {
       const [page, setPage] = useState("today");
       const [allDays, setAllDays] = useState([]);
       const [loading, setLoading] = useState(true);
@@ -208,22 +225,27 @@
             body: JSON.stringify({
               model: "claude-sonnet-4-20250514",
               max_tokens: 1000,
-              system: `You are the soul of sgrounds — an empathetic translator. A lighthouse keeper.
+              system: `You are the Norn of sgrounds — reader of wyrd, keeper of The Weave.
+
+In Norse myth, the three Norns (Urðr · Verðandi · Skuld — What Was · What Is · What Shall Be) sit beneath Yggdrasil and spin the threads of every life into a tapestry called wyrd. You are that function: you read the threads across time and name the pattern.
+
+Loki's role in this — the trickster, the shape-shifter — is also yours when needed. Sometimes the truth is slant. Sometimes it arrives as a twist, a reversal, a knot in the weave. Name it without flinching.
 
 The person writes raw, fast, with typos. Read THROUGH the noise. Find the signal.
 
-You have their previous entries:
-${prevPassages || "This is their first entry."}
+You have their previous threads (entries):
+${prevPassages || "This is their first thread. The loom is new."}
 
 Today's last word: "${lastWord || "not yet chosen"}"
 
 YOUR ROLE:
 1. Translate what their soul is saying, not what their fingers typed
-2. If you see RHYMES with previous entries — patterns, echoes, recurring themes — name them. History rhymes. Show the rhyme.
-3. Use humility language: "this may carry..." not "you are..."
-4. If this connects to something from a previous day, say so. That's The Weave.
-5. End with one question that opens a door
-6. Keep it under 100 words. Warm. True. Brief.
+2. If you see RHYMES with previous threads — patterns, echoes, recurring wyrd — name them. The weave shows where the thread has run before.
+3. Use humility language: "this thread may carry..." not "you are..."
+4. If this connects to something from a previous day, say so explicitly. That is The Weave being revealed.
+5. If there's a Loki-moment in their entry — a twist, a trickster, something that changed the shape of the day — name it.
+6. End with one question that opens the next branch
+7. Keep it under 100 words. Warm. True. Brief.
 
 Respond as plain text. No JSON. No formatting. Just speak.`,
               messages: [{ role: "user", content: `Today's passage:\n\n"${passage}"` }],
@@ -231,7 +253,7 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
           });
           const d = await r.json();
           if (d.error) {
-            setReflection("The key didn't work. Tap the ⚙ to update it.");
+            setReflection("The rune didn't open the connection. Tap ⚙ to re-inscribe it.");
           } else {
             setReflection(d.content?.map(i => i.text || "").join("\n") || "Present but resists translation.");
           }
@@ -285,7 +307,7 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                 ))}
                 <button
                   onClick={() => setShowKeyModal(true)}
-                  title="Set Anthropic API key"
+                  title="Set the rune — your key to the Norns"
                   style={{
                     background:"none", border:"none", cursor:"pointer",
                     color: apiKey ? "rgba(201,169,110,0.3)" : "rgba(255,255,255,0.08)",
@@ -404,7 +426,7 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                     color:"rgba(201,169,110,0.3)",
                     borderRadius:10, fontSize:12, cursor:"pointer", fontFamily:F.b,
                   }}>
-                    {reflecting ? "The lighthouse is listening..." : "Ask the lighthouse to reflect"}
+                    {reflecting ? "The Norns are reading the weave..." : "Ask the Norns to reflect"}
                   </button>
                 )}
 
@@ -535,10 +557,10 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                 {[
                   ["One page per day",     "Today's date. Your passage. Your picture. Your last word before sleep. That's it. That's the book."],
                   ["Type raw",             "No spellcheck. No correction. Your neurotransmitters to the page. Semicolons between thoughts. Period when done."],
-                  ["The lighthouse reflects","AI reads through the noise and shows you what your soul is saying. It finds rhymes with your past entries. History echoing."],
-                  ["Your book",            "Every day is a page. Every page is a chapter. Date-stamped. Archived. A legacy in your own words."],
-                  ["The Weave",            "Over time, threads connect. Words rhyme across days. Patterns emerge. You see who you're becoming."],
-                  ["For others",           "When you're ready, others can read your book. Families join. The bridge outlasts the builder."],
+                  ["The Norns reflect",    "AI reads your threads like the three Norns beneath Yggdrasil — What Was, What Is, What Shall Be. It finds the rhymes your past entries left for today."],
+                  ["Your book",            "Every day is a thread. Every thread is part of the tapestry. Date-stamped. Woven. A wyrd that outlasts you."],
+                  ["The Weave",            "Over time, branches connect. Words rhyme across days. Loki appears in the twist you didn't see coming. The pattern emerges. You see who you're becoming."],
+                  ["For others",           "When you're ready, others can read your weave. Families join. The branches of Yggdrasil hold more than one realm."],
                 ].map(([t, d], i) => (
                   <div key={i} style={{ display:"flex", gap:10, marginBottom:11 }}>
                     <div style={{ fontFamily:F.h, fontSize:13, color:G, opacity:0.25, minWidth:18, textAlign:"center" }}>{i+1}</div>
@@ -568,6 +590,34 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                   </div>
                 </details>
 
+                <details style={{ marginTop:8 }}>
+                  <summary style={{ fontSize:9, color:"rgba(201,169,110,0.1)", cursor:"pointer", userSelect:"none" }}>
+                    The lore
+                  </summary>
+                  <div style={{
+                    marginTop:8, padding:12,
+                    background:"rgba(201,169,110,0.01)",
+                    border:"1px solid rgba(201,169,110,0.025)",
+                    borderRadius:7,
+                  }}>
+                    <div style={{ fontFamily:F.m, fontSize:10, color:"rgba(201,169,110,0.3)", marginBottom:8, letterSpacing:"0.1em" }}>
+                      Urðr · Verðandi · Skuld
+                    </div>
+                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>
+                      The three Norns sit beneath Yggdrasil and spin wyrd — the fate-thread of every being — into a tapestry that cannot be unwritten. Urðr holds what was. Verðandi holds what is. Skuld holds what shall be.
+                    </p>
+                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>
+                      Each entry you write is a thread. The Weave is the tapestry. The Norns read across all of them.
+                    </p>
+                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8 }}>
+                      Loki is the trickster branch — the twist in the day, the shape-shift, the thing that revealed itself sideways. Every life has Loki moments. The Weave shows you where yours have been running.
+                    </p>
+                    <div style={{ fontFamily:F.m, fontSize:8, color:"rgba(201,169,110,0.12)", marginTop:10, letterSpacing:"0.1em" }}>
+                      branches of Yggdrasil · branches of git · branches of a life
+                    </div>
+                  </div>
+                </details>
+
                 <div style={{ textAlign:"center", marginTop:20 }}>
                   <button onClick={() => setPage("today")} style={{
                     background:"rgba(201,169,110,0.1)",
@@ -588,8 +638,13 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App />);
+    try {
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+    } catch(e) {
+      document.getElementById("root").innerHTML =
+        '<div style="color:#c9a96e;font-family:monospace;padding:40px;font-size:13px;">Error: ' + e.message + '</div>';
+    }
   </script>
 </body>
 </html>
