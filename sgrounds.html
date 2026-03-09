@@ -143,6 +143,8 @@ export default function App() {
   const [inspoSearching, setInspoSearching] = useState(false);
   const [inspoPulling, setInspoPulling] = useState(false); // AI pull for scripture/poem/film
   const [scriptureSearching, setScriptureSearching] = useState(false); // bible-api auto-lookup
+  const [scriptTrad, setScriptTrad] = useState(null); // "bible" | "quran" | "torah" | null
+  const [filmGenre, setFilmGenre] = useState(null); // "sci-fi" | "drama" | "thriller" | "comedy" | "horror" | "animation" | null
 
   // Time machine — drill into a specific book entry as a full-page view
   const [timeMachineKey, setTimeMachineKey] = useState(null);
@@ -195,6 +197,8 @@ export default function App() {
         if (existing.inspoText) setInspoText(existing.inspoText);
         if (existing.inspoArtist) setInspoArtist(existing.inspoArtist);
         if (existing.inspoSong) setInspoSong(existing.inspoSong);
+        if (existing.scriptTrad) setScriptTrad(existing.scriptTrad);
+        if (existing.filmGenre) setFilmGenre(existing.filmGenre);
         setSaved(true);
       }
       setLoading(false);
@@ -214,6 +218,8 @@ export default function App() {
         inspoText: inspoText.trim() || null,
         inspoArtist: inspoArtist.trim() || null,
         inspoSong: inspoSong.trim() || null,
+        scriptTrad: scriptTrad || null,
+        filmGenre: filmGenre || null,
         ts: new Date().toISOString(),
       };
       const existing = allDays.filter(d => d.key !== dk);
@@ -373,24 +379,44 @@ Minimal entropy. Maximum coupling efficiency. Every word in your output should d
     return () => clearTimeout(t);
   }, [inspoArtist, inspoType]);
 
-  // Scripture auto-fetch — when reference looks like "Book chapter:verse", pull from bible-api.com
+  // Scripture auto-fetch — routes to correct sacred text API based on tradition
+  // Bible → bible-api.com, Quran → alquran.cloud, Torah/Tanakh → sefaria.org
   useEffect(() => {
     if (inspoType !== "scripture" || !inspoArtist.trim()) return;
     if (!/\d+\s*:\s*\d+/.test(inspoArtist)) return;
     const t = setTimeout(async () => {
       setScriptureSearching(true);
       try {
-        const r = await fetch(`https://bible-api.com/${encodeURIComponent(inspoArtist.trim())}`);
-        const d = await r.json();
-        if (d.text && !d.error) {
-          setInspoText(d.text.trim().replace(/\s+/g, ' '));
-          setSaved(false);
+        const ref = inspoArtist.trim();
+        let text = null;
+        if (scriptTrad === "quran") {
+          // alquran.cloud — numeric surah:ayah (e.g. "2:255")
+          const m = ref.match(/(\d+)\s*:\s*(\d+)/);
+          if (m) {
+            const r = await fetch(`https://api.alquran.cloud/v1/ayah/${m[1]}:${m[2]}/en.sahih`);
+            const d = await r.json();
+            if (d.data?.text) text = d.data.text.trim();
+          }
+        } else if (scriptTrad === "torah") {
+          // Sefaria — accepts "Genesis 1:1", "Proverbs 3:5", etc.
+          const r = await fetch(`https://www.sefaria.org/api/texts/${encodeURIComponent(ref)}?context=0`);
+          const d = await r.json();
+          if (d.text) {
+            const raw = Array.isArray(d.text) ? d.text.flat().filter(Boolean).join(' ') : d.text;
+            text = raw.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+          }
+        } else {
+          // Bible (default / explicit)
+          const r = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}`);
+          const d = await r.json();
+          if (d.text && !d.error) text = d.text.trim().replace(/\s+/g, ' ');
         }
+        if (text) { setInspoText(text); setSaved(false); }
       } catch {}
       setScriptureSearching(false);
     }, 800);
     return () => clearTimeout(t);
-  }, [inspoArtist, inspoType]);
+  }, [inspoArtist, inspoType, scriptTrad]);
 
   // AI pull — scripture verse, poem excerpt, or film quote based on passage/keyword
   const pullInspo = async () => {
@@ -401,14 +427,21 @@ Minimal entropy. Maximum coupling efficiency. Every word in your output should d
       const passageCtx = passage.trim() ? `\nJournal entry: "${passage.slice(0, 200)}"` : '';
       let sys, userMsg;
       if (inspoType === "scripture") {
-        sys = `You are a scholar of sacred texts — Bible (KJV/NIV), Quran, Torah, Psalms, Proverbs, Gospels. Return ONE verse that resonates. Format EXACTLY:\n[verse text]\n— Book Chapter:Verse (translation)\nPlain text only. No extra explanation.`;
+        const tradCtx = scriptTrad === "quran"
+          ? "Draw EXCLUSIVELY from the Holy Quran. Use an authentic English translation (Sahih International or Yusuf Ali). Reference format: Surah Name Chapter:Ayah."
+          : scriptTrad === "torah"
+          ? "Draw EXCLUSIVELY from the Torah and Hebrew Bible (Tanakh). Use the Jewish textual tradition. Reference format: Book Chapter:Verse."
+          : "Draw EXCLUSIVELY from the Bible (KJV or NIV). Reference format: Book Chapter:Verse.";
+        sys = `You are a scholar of sacred texts. ${tradCtx} Return ONE verse or ayah that resonates. Format EXACTLY:\n[verse text]\n— Reference\nPlain text only. No extra explanation.`;
         userMsg = refCtx ? `Find a verse related to: ${refCtx}${passageCtx}` : `Find a verse that resonates with:${passageCtx}`;
       } else if (inspoType === "poem") {
         sys = `You are a poetry librarian who knows Rumi, Mary Oliver, Rilke, Hopkins, Whitman, Hughes, Dickinson, Neruda, Keats. Return ONE short excerpt (2–6 lines) that resonates. Format EXACTLY:\n[poem lines]\n— Poet Name, "Poem Title"\nPlain text only.`;
         userMsg = refCtx ? `Find a poem by or related to: ${refCtx}${passageCtx}` : `Find a poem that resonates with:${passageCtx}`;
       } else if (inspoType === "film") {
-        sys = `You are a film scholar. Return ONE memorable film quote that resonates. Format EXACTLY:\n[the quote]\n— Film Title (Year), Character\nPlain text only.`;
-        userMsg = refCtx ? `Find a quote from or related to: ${refCtx}${passageCtx}` : `Find a film quote that resonates with:${passageCtx}`;
+        const genreCtx = filmGenre ? ` Genre: ${filmGenre}.` : '';
+        const movieCtx = refCtx ? `FROM THE FILM "${refCtx}" — find a memorable quote from this specific film.` : `Find a film quote that resonates with the journal entry.${genreCtx}`;
+        sys = `You are a cinephile and film archivist with encyclopedic knowledge of cinema across all eras and cultures.${genreCtx} Return ONE memorable, emotionally resonant quote. ${movieCtx} Format EXACTLY:\n[the quote]\n— Film Title (Year), Character\nPlain text only. No markdown.`;
+        userMsg = refCtx ? `Film: "${refCtx}"${genreCtx}${passageCtx}` : `Find a${filmGenre ? ' ' + filmGenre : ''} film quote that resonates with:${passageCtx}`;
       } else {
         sys = `You are a cultural archivist. Return ONE resonant quote from literature, music, or culture. Format: the quote, then on a new line — Source. Plain text only.`;
         userMsg = refCtx ? `Find a quote related to: ${refCtx}${passageCtx}` : `Find a quote that resonates with:${passageCtx}`;
@@ -734,7 +767,13 @@ Be honest about the lean without contempt for either direction. Your task is cla
               {/* Type chips */}
               <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
                 {["lyric","scripture","film","poem","other"].map(t => (
-                  <button key={t} onClick={() => { setInspoType(inspoType === t ? null : t); setSaved(false); }} style={{
+                  <button key={t} onClick={() => {
+                    const next = inspoType === t ? null : t;
+                    setInspoType(next);
+                    if (next !== "scripture") setScriptTrad(null);
+                    if (next !== "film") setFilmGenre(null);
+                    setSaved(false);
+                  }} style={{
                     padding: "3px 10px",
                     background: inspoType === t ? "rgba(201,169,110,0.1)" : "rgba(var(--sg-t),0.02)",
                     border: `1px solid ${inspoType === t ? "rgba(201,169,110,0.28)" : "rgba(var(--sg-t),0.07)"}`,
@@ -744,6 +783,46 @@ Be honest about the lean without contempt for either direction. Your task is cla
                   }}>{t}</button>
                 ))}
               </div>
+              {/* Scripture tradition pills — which sacred archive to draw from */}
+              {inspoType === "scripture" && (
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
+                  {[
+                    { id: "bible", label: "Bible" },
+                    { id: "quran", label: "Quran" },
+                    { id: "torah", label: "Torah" },
+                  ].map(tr => (
+                    <button key={tr.id} onClick={() => { setScriptTrad(scriptTrad === tr.id ? null : tr.id); setSaved(false); }} style={{
+                      padding: "2px 9px",
+                      background: scriptTrad === tr.id ? "rgba(201,169,110,0.12)" : "rgba(var(--sg-t),0.015)",
+                      border: `1px solid ${scriptTrad === tr.id ? "rgba(201,169,110,0.35)" : "rgba(var(--sg-t),0.05)"}`,
+                      color: scriptTrad === tr.id ? G : "rgba(var(--sg-t),0.2)",
+                      borderRadius: 14, fontSize: 9, cursor: "pointer", fontFamily: F.b,
+                      transition: "all 0.2s", letterSpacing: "0.04em",
+                    }}>{tr.label}</button>
+                  ))}
+                  <span style={{ fontSize: 8, color: "rgba(var(--sg-t),0.1)", fontFamily: F.m,
+                    alignSelf: "center", paddingLeft: 2 }}>
+                    {scriptTrad === "quran" ? "type surah:ayah (e.g. 2:255)" :
+                     scriptTrad === "torah" ? "type reference (e.g. Genesis 1:1)" :
+                     scriptTrad === "bible" ? "type reference (e.g. John 3:16)" : "select a tradition"}
+                  </span>
+                </div>
+              )}
+              {/* Film genre pills — give the genres life */}
+              {inspoType === "film" && (
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
+                  {["sci-fi","drama","thriller","comedy","horror","animation"].map(g => (
+                    <button key={g} onClick={() => { setFilmGenre(filmGenre === g ? null : g); setSaved(false); }} style={{
+                      padding: "2px 9px",
+                      background: filmGenre === g ? "rgba(201,169,110,0.12)" : "rgba(var(--sg-t),0.015)",
+                      border: `1px solid ${filmGenre === g ? "rgba(201,169,110,0.35)" : "rgba(var(--sg-t),0.05)"}`,
+                      color: filmGenre === g ? G : "rgba(var(--sg-t),0.2)",
+                      borderRadius: 14, fontSize: 9, cursor: "pointer", fontFamily: F.b,
+                      transition: "all 0.2s", letterSpacing: "0.03em",
+                    }}>{g}</button>
+                  ))}
+                </div>
+              )}
               {/* Quote / lyric text input */}
               {inspoType && (
                 <div>
@@ -752,7 +831,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
                     onChange={e => { setInspoText(e.target.value); setSaved(false); }}
                     placeholder={
                       inspoType === "lyric"     ? "A lyric that's with you today…" :
-                      inspoType === "scripture" ? "A verse or passage that landed…" :
+                      inspoType === "scripture" ? "Verse will appear here — or type your own…" :
                       inspoType === "film"      ? "A line or scene you keep returning to…" :
                       inspoType === "poem"      ? "Lines that found you today…" :
                                                   "Something that's resonating…"
@@ -769,8 +848,12 @@ Be honest about the lean without contempt for either direction. Your task is cla
                       onBlur={() => setTimeout(() => setInspoSongs([]), 200)}
                       placeholder={
                         inspoType === "lyric"     ? "Artist or band (e.g. Harry Styles, Kendrick…)" :
-                        inspoType === "scripture" ? "Book chapter:verse  (e.g. John 3:16, Psalm 23…)" :
-                        inspoType === "film"      ? "Film title · director" :
+                        inspoType === "scripture" ? (
+                          scriptTrad === "quran" ? "Surah:Ayah (e.g. 2:255 · 36:1 · 112:1)" :
+                          scriptTrad === "torah" ? "Book Chapter:Verse (e.g. Genesis 1:1 · Isaiah 40:31)" :
+                          "Book Chapter:Verse (e.g. John 3:16 · Psalm 23:1)"
+                        ) :
+                        inspoType === "film"      ? "Movie title (e.g. Interstellar, Arrival, Parasite…)" :
                         inspoType === "poem"      ? "Poet · collection" :
                                                     "Source"
                       }
@@ -839,9 +922,9 @@ Be honest about the lean without contempt for either direction. Your task is cla
                         fontFamily: F.b, letterSpacing: "0.03em", transition: "all 0.2s",
                       }}>
                         {inspoPulling ? "searching…" :
-                          inspoType === "scripture" ? "find a verse ›" :
+                          inspoType === "scripture" ? `find a ${scriptTrad || "verse"} verse ›` :
                           inspoType === "poem"      ? "pull a poem ›" :
-                          inspoType === "film"      ? "pull a quote ›" :
+                          inspoType === "film"      ? (inspoArtist.trim() ? `pull from "${inspoArtist.trim()}" ›` : filmGenre ? `pull a ${filmGenre} quote ›` : "pull a film quote ›") :
                                                       "pull a quote ›"}
                       </button>
                     )}
