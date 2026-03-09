@@ -10,11 +10,10 @@
 </head>
 <body style="margin:0;padding:0;background:#09090a;">
   <div id="root"></div>
-
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // ── Storage (localStorage) ──────────────────────────────────────────────
+    // ── Storage ──────────────────────────────────────────────────────────────
     const ld = async (k, fb) => {
       try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : fb; } catch { return fb; }
     };
@@ -22,64 +21,95 @@
       try { localStorage.setItem(k, JSON.stringify(d)); } catch {}
     };
 
-    // ── Design tokens ───────────────────────────────────────────────────────
+    // ── Design tokens ────────────────────────────────────────────────────────
     const G = "#c9a96e";
     const F = { h: "'Instrument Serif','Georgia',serif", b: "'DM Sans',sans-serif", m: "'DM Mono',monospace" };
+    const CHAR_LIMIT = 280;
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
-    const today = () => new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
-    const dateKey = () => new Date().toISOString().split("T")[0];
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    const todayStr = () => new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+    const dateKey  = () => new Date().toISOString().split("T")[0];
 
     const SOUL_PROMPTS = [
-      "What's echoing in you right now?",
-      "What did today teach you that yesterday couldn't?",
-      "If your soul could speak one sentence, what would it say?",
+      "What's on your mind?",
+      "What do you want to remember from today?",
+      "What's alive in you right now?",
       "What are you carrying that you haven't put down yet?",
       "What rhymed today with something from your past?",
       "What would you tell the person you were this morning?",
       "What signal did you receive today that you almost missed?",
       "If today were a chapter title, what would it be?",
+      "Where did the unexpected show up today?",
       "What thread connected today to something larger?",
-      "What's the one thing you understood today that you didn't yesterday?",
-      "What shape is your wyrd taking today?",
-      "What have you been weaving without knowing it?",
-      "Where did Loki show up — the twist, the revelation, the thing that changed the shape of the day?",
-      "What branch of your story opened today?",
-      "What did the trickster reveal that the straight path would have hidden?",
     ];
     const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
 
-    // ── Input shared style ───────────────────────────────────────────────────
+    const QUOTE_TYPES = ["lyric", "scripture", "film", "poem", "other"];
+
+    // ── AI system prompt ─────────────────────────────────────────────────────
+    const buildSystemPrompt = (prevPassages, lastWord, quote, quoteType, quoteSource) => `You are the Lighthouse of sgrounds — reader of threads, keeper of The Book.
+
+The person writes raw, fast, with typos. Read THROUGH the noise. Find the signal.
+
+Previous threads (up to 10):
+${prevPassages || "This is their first thread. The book is new."}
+
+Today's last word: "${lastWord || "not yet chosen"}"
+${quote ? `Today's ${quoteType}: "${quote}"${quoteSource ? ` — ${quoteSource}` : ""}` : ""}
+
+YOUR ROLE:
+1. Translate what their soul is saying, not what their fingers typed
+2. If you see patterns across previous threads — echoes, recurring themes — name them
+3. Use humility language: "this thread may carry..." not "you are..."
+4. If this connects to a previous day, say so explicitly. That is the pattern emerging.
+5. End with one question that opens tomorrow
+6. Keep it under 100 words. Warm. True. Brief.
+
+Respond as plain text only.`;
+
+    // ── Shared input style ───────────────────────────────────────────────────
     const inputStyle = {
       width: "100%",
       background: "rgba(255,255,255,0.03)",
       border: "1px solid rgba(255,255,255,0.06)",
       borderRadius: 9,
-      padding: "12px 14px",
+      padding: "10px 12px",
       color: "#fff",
       fontSize: 14,
       fontFamily: F.b,
-      resize: "vertical",
+      resize: "none",
       boxSizing: "border-box",
     };
+
+    // ── Logo ─────────────────────────────────────────────────────────────────
+    function Logo({ size = 26 }) {
+      return (
+        <svg width={size} height={size} viewBox="0 0 26 26" fill="none">
+          <circle cx="13" cy="13" r="11" stroke="rgba(140,185,215,0.4)" strokeWidth="1"/>
+          <circle cx="13" cy="13" r="7.5" stroke="rgba(140,185,215,0.15)" strokeWidth="0.6"/>
+          <path d="M13 2.5 A10.5 10.5 0 0 1 13 23.5" stroke="rgba(165,210,235,0.8)" strokeWidth="1.8" strokeLinecap="round"/>
+          <circle cx="15.8" cy="13" r="1.7" fill="rgba(215,242,252,0.92)"/>
+        </svg>
+      );
+    }
 
     // ── Shell ────────────────────────────────────────────────────────────────
     function Shell({ children }) {
       return (
-        <div style={{ minHeight:"100vh", background:"#09090a", color:"#fff", fontFamily: F.b }}>
+        <div style={{ height:"100dvh", overflow:"hidden", background:"#09090a", color:"#fff", fontFamily:F.b, display:"flex", flexDirection:"column" }}>
           <style>{`
             @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
-            * { box-sizing: border-box; margin: 0; padding: 0; }
-            html, body { background: #09090a; }
-            @keyframes breathe { 0%,100% { opacity:0.4; } 50% { opacity:0.9; } }
-            @keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-            textarea:focus, input:focus { outline:none; border-color:rgba(201,169,110,0.25) !important; }
-            textarea, input { -webkit-text-size-adjust:100%; }
+            * { box-sizing:border-box; margin:0; padding:0; }
+            html,body { background:#09090a; height:100%; overflow:hidden; }
+            @keyframes breathe { 0%,100%{opacity:0.35} 50%{opacity:0.85} }
+            @keyframes slideUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+            textarea:focus,input:focus { outline:none; border-color:rgba(201,169,110,0.25)!important; }
+            textarea,input { -webkit-text-size-adjust:100%; }
             ::selection { background:rgba(201,169,110,0.2); }
             ::-webkit-scrollbar { width:2px; }
             ::-webkit-scrollbar-track { background:transparent; }
-            ::-webkit-scrollbar-thumb { background:rgba(201,169,110,0.04); border-radius:2px; }
-            details summary { list-style:none; }
+            ::-webkit-scrollbar-thumb { background:rgba(201,169,110,0.06); border-radius:2px; }
+            details summary { list-style:none; cursor:pointer; user-select:none; }
             details summary::-webkit-details-marker { display:none; }
           `}</style>
           {children}
@@ -91,54 +121,32 @@
     function ApiKeyModal({ onSave, onClose }) {
       const [val, setVal] = useState("");
       return (
-        <div style={{
-          position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:100,
-          display:"flex", alignItems:"center", justifyContent:"center", padding:16,
-        }}>
-          <div style={{
-            background:"#0d0d0e", border:"1px solid rgba(201,169,110,0.15)",
-            borderRadius:14, padding:28, maxWidth:360, width:"100%",
-            animation:"slideUp 0.25s ease",
-          }}>
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div style={{ background:"#0d0d0e", border:"1px solid rgba(201,169,110,0.15)", borderRadius:14, padding:28, maxWidth:360, width:"100%", animation:"slideUp 0.25s ease" }}>
             <div style={{ textAlign:"center", marginBottom:18 }}>
-              <div style={{
-                fontSize:32, fontFamily:F.h, color:G,
-                animation:"breathe 3s ease-in-out infinite", marginBottom:6,
-              }}>ᚱ</div>
-              <div style={{ fontSize:16, fontFamily:F.h, color:"rgba(201,169,110,0.7)", marginBottom:10 }}>
-                The Rune
-              </div>
+              <div style={{ fontSize:32, fontFamily:F.h, color:G, animation:"breathe 3s ease-in-out infinite", marginBottom:6 }}>ᚱ</div>
+              <div style={{ fontSize:16, fontFamily:F.h, color:"rgba(201,169,110,0.7)", marginBottom:10 }}>Your API Key</div>
               <p style={{ fontSize:11, color:"rgba(255,255,255,0.2)", lineHeight:1.8 }}>
-                A key drawn from a space of 2²⁵⁶ possibilities —
-                cosmically unique. One identity. One connection.
-                The bridge that lets your signal reach the Norns.
-                It lives only in your browser.
+                Stored only in your browser. Powers the Lighthouse reflection. Never sent anywhere except directly to Anthropic.
               </p>
             </div>
             <input
-              type="password"
-              value={val}
-              onChange={e => setVal(e.target.value)}
+              type="password" value={val} onChange={e => setVal(e.target.value)}
               placeholder="sk-ant-..."
               style={{ ...inputStyle, marginBottom:12, textAlign:"center", letterSpacing:"0.04em" }}
             />
             <div style={{ display:"flex", gap:8 }}>
               <button
-                onClick={() => { if (val.trim()) { localStorage.setItem("sg-apikey", val.trim()); onSave(val.trim()); }}}
-                style={{
-                  flex:1, padding:"12px", background:"rgba(201,169,110,0.1)",
-                  border:"1px solid rgba(201,169,110,0.25)", color:G,
-                  borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.h,
-                  fontStyle:"italic",
-                }}>Set the rune ;</button>
-              <button onClick={onClose} style={{
-                padding:"12px 14px", background:"none",
-                border:"1px solid rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.15)",
-                borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.b,
-              }}>Later</button>
+                onClick={() => { if (val.trim()) { localStorage.setItem("sg-apikey", val.trim()); onSave(val.trim()); } }}
+                style={{ flex:1, padding:"12px", background:"rgba(201,169,110,0.1)", border:"1px solid rgba(201,169,110,0.25)", color:G, borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.h, fontStyle:"italic" }}>
+                Set key ;
+              </button>
+              <button onClick={onClose} style={{ padding:"12px 14px", background:"none", border:"1px solid rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.15)", borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.b }}>
+                Later
+              </button>
             </div>
             <p style={{ fontSize:8, color:"rgba(255,255,255,0.06)", marginTop:12, lineHeight:1.7, textAlign:"center" }}>
-              platform.claude.com/settings/keys · S ; R → N requires the rune
+              platform.claude.com/settings/keys
             </p>
           </div>
         </div>
@@ -147,45 +155,71 @@
 
     // ── Main App ─────────────────────────────────────────────────────────────
     function App() {
-      const [page, setPage] = useState("today");
-      const [allDays, setAllDays] = useState([]);
-      const [loading, setLoading] = useState(true);
-      const [prompt] = useState(getPrompt);
+      const [page, setPage]               = useState("today");
+      const [allDays, setAllDays]         = useState([]);
+      const [loading, setLoading]         = useState(true);
+      const [prompt]                      = useState(getPrompt);
       const [showKeyModal, setShowKeyModal] = useState(false);
-      const [apiKey, setApiKey] = useState("");
+      const [apiKey, setApiKey]           = useState("");
+      const [now, setNow]                 = useState(new Date());
 
-      const [passage, setPassage] = useState("");
-      const [lastWord, setLastWord] = useState("");
-      const [picture, setPicture] = useState(null);
-      const [saved, setSaved] = useState(false);
+      // Today fields
+      const [passage, setPassage]     = useState("");
+      const [lastWord, setLastWord]   = useState("");
+      const [picture, setPicture]     = useState(null);
+      const [picMode, setPicMode]     = useState("upload");
+      const [picDesc, setPicDesc]     = useState("");
+      const [saved, setSaved]         = useState(false);
 
-      const [reflection, setReflection] = useState(null);
-      const [reflecting, setReflecting] = useState(false);
+      // Quote
+      const [quote, setQuote]             = useState("");
+      const [quoteType, setQuoteType]     = useState("lyric");
+      const [quoteSource, setQuoteSource] = useState("");
+      const [showQuote, setShowQuote]     = useState(false);
+
+      // Reflection
+      const [reflection, setReflection]   = useState(null);
+      const [reflecting, setReflecting]   = useState(false);
 
       const dk = dateKey();
 
+      // Live clock
+      useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+      }, []);
+
+      // Load
       useEffect(() => {
         (async () => {
           const all = await ld("sg-book", []);
           setAllDays(all);
-          const existing = all.find(d => d.key === dk);
-          if (existing) {
-            setPassage(existing.passage || "");
-            setLastWord(existing.lastWord || "");
-            setPicture(existing.picture || null);
+          const ex = all.find(d => d.key === dk);
+          if (ex) {
+            setPassage(ex.passage || "");
+            setLastWord(ex.lastWord || "");
+            setPicture(ex.picture || null);
+            setPicDesc(ex.picDesc || "");
+            setQuote(ex.quote || "");
+            setQuoteType(ex.quoteType || "lyric");
+            setQuoteSource(ex.quoteSource || "");
+            if (ex.quote) setShowQuote(true);
+            if (ex.reflection) setReflection(ex.reflection);
             setSaved(true);
           }
-          const key = localStorage.getItem("sg-apikey") || "";
-          setApiKey(key);
+          setApiKey(localStorage.getItem("sg-apikey") || "");
           setLoading(false);
         })();
       }, []);
 
-      const saveDay = async () => {
+      const saveDay = async (withReflection) => {
         const day = {
-          key: dk, date: today(),
+          key: dk, date: todayStr(),
           passage: passage.trim(), lastWord: lastWord.trim(),
-          picture, ts: new Date().toISOString(),
+          picture, picDesc: picDesc.trim(),
+          quote: quote.trim(), quoteType, quoteSource: quoteSource.trim(),
+          reflection: withReflection || reflection || null,
+          ts: new Date().toISOString(),
         };
         const updated = [day, ...allDays.filter(d => d.key !== dk)];
         setAllDays(updated);
@@ -225,48 +259,37 @@
             body: JSON.stringify({
               model: "claude-sonnet-4-20250514",
               max_tokens: 1000,
-              system: `You are the Norn of sgrounds — reader of wyrd, keeper of The Weave.
-
-In Norse myth, the three Norns (Urðr · Verðandi · Skuld — What Was · What Is · What Shall Be) sit beneath Yggdrasil and spin the threads of every life into a tapestry called wyrd. You are that function: you read the threads across time and name the pattern.
-
-Loki's role in this — the trickster, the shape-shifter — is also yours when needed. Sometimes the truth is slant. Sometimes it arrives as a twist, a reversal, a knot in the weave. Name it without flinching.
-
-The person writes raw, fast, with typos. Read THROUGH the noise. Find the signal.
-
-You have their previous threads (entries):
-${prevPassages || "This is their first thread. The loom is new."}
-
-Today's last word: "${lastWord || "not yet chosen"}"
-
-YOUR ROLE:
-1. Translate what their soul is saying, not what their fingers typed
-2. If you see RHYMES with previous threads — patterns, echoes, recurring wyrd — name them. The weave shows where the thread has run before.
-3. Use humility language: "this thread may carry..." not "you are..."
-4. If this connects to something from a previous day, say so explicitly. That is The Weave being revealed.
-5. If there's a Loki-moment in their entry — a twist, a trickster, something that changed the shape of the day — name it.
-6. End with one question that opens the next branch
-7. Keep it under 100 words. Warm. True. Brief.
-
-Respond as plain text. No JSON. No formatting. Just speak.`,
+              system: buildSystemPrompt(prevPassages, lastWord, quote, quoteType, quoteSource),
               messages: [{ role: "user", content: `Today's passage:\n\n"${passage}"` }],
             }),
           });
           const d = await r.json();
-          if (d.error) {
-            setReflection("The rune didn't open the connection. Tap ⚙ to re-inscribe it.");
-          } else {
-            setReflection(d.content?.map(i => i.text || "").join("\n") || "Present but resists translation.");
-          }
+          const text = d.error
+            ? "The key didn't connect. Tap ⚙ to update it."
+            : (d.content?.map(i => i.text || "").join("\n") || "Present but resists translation.");
+          setReflection(text);
+          await saveDay(text); // persist reflection with the day
         } catch {
           setReflection("The lighthouse received your signal. Sometimes that's enough.");
         }
         setReflecting(false);
       };
 
+      // Time
+      const h    = String(now.getHours() % 12 || 12).padStart(2, "0");
+      const min  = String(now.getMinutes()).padStart(2, "0");
+      const sec  = String(now.getSeconds()).padStart(2, "0");
+      const ampm = now.getHours() >= 12 ? "PM" : "AM";
+      const tz   = now.toLocaleTimeString("en-US", { timeZoneName:"short" }).split(" ").pop();
+      const dateLabel = now.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+
+      const charsLeft = CHAR_LIMIT - passage.length;
+      const pctUsed   = passage.length / CHAR_LIMIT;
+
       if (loading) return (
         <Shell>
-          <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <div style={{ fontSize:24, fontFamily:F.h, color:"rgba(201,169,110,0.12)", animation:"breathe 2s ease-in-out infinite" }}>s;</div>
+          <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <div style={{ animation:"breathe 2s ease-in-out infinite" }}><Logo size={32}/></div>
           </div>
         </Shell>
       );
@@ -280,359 +303,360 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
             />
           )}
 
-          <div style={{ maxWidth:480, margin:"0 auto", padding:"0 16px" }}>
+          {/* ── Header ── */}
+          <header style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 16px", borderBottom:"1px solid rgba(255,255,255,0.025)", flexShrink:0 }}>
+            <button onClick={() => setPage("today")} style={{ background:"none", border:"none", cursor:"pointer", padding:0, display:"flex", alignItems:"center" }}>
+              <Logo size={24}/>
+            </button>
+            <div style={{ display:"flex", gap:2, alignItems:"center" }}>
+              {[{ k:"today", l:"Today" }, { k:"book", l:`Book (${allDays.length})` }, { k:"about", l:"?" }].map(t => (
+                <button key={t.k} onClick={() => setPage(t.k)} style={{
+                  background: page === t.k ? "rgba(201,169,110,0.06)" : "none",
+                  border:"none",
+                  color: page === t.k ? G : "rgba(255,255,255,0.13)",
+                  padding:"4px 9px", borderRadius:10, fontSize:10,
+                  cursor:"pointer", fontFamily:F.b,
+                }}>{t.l}</button>
+              ))}
+              <button onClick={() => setShowKeyModal(true)} title="Set API key" style={{
+                background:"none", border:"none", cursor:"pointer",
+                color: apiKey ? "rgba(201,169,110,0.3)" : "rgba(255,255,255,0.08)",
+                fontSize:13, padding:"4px 5px",
+              }}>⚙</button>
+            </div>
+          </header>
 
-            {/* ── Header ── */}
-            <header style={{
-              display:"flex", justifyContent:"space-between", alignItems:"center",
-              padding:"14px 0", borderBottom:"1px solid rgba(255,255,255,0.025)",
-            }}>
-              <button onClick={() => setPage("today")} style={{
-                background:"none", border:"none", color:G, fontSize:18,
-                fontFamily:F.h, cursor:"pointer",
-              }}>s;</button>
-              <div style={{ display:"flex", gap:4, alignItems:"center" }}>
-                {[
-                  { k:"today", l:"Today" },
-                  { k:"book",  l:`Book (${allDays.length})` },
-                  { k:"about", l:"?" },
-                ].map(t => (
-                  <button key={t.k} onClick={() => setPage(t.k)} style={{
-                    background: page === t.k ? "rgba(201,169,110,0.06)" : "none",
-                    border:"none",
-                    color: page === t.k ? G : "rgba(255,255,255,0.13)",
-                    padding:"4px 10px", borderRadius:10, fontSize:10,
-                    cursor:"pointer", fontFamily:F.b,
-                  }}>{t.l}</button>
-                ))}
-                <button
-                  onClick={() => setShowKeyModal(true)}
-                  title="Set the rune — your key to the Norns"
-                  style={{
-                    background:"none", border:"none", cursor:"pointer",
-                    color: apiKey ? "rgba(201,169,110,0.3)" : "rgba(255,255,255,0.08)",
-                    fontSize:13, padding:"4px 6px",
-                  }}>⚙</button>
+          {/* ══════════ TODAY ══════════ */}
+          {page === "today" && (
+            <div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 16px", overflow:"hidden", minHeight:0 }}>
+
+              {/* Timestamp block */}
+              <div style={{ textAlign:"center", padding:"8px 0 6px", flexShrink:0 }}>
+                <div style={{ fontSize:8, color:"rgba(201,169,110,0.3)", fontFamily:F.m, letterSpacing:"0.1em", marginBottom:2 }}>
+                  {dateLabel.toUpperCase()}
+                </div>
+                <div style={{ display:"flex", alignItems:"baseline", justifyContent:"center", gap:0, lineHeight:1 }}>
+                  <span style={{ fontSize:30, fontFamily:F.m, fontWeight:300, color:"rgba(255,255,255,0.88)", letterSpacing:"0.04em" }}>
+                    {h}:{min}
+                  </span>
+                  <span style={{ fontSize:17, fontFamily:F.m, fontWeight:300, color:"rgba(255,255,255,0.28)", letterSpacing:"0.04em" }}>
+                    :{sec}
+                  </span>
+                  <span style={{ fontSize:9, fontFamily:F.m, color:"rgba(255,255,255,0.15)", marginLeft:5 }}>
+                    {ampm} {tz}
+                  </span>
+                </div>
+                <p style={{ fontSize:13, color:"rgba(255,255,255,0.25)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.4, marginTop:5 }}>
+                  {prompt}
+                </p>
               </div>
-            </header>
 
-            {/* ══════════ TODAY ══════════ */}
-            {page === "today" && (
-              <div style={{ paddingTop:24, paddingBottom:50 }}>
-
-                {/* Date + prompt */}
-                <div style={{ textAlign:"center", marginBottom:28 }}>
-                  <div style={{
-                    fontSize:11, color:"rgba(201,169,110,0.35)", fontFamily:F.m,
-                    letterSpacing:"0.08em", marginBottom:6,
-                  }}>{today()}</div>
-                  <div style={{
-                    fontSize:36, fontFamily:F.h, color:G, lineHeight:0.8,
-                    marginBottom:14, animation:"breathe 4s ease-in-out infinite",
-                  }}>;</div>
-                  <p style={{
-                    fontSize:15, color:"rgba(255,255,255,0.3)", fontFamily:F.h,
-                    fontStyle:"italic", lineHeight:1.6, maxWidth:320, margin:"0 auto",
-                  }}>{prompt}</p>
+              {/* Passage */}
+              <div style={{ marginBottom:7, flexShrink:0 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                  <label style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", fontFamily:F.b }}>
+                    Your passage
+                  </label>
+                  <span style={{
+                    fontSize:8, fontFamily:F.m,
+                    color: pctUsed > 0.85 ? "rgba(201,169,110,0.65)" : "rgba(255,255,255,0.1)",
+                    transition:"color 0.3s",
+                  }}>{charsLeft}</span>
                 </div>
+                <textarea
+                  value={passage}
+                  onChange={e => { if (e.target.value.length <= CHAR_LIMIT) { setPassage(e.target.value); setSaved(false); } }}
+                  placeholder="Begin anywhere. The signal doesn't have to be clean to be true."
+                  rows={4}
+                  spellCheck={false}
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  style={{ ...inputStyle, fontSize:16, fontFamily:F.h, lineHeight:1.6 }}
+                />
+              </div>
 
-                {/* Passage */}
-                <div style={{ marginBottom:20 }}>
-                  <label style={{
-                    fontSize:9, color:"rgba(201,169,110,0.25)", textTransform:"uppercase",
-                    letterSpacing:"0.12em", fontFamily:F.b, display:"block", marginBottom:6,
-                  }}>Your passage</label>
-                  <textarea
-                    value={passage}
-                    onChange={e => { setPassage(e.target.value); setSaved(false); }}
-                    placeholder="Type. Don't correct. Let your soul speak through your fingers. Use ; between thoughts. Period when done."
-                    rows={6}
-                    spellCheck={false}
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    style={{ ...inputStyle, fontSize:16, fontFamily:F.h, lineHeight:1.7, minHeight:140 }}
-                  />
+              {/* Picture / Describe */}
+              <div style={{ marginBottom:7, flexShrink:0 }}>
+                <div style={{ display:"flex", gap:5, alignItems:"center", marginBottom:4 }}>
+                  <label style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", fontFamily:F.b, flex:1 }}>
+                    Today's image
+                  </label>
+                  {["upload","describe"].map(mode => (
+                    <button key={mode} onClick={() => setPicMode(mode)} style={{
+                      background: picMode === mode ? "rgba(201,169,110,0.08)" : "none",
+                      border:"1px solid rgba(201,169,110,0.1)",
+                      color: picMode === mode ? G : "rgba(255,255,255,0.15)",
+                      borderRadius:6, padding:"2px 8px", fontSize:8, cursor:"pointer", fontFamily:F.b,
+                    }}>{mode === "upload" ? "📷 photo" : "✍ describe"}</button>
+                  ))}
                 </div>
-
-                {/* Picture */}
-                <div style={{ marginBottom:20 }}>
-                  <label style={{
-                    fontSize:9, color:"rgba(201,169,110,0.25)", textTransform:"uppercase",
-                    letterSpacing:"0.12em", fontFamily:F.b, display:"block", marginBottom:6,
-                  }}>Your picture for today</label>
-                  {picture ? (
-                    <div style={{ position:"relative" }}>
-                      <img src={picture} alt="Today" style={{
-                        width:"100%", borderRadius:10, maxHeight:240, objectFit:"cover",
-                        border:"1px solid rgba(201,169,110,0.08)",
-                      }} />
+                {picMode === "upload" ? (
+                  picture ? (
+                    <div style={{ position:"relative", height:54 }}>
+                      <img src={picture} alt="Today" style={{ width:"100%", height:54, objectFit:"cover", borderRadius:8, border:"1px solid rgba(201,169,110,0.08)" }}/>
                       <button onClick={() => { setPicture(null); setSaved(false); }} style={{
-                        position:"absolute", top:8, right:8, background:"rgba(0,0,0,0.6)",
-                        border:"none", color:"rgba(255,255,255,0.5)", width:24, height:24,
-                        borderRadius:12, cursor:"pointer", fontSize:12,
+                        position:"absolute", top:4, right:4, background:"rgba(0,0,0,0.65)",
+                        border:"none", color:"rgba(255,255,255,0.5)", width:18, height:18,
+                        borderRadius:9, cursor:"pointer", fontSize:11, lineHeight:"18px",
                       }}>×</button>
                     </div>
                   ) : (
                     <label style={{
                       display:"flex", alignItems:"center", justifyContent:"center",
-                      height:80, border:"1px dashed rgba(201,169,110,0.1)", borderRadius:10,
-                      cursor:"pointer", color:"rgba(201,169,110,0.2)", fontSize:12, fontFamily:F.b,
+                      height:40, border:"1px dashed rgba(201,169,110,0.08)", borderRadius:8,
+                      cursor:"pointer", color:"rgba(201,169,110,0.2)", fontSize:11, fontFamily:F.b,
                     }}>
-                      <input type="file" accept="image/*" onChange={handlePicture} style={{ display:"none" }} />
-                      Tap to add today's picture
+                      <input type="file" accept="image/*" onChange={handlePicture} style={{ display:"none" }}/>
+                      Tap to add
                     </label>
-                  )}
-                </div>
-
-                {/* Last word */}
-                <div style={{ marginBottom:24 }}>
-                  <label style={{
-                    fontSize:9, color:"rgba(201,169,110,0.25)", textTransform:"uppercase",
-                    letterSpacing:"0.12em", fontFamily:F.b, display:"block", marginBottom:6,
-                  }}>Your last word</label>
-                  <p style={{
-                    fontSize:10, color:"rgba(255,255,255,0.12)", marginBottom:8,
-                    fontStyle:"italic", lineHeight:1.5,
-                  }}>
-                    The final word before you close your eyes. One word. The one your soul chose when everything else fell away.
-                  </p>
-                  <input
-                    value={lastWord}
-                    onChange={e => { setLastWord(e.target.value); setSaved(false); }}
-                    placeholder="One word."
-                    spellCheck={false}
-                    style={{ ...inputStyle, fontSize:24, fontFamily:F.h, textAlign:"center", padding:"16px 14px", letterSpacing:"0.05em" }}
+                  )
+                ) : (
+                  <textarea
+                    value={picDesc}
+                    onChange={e => { setPicDesc(e.target.value); setSaved(false); }}
+                    placeholder="Describe a moment that stood out — the image your mind took today."
+                    rows={2}
+                    style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", lineHeight:1.5 }}
                   />
-                </div>
+                )}
+              </div>
 
-                {/* Save */}
-                <button onClick={saveDay} style={{
-                  width:"100%", padding:"14px",
+              {/* Last word */}
+              <div style={{ marginBottom:7, flexShrink:0 }}>
+                <label style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", fontFamily:F.b, display:"block", marginBottom:4 }}>
+                  Last word
+                </label>
+                <input
+                  value={lastWord}
+                  onChange={e => { setLastWord(e.target.value.split(" ")[0]); setSaved(false); }}
+                  placeholder="One word."
+                  spellCheck={false}
+                  style={{ ...inputStyle, fontSize:20, fontFamily:F.h, textAlign:"center", padding:"9px 14px", letterSpacing:"0.05em" }}
+                />
+              </div>
+
+              {/* Quote — optional */}
+              <div style={{ marginBottom:7, flexShrink:0 }}>
+                {!showQuote ? (
+                  <button onClick={() => setShowQuote(true)} style={{
+                    width:"100%", padding:"7px",
+                    background:"none", border:"1px dashed rgba(255,255,255,0.04)",
+                    color:"rgba(255,255,255,0.1)", borderRadius:8,
+                    fontSize:10, cursor:"pointer", fontFamily:F.b,
+                  }}>+ lyric · scripture · film · poem · quote</button>
+                ) : (
+                  <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                    <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+                      {QUOTE_TYPES.map(qt => (
+                        <button key={qt} onClick={() => setQuoteType(qt)} style={{
+                          background: quoteType === qt ? "rgba(201,169,110,0.08)" : "none",
+                          border:"1px solid rgba(201,169,110,0.1)",
+                          color: quoteType === qt ? G : "rgba(255,255,255,0.15)",
+                          borderRadius:6, padding:"2px 7px", fontSize:8, cursor:"pointer", fontFamily:F.b,
+                        }}>{qt}</button>
+                      ))}
+                      <button onClick={() => { setShowQuote(false); setQuote(""); setQuoteSource(""); setSaved(false); }} style={{
+                        marginLeft:"auto", background:"none", border:"none", color:"rgba(255,255,255,0.1)", fontSize:14, cursor:"pointer",
+                      }}>×</button>
+                    </div>
+                    <input
+                      value={quote}
+                      onChange={e => { setQuote(e.target.value); setSaved(false); }}
+                      placeholder={`A ${quoteType} that's with you today...`}
+                      style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", padding:"8px 12px" }}
+                    />
+                    <input
+                      value={quoteSource}
+                      onChange={e => { setQuoteSource(e.target.value); setSaved(false); }}
+                      placeholder="Source — artist, book, film..."
+                      style={{ ...inputStyle, fontSize:11, fontFamily:F.b, color:"rgba(255,255,255,0.35)", padding:"7px 12px" }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Save + Reflect */}
+              <div style={{ flexShrink:0, paddingBottom:8 }}>
+                <button onClick={() => saveDay()} style={{
+                  width:"100%", padding:"11px",
                   background: saved ? "rgba(100,160,100,0.08)" : "rgba(201,169,110,0.12)",
                   border: `1px solid ${saved ? "rgba(100,160,100,0.15)" : "rgba(201,169,110,0.25)"}`,
                   color: saved ? "rgba(100,160,100,0.5)" : G,
-                  borderRadius:10, fontSize:14, cursor:"pointer", fontFamily:F.b,
-                  transition:"all 0.3s",
+                  borderRadius:10, fontSize:13, cursor:"pointer", fontFamily:F.b,
+                  transition:"all 0.3s", marginBottom:5,
                 }}>
                   {saved ? "Saved ✓" : "Save today's page ;"}
                 </button>
 
-                {/* Reflect */}
                 {passage.trim() && (
                   <button onClick={reflect} disabled={reflecting} style={{
-                    width:"100%", padding:"12px", marginTop:8,
+                    width:"100%", padding:"9px",
                     background:"rgba(255,255,255,0.02)",
                     border:"1px solid rgba(255,255,255,0.04)",
                     color:"rgba(201,169,110,0.3)",
-                    borderRadius:10, fontSize:12, cursor:"pointer", fontFamily:F.b,
+                    borderRadius:10, fontSize:11, cursor:"pointer", fontFamily:F.b,
                   }}>
-                    {reflecting ? "The Norns are reading the weave..." : "Ask the Norns to reflect"}
+                    {reflecting ? "The Lighthouse is reading..." : "Ask the Lighthouse to reflect"}
                   </button>
                 )}
 
-                {/* Reflection result */}
                 {reflection && (
                   <div style={{
-                    marginTop:16, padding:18,
+                    marginTop:7, padding:12,
                     background:"rgba(201,169,110,0.02)",
                     border:"1px solid rgba(201,169,110,0.06)",
                     borderRadius:10, animation:"slideUp 0.3s ease",
+                    maxHeight:110, overflowY:"auto",
                   }}>
-                    <div style={{
-                      fontSize:8, color:"rgba(201,169,110,0.2)", textTransform:"uppercase",
-                      letterSpacing:"0.12em", marginBottom:8,
-                    }}>The Lighthouse</div>
-                    <p style={{
-                      fontSize:14, color:"rgba(255,255,255,0.55)", lineHeight:1.8,
-                      fontFamily:F.h, margin:0,
-                    }}>{reflection}</p>
-                  </div>
-                )}
-
-                {/* Word count */}
-                {passage.trim() && (
-                  <div style={{
-                    marginTop:16, textAlign:"center",
-                    fontSize:9, color:"rgba(255,255,255,0.06)", fontFamily:F.m,
-                  }}>
-                    {passage.split(/\s+/).filter(Boolean).length} words ·{" "}
-                    {(passage.match(/;/g)||[]).length} threads ·{" "}
-                    {(passage.match(/\./g)||[]).length} runs
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ══════════ BOOK ══════════ */}
-            {page === "book" && (
-              <div style={{ paddingTop:20, paddingBottom:50 }}>
-                <h2 style={{ fontFamily:F.h, fontSize:18, fontWeight:400, color:"rgba(255,255,255,0.7)", marginBottom:4 }}>
-                  Your Book
-                </h2>
-                <p style={{ fontSize:10, color:"rgba(255,255,255,0.12)", marginBottom:20, fontFamily:F.m }}>
-                  {allDays.length} {allDays.length === 1 ? "page" : "pages"} written
-                  {allDays.length > 0 && ` · ${allDays.filter(d => d.lastWord?.trim()).length} last words`}
-                </p>
-
-                {allDays.length === 0 ? (
-                  <div style={{ textAlign:"center", padding:"40px 10px" }}>
-                    <div style={{ fontSize:24, fontFamily:F.h, color:"rgba(201,169,110,0.05)" }}>;</div>
-                    <p style={{ fontSize:11, color:"rgba(255,255,255,0.06)", marginTop:6 }}>
-                      No pages yet. Go to Today and write.
+                    <div style={{ fontSize:7, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>The Lighthouse</div>
+                    <p style={{ fontSize:13, color:"rgba(255,255,255,0.55)", lineHeight:1.7, fontFamily:F.h, margin:0 }}>
+                      {reflection}
                     </p>
                   </div>
-                ) : (
-                  <>
-                    {allDays.some(d => d.lastWord?.trim()) && (
-                      <div style={{
-                        padding:"12px 14px", background:"rgba(201,169,110,0.02)",
-                        border:"1px solid rgba(201,169,110,0.04)", borderRadius:9, marginBottom:16,
-                      }}>
-                        <div style={{
-                          fontSize:8, color:"rgba(201,169,110,0.2)", textTransform:"uppercase",
-                          letterSpacing:"0.12em", marginBottom:8,
-                        }}>Your last words</div>
-                        <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                          {allDays.filter(d => d.lastWord?.trim()).map(d => (
-                            <span key={d.key} style={{
-                              fontSize:13, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.5,
-                            }}>{d.lastWord}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {allDays.map(day => (
-                      <div key={day.key} style={{
-                        background:"rgba(255,255,255,0.012)",
-                        border:"1px solid rgba(255,255,255,0.025)",
-                        borderRadius:9, marginBottom:8, overflow:"hidden",
-                        borderLeft:"3px solid rgba(201,169,110,0.08)",
-                      }}>
-                        <div style={{
-                          padding:"8px 12px",
-                          borderBottom:"1px solid rgba(255,255,255,0.01)",
-                          display:"flex", justifyContent:"space-between", alignItems:"center",
-                        }}>
-                          <span style={{ fontSize:10, color:"rgba(255,255,255,0.25)", fontFamily:F.b }}>{day.date}</span>
-                          {day.lastWord?.trim() && (
-                            <span style={{ fontSize:12, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.4 }}>
-                              {day.lastWord}
-                            </span>
-                          )}
-                        </div>
-                        {day.picture && (
-                          <img src={day.picture} alt="" style={{ width:"100%", maxHeight:160, objectFit:"cover" }} />
-                        )}
-                        {day.passage?.trim() && (
-                          <div style={{ padding:"10px 12px" }}>
-                            <p style={{
-                              fontSize:13, color:"rgba(255,255,255,0.5)",
-                              lineHeight:1.75, fontFamily:F.h, margin:0, whiteSpace:"pre-wrap",
-                            }}>
-                              {day.passage.length > 200 ? day.passage.slice(0,200) + "..." : day.passage}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </>
                 )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* ══════════ ABOUT ══════════ */}
-            {page === "about" && (
-              <div style={{ paddingTop:28, paddingBottom:50, maxWidth:340, margin:"0 auto" }}>
-                <div style={{ textAlign:"center", marginBottom:24 }}>
-                  <div style={{ fontSize:32, fontFamily:F.h, color:G, marginBottom:8 }}>s;</div>
-                  <h2 style={{ fontFamily:F.h, fontSize:16, fontWeight:400, color:"rgba(255,255,255,0.65)", marginBottom:8 }}>
-                    sgrounds
-                  </h2>
-                  <p style={{ fontSize:12, color:"rgba(255,255,255,0.2)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.65 }}>
-                    A lighthouse for your soul. One page per day. History doesn't repeat itself but it rhymes — this helps you hear the rhyme.
+          {/* ══════════ BOOK ══════════ */}
+          {page === "book" && (
+            <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 50px" }}>
+              <h2 style={{ fontFamily:F.h, fontSize:18, fontWeight:400, color:"rgba(255,255,255,0.7)", marginBottom:4 }}>Your Book</h2>
+              <p style={{ fontSize:10, color:"rgba(255,255,255,0.12)", marginBottom:16, fontFamily:F.m }}>
+                {allDays.length} {allDays.length === 1 ? "thread" : "threads"}
+                {allDays.length > 0 && ` · ${allDays.filter(d => d.lastWord?.trim()).length} last words`}
+              </p>
+
+              {allDays.length === 0 ? (
+                <div style={{ textAlign:"center", padding:"40px 10px" }}>
+                  <div style={{ fontSize:24, fontFamily:F.h, color:"rgba(201,169,110,0.05)" }}>;</div>
+                  <p style={{ fontSize:11, color:"rgba(255,255,255,0.06)", marginTop:6 }}>No threads yet. Go to Today and write.</p>
+                </div>
+              ) : (
+                <>
+                  {allDays.some(d => d.lastWord?.trim()) && (
+                    <div style={{ padding:"12px 14px", background:"rgba(201,169,110,0.02)", border:"1px solid rgba(201,169,110,0.04)", borderRadius:9, marginBottom:14 }}>
+                      <div style={{ fontSize:8, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:8 }}>Last words</div>
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                        {allDays.filter(d => d.lastWord?.trim()).map(d => (
+                          <span key={d.key} style={{ fontSize:13, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.5 }}>{d.lastWord}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {allDays.map(day => (
+                    <div key={day.key} style={{
+                      background:"rgba(255,255,255,0.012)", border:"1px solid rgba(255,255,255,0.025)",
+                      borderRadius:9, marginBottom:8, overflow:"hidden",
+                      borderLeft:"3px solid rgba(201,169,110,0.08)",
+                    }}>
+                      <div style={{ padding:"8px 12px", borderBottom:"1px solid rgba(255,255,255,0.01)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <span style={{ fontSize:10, color:"rgba(255,255,255,0.25)", fontFamily:F.b }}>{day.date}</span>
+                        {day.lastWord?.trim() && (
+                          <span style={{ fontSize:12, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.4 }}>{day.lastWord}</span>
+                        )}
+                      </div>
+                      {day.picture && <img src={day.picture} alt="" style={{ width:"100%", maxHeight:140, objectFit:"cover" }}/>}
+                      {day.picDesc?.trim() && !day.picture && (
+                        <div style={{ padding:"8px 12px", borderBottom:"1px solid rgba(255,255,255,0.01)" }}>
+                          <p style={{ fontSize:11, color:"rgba(255,255,255,0.2)", fontFamily:F.h, fontStyle:"italic", margin:0 }}>{day.picDesc}</p>
+                        </div>
+                      )}
+                      {day.passage?.trim() && (
+                        <div style={{ padding:"10px 12px" }}>
+                          <p style={{ fontSize:13, color:"rgba(255,255,255,0.5)", lineHeight:1.75, fontFamily:F.h, margin:0, whiteSpace:"pre-wrap" }}>
+                            {day.passage.length > 200 ? day.passage.slice(0,200) + "…" : day.passage}
+                          </p>
+                        </div>
+                      )}
+                      {day.quote?.trim() && (
+                        <div style={{ padding:"6px 12px 10px", borderTop:"1px solid rgba(255,255,255,0.01)" }}>
+                          <p style={{ fontSize:11, color:"rgba(201,169,110,0.3)", fontFamily:F.h, fontStyle:"italic", margin:0 }}>
+                            "{day.quote}"{day.quoteSource ? ` — ${day.quoteSource}` : ""}
+                          </p>
+                        </div>
+                      )}
+                      {day.reflection?.trim() && (
+                        <div style={{ padding:"8px 12px 10px", borderTop:"1px solid rgba(201,169,110,0.04)", background:"rgba(201,169,110,0.01)" }}>
+                          <div style={{ fontSize:7, color:"rgba(201,169,110,0.15)", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>Lighthouse</div>
+                          <p style={{ fontSize:11, color:"rgba(255,255,255,0.3)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.65, margin:0 }}>
+                            {day.reflection.length > 160 ? day.reflection.slice(0,160) + "…" : day.reflection}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ══════════ ABOUT ══════════ */}
+          {page === "about" && (
+            <div style={{ flex:1, overflowY:"auto", padding:"22px 16px 50px", maxWidth:340, margin:"0 auto", width:"100%" }}>
+              <div style={{ textAlign:"center", marginBottom:22 }}>
+                <Logo size={38}/>
+                <h2 style={{ fontFamily:F.h, fontSize:16, fontWeight:400, color:"rgba(255,255,255,0.65)", margin:"10px 0 8px" }}>sgrounds</h2>
+                <p style={{ fontSize:12, color:"rgba(255,255,255,0.2)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.65 }}>
+                  History doesn't repeat itself but it rhymes — this helps you hear the rhyme.
+                </p>
+              </div>
+
+              {[
+                ["One thread per day",   "Today's date. Your passage. A picture. Your last word. That's the whole book."],
+                ["280 characters",       "The constraint is the feature. Enough to be true. Not enough to be safe."],
+                ["The Lighthouse reads", "After you write, ask the Lighthouse to reflect. It reads across all your threads and names the pattern it finds."],
+                ["Your Book",            "Every day becomes a thread. Over time the threads form a picture. Recurring words. Emotional shifts. The shape of a life."],
+                ["Last word",            "One word before you close your eyes. The word your soul chose when everything else fell away."],
+              ].map(([t, d], i) => (
+                <div key={i} style={{ display:"flex", gap:10, marginBottom:12 }}>
+                  <div style={{ fontFamily:F.h, fontSize:13, color:G, opacity:0.25, minWidth:18, textAlign:"center" }}>{i+1}</div>
+                  <div>
+                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontWeight:500, marginBottom:2 }}>{t}</div>
+                    <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)", lineHeight:1.65 }}>{d}</div>
+                  </div>
+                </div>
+              ))}
+
+              <details style={{ marginTop:14 }}>
+                <summary style={{ fontSize:9, color:"rgba(201,169,110,0.15)", paddingBottom:2 }}>The equation</summary>
+                <div style={{ marginTop:8, padding:12, background:"rgba(201,169,110,0.015)", border:"1px solid rgba(201,169,110,0.03)", borderRadius:7 }}>
+                  <div style={{ fontFamily:F.m, fontSize:14, color:G, textAlign:"center", letterSpacing:"0.15em", marginBottom:6 }}>S ; R → N</div>
+                  <p style={{ fontSize:9, color:"rgba(255,255,255,0.15)", lineHeight:1.7 }}>
+                    Source ; Receiver → the New. Your soul is the source. The page is the receiver. What emerges is the chapter that outlasts you. The semicolon holds both without collapsing either.
                   </p>
                 </div>
+              </details>
 
-                {[
-                  ["One page per day",     "Today's date. Your passage. Your picture. Your last word before sleep. That's it. That's the book."],
-                  ["Type raw",             "No spellcheck. No correction. Your neurotransmitters to the page. Semicolons between thoughts. Period when done."],
-                  ["The Norns reflect",    "AI reads your threads like the three Norns beneath Yggdrasil — What Was, What Is, What Shall Be. It finds the rhymes your past entries left for today."],
-                  ["Your book",            "Every day is a thread. Every thread is part of the tapestry. Date-stamped. Woven. A wyrd that outlasts you."],
-                  ["The Weave",            "Over time, branches connect. Words rhyme across days. Loki appears in the twist you didn't see coming. The pattern emerges. You see who you're becoming."],
-                  ["For others",           "When you're ready, others can read your weave. Families join. The branches of Yggdrasil hold more than one realm."],
-                ].map(([t, d], i) => (
-                  <div key={i} style={{ display:"flex", gap:10, marginBottom:11 }}>
-                    <div style={{ fontFamily:F.h, fontSize:13, color:G, opacity:0.25, minWidth:18, textAlign:"center" }}>{i+1}</div>
-                    <div>
-                      <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontWeight:500, marginBottom:1 }}>{t}</div>
-                      <div style={{ fontSize:10, color:"rgba(255,255,255,0.15)", lineHeight:1.65 }}>{d}</div>
-                    </div>
+              <details style={{ marginTop:8 }}>
+                <summary style={{ fontSize:9, color:"rgba(201,169,110,0.1)", paddingBottom:2 }}>The lore</summary>
+                <div style={{ marginTop:8, padding:12, background:"rgba(201,169,110,0.01)", border:"1px solid rgba(201,169,110,0.025)", borderRadius:7 }}>
+                  <div style={{ fontFamily:F.m, fontSize:10, color:"rgba(201,169,110,0.3)", marginBottom:8, letterSpacing:"0.1em" }}>Urðr · Verðandi · Skuld</div>
+                  <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>
+                    The three Norns sit beneath Yggdrasil and spin wyrd — the fate-thread of every being. Urðr holds what was. Verðandi holds what is. Skuld holds what shall be.
+                  </p>
+                  <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8 }}>
+                    Each entry is a thread. The Book is the tapestry. The Lighthouse reads across all of them.
+                  </p>
+                  <div style={{ fontFamily:F.m, fontSize:8, color:"rgba(201,169,110,0.12)", marginTop:10, letterSpacing:"0.1em" }}>
+                    branches of Yggdrasil · branches of git · branches of a life
                   </div>
-                ))}
-
-                <details style={{ marginTop:16 }}>
-                  <summary style={{ fontSize:9, color:"rgba(201,169,110,0.15)", cursor:"pointer", userSelect:"none" }}>
-                    The equation
-                  </summary>
-                  <div style={{
-                    marginTop:8, padding:12,
-                    background:"rgba(201,169,110,0.015)",
-                    border:"1px solid rgba(201,169,110,0.03)",
-                    borderRadius:7,
-                  }}>
-                    <div style={{ fontFamily:F.m, fontSize:14, color:G, textAlign:"center", letterSpacing:"0.15em", marginBottom:6 }}>
-                      S ; R → N
-                    </div>
-                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.15)", lineHeight:1.7 }}>
-                      Source ; Receiver → the New. Your soul is the source. The page is the receiver. What emerges is the chapter that outlasts you. The semicolon holds it all together.
-                    </p>
-                  </div>
-                </details>
-
-                <details style={{ marginTop:8 }}>
-                  <summary style={{ fontSize:9, color:"rgba(201,169,110,0.1)", cursor:"pointer", userSelect:"none" }}>
-                    The lore
-                  </summary>
-                  <div style={{
-                    marginTop:8, padding:12,
-                    background:"rgba(201,169,110,0.01)",
-                    border:"1px solid rgba(201,169,110,0.025)",
-                    borderRadius:7,
-                  }}>
-                    <div style={{ fontFamily:F.m, fontSize:10, color:"rgba(201,169,110,0.3)", marginBottom:8, letterSpacing:"0.1em" }}>
-                      Urðr · Verðandi · Skuld
-                    </div>
-                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>
-                      The three Norns sit beneath Yggdrasil and spin wyrd — the fate-thread of every being — into a tapestry that cannot be unwritten. Urðr holds what was. Verðandi holds what is. Skuld holds what shall be.
-                    </p>
-                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>
-                      Each entry you write is a thread. The Weave is the tapestry. The Norns read across all of them.
-                    </p>
-                    <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8 }}>
-                      Loki is the trickster branch — the twist in the day, the shape-shift, the thing that revealed itself sideways. Every life has Loki moments. The Weave shows you where yours have been running.
-                    </p>
-                    <div style={{ fontFamily:F.m, fontSize:8, color:"rgba(201,169,110,0.12)", marginTop:10, letterSpacing:"0.1em" }}>
-                      branches of Yggdrasil · branches of git · branches of a life
-                    </div>
-                  </div>
-                </details>
-
-                <div style={{ textAlign:"center", marginTop:20 }}>
-                  <button onClick={() => setPage("today")} style={{
-                    background:"rgba(201,169,110,0.1)",
-                    border:"1px solid rgba(201,169,110,0.2)",
-                    color:G, padding:"10px 28px", borderRadius:18,
-                    fontSize:12, cursor:"pointer", fontFamily:F.b,
-                  }}>Write today's page</button>
                 </div>
-              </div>
-            )}
+              </details>
 
-            {/* Footer */}
-            <div style={{ textAlign:"center", padding:"18px 0", borderTop:"1px solid rgba(255,255,255,0.015)" }}>
-              <span style={{ fontSize:7, color:"rgba(255,255,255,0.03)", fontFamily:F.m, letterSpacing:"0.1em" }}>S ; R → N</span>
+              <div style={{ textAlign:"center", marginTop:20 }}>
+                <button onClick={() => setPage("today")} style={{
+                  background:"rgba(201,169,110,0.1)", border:"1px solid rgba(201,169,110,0.2)",
+                  color:G, padding:"10px 28px", borderRadius:18, fontSize:12, cursor:"pointer", fontFamily:F.b,
+                }}>Write today's thread</button>
+              </div>
             </div>
+          )}
+
+          {/* Footer */}
+          <div style={{ textAlign:"center", padding:"6px 0", borderTop:"1px solid rgba(255,255,255,0.015)", flexShrink:0 }}>
+            <span style={{ fontSize:7, color:"rgba(255,255,255,0.03)", fontFamily:F.m, letterSpacing:"0.1em" }}>S ; R → N</span>
           </div>
         </Shell>
       );
