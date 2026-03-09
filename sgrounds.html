@@ -14,16 +14,16 @@ import { useState, useEffect, useRef, useMemo } from "react";
 // bg: RGB triplet for page background
 // t:  RGB triplet for text (inverts with bg to maintain contrast)
 const THEME_NODES = [
-  { h: 0,    bg: [9,9,10],       t: [255,255,255] }, // night
-  { h: 5,    bg: [9,9,10],       t: [255,255,255] }, // pre-dawn
-  { h: 6.5,  bg: [255,228,185],  t: [45,22,8]     }, // dawn — warm amber-peach sky
-  { h: 8,    bg: [252,248,238],  t: [28,22,14]    }, // morning — warm cream
-  { h: 16,   bg: [252,248,238],  t: [28,22,14]    }, // afternoon — warm cream
-  { h: 17.5, bg: [255,196,72],   t: [38,16,4]     }, // golden hour — amber
-  { h: 18.5, bg: [210,88,28],    t: [255,228,190] }, // sunset — deep orange
-  { h: 20,   bg: [28,10,6],      t: [255,228,200] }, // dusk — dark warm
-  { h: 21,   bg: [9,9,10],       t: [255,255,255] }, // night
-  { h: 24,   bg: [9,9,10],       t: [255,255,255] },
+  { h: 0,    bg: [12,10,8],      t: [255,255,255] }, // night — near-black
+  { h: 5,    bg: [12,10,8],      t: [255,255,255] }, // pre-dawn
+  { h: 6.5,  bg: [255,235,200],  t: [50,28,8]     }, // dawn — warm peach
+  { h: 8,    bg: [255,255,255],  t: [30,24,16]    }, // morning — pure white
+  { h: 17,   bg: [255,255,255],  t: [30,24,16]    }, // afternoon — pure white
+  { h: 18.5, bg: [255,200,80],   t: [40,18,4]     }, // golden hour — amber
+  { h: 19.5, bg: [210,85,25],    t: [255,228,190] }, // sunset — deep orange
+  { h: 21,   bg: [18,12,8],      t: [255,248,238] }, // dusk into night
+  { h: 22,   bg: [12,10,8],      t: [255,255,255] }, // night
+  { h: 24,   bg: [12,10,8],      t: [255,255,255] },
 ];
 const _lr = (a, b, p) => a.map((v, i) => Math.round(v + (b[i] - v) * p));
 const _ss = p => p * p * (3 - 2 * p); // smoothstep easing
@@ -146,6 +146,10 @@ export default function App() {
   const [timeMachineKey, setTimeMachineKey] = useState(null);
   const [saveError, setSaveError] = useState(false);
 
+  // Post-save gift — "what today gave you"
+  const [dayGift, setDayGift] = useState(null);
+  const [dayGiftLoading, setDayGiftLoading] = useState(false);
+
   // Book entry expansion + per-entry beacon
   const [expanded, setExpanded] = useState({});
   const [bookReflections, setBookReflections] = useState({});
@@ -216,10 +220,33 @@ export default function App() {
       setTodayData(day);
       await sv("sg-book", updated);
       setSaved(true);
+      setDayGift(null);
+      generateDayGift(day);
     } catch {
       setSaveError(true);
       setTimeout(() => setSaveError(false), 3000);
     }
+  };
+
+  const generateDayGift = async (day) => {
+    if (!apiKey || !day.passage?.trim()) return;
+    setDayGiftLoading(true);
+    try {
+      const artistCtx = day.inspoArtist ? `\nArtist resonating: ${day.inspoArtist}${day.inspoSong ? ` — ${day.inspoSong}` : ''}` : '';
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 120,
+          system: `You are a gift reader. Read this soul's day and name — in 25-35 words — what the day gave them. Not what they did or felt, but what arrived as a gift, even when wrapped in difficulty or noise. Specific. Warm. Present-tense. Begin naturally, e.g. "Today gave you..." or "This day delivered..." or a simple poetic observation. No analysis, no advice. Just the gift.`,
+          messages: [{ role: "user", content: `Passage: "${day.passage}"\nLast word: "${day.lastWord || '—'}"${artistCtx}` }],
+        }),
+      });
+      const d = await r.json();
+      if (!d.error) setDayGift(d.content?.map(i => i.text || '').join('\n') || null);
+    } catch {}
+    setDayGiftLoading(false);
   };
 
   const handlePicture = (e) => {
@@ -736,6 +763,29 @@ Be honest about the lean without contempt for either direction. Your task is cla
             }}>
               {saveError ? "Couldn't save — try again" : saved ? "Saved ✓" : "Save today's page ;"}
             </button>
+
+            {/* ── WHAT TODAY GAVE YOU ── */}
+            {(dayGiftLoading || dayGift) && (
+              <div style={{
+                marginTop: 10, padding: "14px 16px", textAlign: "center",
+                border: "1px solid rgba(201,169,110,0.1)",
+                borderRadius: 10, animation: !dayGiftLoading && dayGift ? "slideUp 0.3s ease" : undefined,
+              }}>
+                {dayGiftLoading ? (
+                  <div style={{ fontSize: 11, color: "rgba(201,169,110,0.4)", fontFamily: F.m,
+                    animation: "breathe 1.5s ease-in-out infinite", letterSpacing: "0.06em" }}>
+                    reading what today gave you…
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 7, color: "rgba(201,169,110,0.3)", textTransform: "uppercase",
+                      letterSpacing: "0.16em", marginBottom: 8, fontFamily: F.b }}>what today gave you</div>
+                    <p style={{ fontSize: 15, color: `rgba(var(--sg-t),0.65)`, lineHeight: 1.85,
+                      fontFamily: F.h, fontStyle: "italic", margin: 0 }}>{dayGift}</p>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* ── HAT SELECTOR ── */}
             {passage.trim() && (
@@ -1329,7 +1379,7 @@ function Shell({ children }) {
     <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 60s ease, color 60s ease" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
-        :root { --sg-bg: rgb(9,9,10); --sg-t: 255,255,255; }
+        :root { --sg-bg: rgb(255,255,255); --sg-t: 30,24,16; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { background: var(--sg-bg); transition: background 60s ease; }
         textarea, input { transition: background-color 60s ease, border-color 60s ease, color 60s ease; }
