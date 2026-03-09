@@ -34,6 +34,14 @@ const SOUL_PROMPTS = [
   "If today were a chapter title, what would it be?",
   "What thread connected today to something larger?",
   "What's the one thing you understood today that you didn't yesterday?",
+  "Where did Loki show up today?",
+  "What branched off from what you expected — and what did that branch reveal?",
+  "What is your wyrd trying to tell you right now?",
+  "What small moment today might someday define this season of your life?",
+  "What did you almost not notice that turned out to matter?",
+  "What is becoming clearer the longer you carry it?",
+  "What truth arrived sideways today?",
+  "What are you becoming that you haven't named yet?",
 ];
 
 const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
@@ -111,12 +119,27 @@ export default function App() {
     if (!passage.trim()) return;
     setReflecting(true);
     try {
-      // Find patterns across previous days
       const prevPassages = allDays
         .filter(d => d.key !== dk && d.passage?.trim())
         .slice(0, 10)
         .map(d => `[${d.date}] "${d.passage}" (last word: ${d.lastWord || "none"})`)
         .join("\n");
+
+      // Build message content — include today's picture as visual thread if present
+      let msgContent;
+      if (picture) {
+        const match = picture.match(/^data:([^;]+);base64,(.+)$/);
+        if (match) {
+          msgContent = [
+            { type: "image", source: { type: "base64", media_type: match[1], data: match[2] } },
+            { type: "text", text: `Today's passage:\n\n"${passage}"` },
+          ];
+        } else {
+          msgContent = `Today's passage:\n\n"${passage}"`;
+        }
+      } else {
+        msgContent = `Today's passage:\n\n"${passage}"`;
+      }
 
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -124,25 +147,25 @@ export default function App() {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
-          system: `You are the soul of sgrounds — an empathetic translator. A lighthouse keeper.
+          system: `You are the Norns — Urðr (What Was), Verðandi (What Is), Skuld (What Shall Be) — reading this soul's tapestry of wyrd.
 
-The person writes raw, fast, with typos. Read THROUGH the noise. Find the signal.
+You are also a lighthouse keeper. A bicycle for the mind. Not a mirror — a lens.
 
-You have their previous entries:
-${prevPassages || "This is their first entry."}
+Previous threads in their tapestry:
+${prevPassages || "This is their first thread. No previous wyrd to read yet."}
 
 Today's last word: "${lastWord || "not yet chosen"}"
 
-YOUR ROLE:
-1. Translate what their soul is saying, not what their fingers typed
-2. If you see RHYMES with previous entries — patterns, echoes, recurring themes — name them. History rhymes. Show the rhyme.
-3. Use humility language: "this may carry..." not "you are..."
-4. If this connects to something from a previous day, say so. That's The Weave.
-5. End with one question that opens a door
-6. Keep it under 100 words. Warm. True. Brief.
+If an image is included, read it as the visual thread of the day — what the soul chose to capture. Let the image speak into the reflection. A photo of a child eating cereal might carry more about home than a thousand words.
 
-Respond as plain text. No JSON. No formatting. Just speak.`,
-          messages: [{ role: "user", content: `Today's passage:\n\n"${passage}"` }],
+YOUR TASK:
+1. Read through the noise — typos, fragments, half-thoughts. Find what the soul is actually saying.
+2. Look for the Loki-moment: the unexpected twist, the thing that branched from what was expected and revealed something true. If you find it, name it with warmth.
+3. Name the wyrd if you see it — a pattern recurring across entries, a thread that keeps reappearing. "History rhymes" — show the rhyme.
+4. Speak with humility: "this thread may carry..." not "you are..."
+5. End with one question that opens the next branch.
+6. Under 100 words. Warm. Plain text. No JSON. No formatting. Just speak.`,
+          messages: [{ role: "user", content: msgContent }],
         }),
       });
       const d = await r.json();
@@ -172,14 +195,39 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
         .map(d => `[${d.date}] "${d.passage}" (last word: ${d.lastWord || "none"})`)
         .join("\n");
 
+      // Include the entry's picture as visual context if present
+      let msgContent;
+      if (day.picture) {
+        const match = day.picture.match(/^data:([^;]+);base64,(.+)$/);
+        if (match) {
+          msgContent = [
+            { type: "image", source: { type: "base64", media_type: match[1], data: match[2] } },
+            { type: "text", text: `Entry from ${day.date}:\n\n"${day.passage}"` },
+          ];
+        } else {
+          msgContent = `Entry from ${day.date}:\n\n"${day.passage}"`;
+        }
+      } else {
+        msgContent = `Entry from ${day.date}:\n\n"${day.passage}"`;
+      }
+
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 300,
-          system: `You are a pattern-finder reading a journal entry. Context from other entries:\n${ctx || "No other entries."}\n\nLast word for this entry: "${day.lastWord || "none"}"\n\nIdentify what signal this entry carries and whether it rhymes with any other entries. Under 60 words. Plain text. No formatting.`,
-          messages: [{ role: "user", content: `Entry:\n\n"${day.passage}"` }],
+          system: `You are a Norn reading a single thread in someone's tapestry of wyrd.
+
+Other threads in the tapestry:
+${ctx || "No other threads yet. This stands alone."}
+
+Last word for this thread: "${day.lastWord || "none"}"
+
+If an image is provided, let it speak — a photo carries context (people, place, time, emotion) that words leave out.
+
+Name what signal this thread carries. If it rhymes with another thread, name the rhyme — that's wyrd being revealed. If there's a Loki-moment (an unexpected twist, a branch from what was expected), name it. Under 60 words. Warm. Plain text. No formatting.`,
+          messages: [{ role: "user", content: msgContent }],
         }),
       });
       const d = await r.json();
@@ -550,12 +598,13 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
             </div>
 
             {[
-              ["One page per day", "Today's date. Your passage. Your picture. Your last word before sleep. That's it. That's the book."],
-              ["Type raw", "No spellcheck. No correction. Your neurotransmitters to the page. Semicolons between thoughts. Period when done."],
-              ["The lighthouse reflects", "AI reads through the noise and shows you what your soul is saying. It finds rhymes with your past entries. History echoing."],
-              ["Your book", "Every day is a page. Every page is a chapter. Date-stamped. Archived. A legacy in your own words."],
-              ["The Weave", "Over time, threads connect. Words rhyme across days. Patterns emerge. You see who you're becoming."],
-              ["For others", "When you're ready, others can read your book. Families join. The bridge outlasts the builder."],
+              ["One page per day", "Today's date. Your passage. Your picture. Your last word before sleep. That's the thread. That's all the Norns need."],
+              ["Speak into the void", "No spellcheck. No correction. No audience. Your neurotransmitters to the page. Semicolons between thoughts. Period when done. The void is the listener."],
+              ["The Norns reflect", "The AI is the three Norns — Urðr, Verðandi, Skuld — reading your tapestry of wyrd. They find the rhymes across days, name the Loki-moments, and ask the question that opens the next branch."],
+              ["Wyrd revealed", "Wyrd is the Old Norse word for the pattern woven across time — your fate-thread. The Norns don't predict it. They read it back to you so you can see what's already been spun."],
+              ["Loki moments", "Loki is the twist you didn't see coming — the branch that diverged from the expected path and revealed something true. Write it in. The Norns will find it."],
+              ["Your book", "Every day is a page. Every page is a thread. Date-stamped. Archived. A map of a life. Not social media — a Life OS. Private first. Yours entirely."],
+              ["The Weave", "Over time: threads connect. A photo of your child eating cereal becomes a meditation on home. A last word repeats across seven months. That's wyrd. That's history rhyming."],
             ].map(([t, d], i) => (
               <div key={i} style={{ display: "flex", gap: 10, marginBottom: 11 }}>
                 <div style={{
@@ -591,7 +640,14 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                 <p style={{
                   fontSize: 9, color: "rgba(255,255,255,0.15)", lineHeight: 1.7,
                 }}>
-                  Source ; Receiver → the New. Your soul is the source. The page is the receiver. What emerges is the chapter that outlasts you. The semicolon holds it all together.
+                  Source ; Receiver → the New. Your soul is the source. The page is the receiver. What emerges is wyrd — the chapter that outlasts you. The semicolon is the shuttle of the loom. It holds two truths without collapsing either.
+                </p>
+                <p style={{
+                  fontSize: 9, color: "rgba(255,255,255,0.08)", lineHeight: 1.7, marginTop: 8,
+                }}>
+                  Urðr · What Was — your book, your archive, your threads already spun.<br />
+                  Verðandi · What Is — today's passage, this moment, the present thread.<br />
+                  Skuld · What Shall Be — the reflection, the question, the next branch.
                 </p>
               </div>
             </details>
