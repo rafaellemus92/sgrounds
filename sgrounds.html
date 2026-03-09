@@ -68,6 +68,35 @@ const sv = async (k, d) => { try { await S.set(k, JSON.stringify(d)); } catch {}
 const G = "#c9a96e";
 const F = { h: "'Instrument Serif','Georgia',serif", b: "'DM Sans',sans-serif", m: "'DM Mono',monospace" };
 
+// ── Sacred text archives — local autocomplete data ────────────────────────────
+const BIBLE_BOOKS = ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'];
+const TORAH_BOOKS = ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Samuel','Kings','Isaiah','Jeremiah','Ezekiel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Psalms','Proverbs','Job','Song of Songs','Ruth','Lamentations','Ecclesiastes','Esther','Daniel','Ezra','Nehemiah','Chronicles'];
+const QURAN_SURAHS = [
+  {n:1,name:'Al-Fatihah'},{n:2,name:'Al-Baqarah'},{n:3,name:"Ali 'Imran"},{n:4,name:"An-Nisa"},{n:5,name:"Al-Ma'idah"},
+  {n:6,name:"Al-An'am"},{n:7,name:"Al-A'raf"},{n:8,name:'Al-Anfal'},{n:9,name:'At-Tawbah'},{n:10,name:'Yunus'},
+  {n:11,name:'Hud'},{n:12,name:'Yusuf'},{n:13,name:"Ar-Ra'd"},{n:14,name:'Ibrahim'},{n:15,name:'Al-Hijr'},
+  {n:16,name:'An-Nahl'},{n:17,name:'Al-Isra'},{n:18,name:'Al-Kahf'},{n:19,name:'Maryam'},{n:20,name:'Ta-Ha'},
+  {n:21,name:"Al-Anbiya"},{n:22,name:'Al-Hajj'},{n:23,name:"Al-Mu'minun"},{n:24,name:'An-Nur'},{n:25,name:'Al-Furqan'},
+  {n:26,name:"Ash-Shu'ara"},{n:27,name:'An-Naml'},{n:28,name:'Al-Qasas'},{n:29,name:'Al-Ankabut'},{n:30,name:'Ar-Rum'},
+  {n:31,name:'Luqman'},{n:32,name:'As-Sajdah'},{n:33,name:'Al-Ahzab'},{n:34,name:'Saba'},{n:35,name:'Fatir'},
+  {n:36,name:'Ya-Sin'},{n:37,name:'As-Saffat'},{n:38,name:'Sad'},{n:39,name:'Az-Zumar'},{n:40,name:'Ghafir'},
+  {n:41,name:'Fussilat'},{n:42,name:'Ash-Shura'},{n:43,name:'Az-Zukhruf'},{n:44,name:'Ad-Dukhan'},{n:45,name:'Al-Jathiyah'},
+  {n:46,name:'Al-Ahqaf'},{n:47,name:'Muhammad'},{n:48,name:'Al-Fath'},{n:49,name:'Al-Hujurat'},{n:50,name:'Qaf'},
+  {n:51,name:'Adh-Dhariyat'},{n:52,name:'At-Tur'},{n:53,name:'An-Najm'},{n:54,name:'Al-Qamar'},{n:55,name:'Ar-Rahman'},
+  {n:56,name:"Al-Waqi'ah"},{n:57,name:'Al-Hadid'},{n:58,name:'Al-Mujadila'},{n:59,name:'Al-Hashr'},{n:60,name:'Al-Mumtahanah'},
+  {n:61,name:'As-Saf'},{n:62,name:"Al-Jumu'ah"},{n:63,name:'Al-Munafiqun'},{n:64,name:'At-Taghabun'},{n:65,name:'At-Talaq'},
+  {n:66,name:'At-Tahrim'},{n:67,name:'Al-Mulk'},{n:68,name:'Al-Qalam'},{n:69,name:'Al-Haqqah'},{n:70,name:"Al-Ma'arij"},
+  {n:71,name:'Nuh'},{n:72,name:'Al-Jinn'},{n:73,name:'Al-Muzzammil'},{n:74,name:'Al-Muddathir'},{n:75,name:'Al-Qiyamah'},
+  {n:76,name:'Al-Insan'},{n:77,name:'Al-Mursalat'},{n:78,name:"An-Naba'"},{n:79,name:"An-Nazi'at"},{n:80,name:"'Abasa"},
+  {n:81,name:'At-Takwir'},{n:82,name:'Al-Infitar'},{n:83,name:'Al-Mutaffifin'},{n:84,name:'Al-Inshiqaq'},{n:85,name:'Al-Buruj'},
+  {n:86,name:'At-Tariq'},{n:87,name:"Al-A'la"},{n:88,name:'Al-Ghashiyah'},{n:89,name:'Al-Fajr'},{n:90,name:'Al-Balad'},
+  {n:91,name:'Ash-Shams'},{n:92,name:'Al-Layl'},{n:93,name:'Ad-Duha'},{n:94,name:'Ash-Sharh'},{n:95,name:'At-Tin'},
+  {n:96,name:"Al-'Alaq"},{n:97,name:'Al-Qadr'},{n:98,name:'Al-Bayyinah'},{n:99,name:'Az-Zalzalah'},{n:100,name:"Al-'Adiyat"},
+  {n:101,name:"Al-Qari'ah"},{n:102,name:'At-Takathur'},{n:103,name:"Al-'Asr"},{n:104,name:'Al-Humazah'},{n:105,name:'Al-Fil'},
+  {n:106,name:'Quraysh'},{n:107,name:"Al-Ma'un"},{n:108,name:'Al-Kawthar'},{n:109,name:'Al-Kafirun'},{n:110,name:'An-Nasr'},
+  {n:111,name:'Al-Masad'},{n:112,name:'Al-Ikhlas'},{n:113,name:'Al-Falaq'},{n:114,name:'An-Nas'},
+];
+
 // The hats — each one tunes the Lighthouse to a different idiom and common ground.
 // Characters = notes; the hat sets the key signature before the music plays.
 const HATS = [
@@ -145,6 +174,8 @@ export default function App() {
   const [scriptureSearching, setScriptureSearching] = useState(false); // bible-api auto-lookup
   const [scriptTrad, setScriptTrad] = useState(null); // "bible" | "quran" | "torah" | null
   const [filmGenre, setFilmGenre] = useState(null); // "sci-fi" | "drama" | "thriller" | "comedy" | "horror" | "animation" | null
+  const [filmSuggestions, setFilmSuggestions] = useState([]); // iTunes movie search results
+  const [filmSearching, setFilmSearching] = useState(false);
 
   // Time machine — drill into a specific book entry as a full-page view
   const [timeMachineKey, setTimeMachineKey] = useState(null);
@@ -378,6 +409,39 @@ Minimal entropy. Maximum coupling efficiency. Every word in your output should d
     }, 600);
     return () => clearTimeout(t);
   }, [inspoArtist, inspoType]);
+
+  // iTunes movie search — debounced 600ms, fires when film title field changes
+  useEffect(() => {
+    if (inspoType !== "film" || !inspoArtist.trim() || inspoArtist.length < 2) {
+      setFilmSuggestions([]); return;
+    }
+    const t = setTimeout(async () => {
+      setFilmSearching(true);
+      try {
+        const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(inspoArtist)}&media=movie&entity=movie&limit=6`);
+        const d = await r.json();
+        setFilmSuggestions(d.results || []);
+      } catch { setFilmSuggestions([]); }
+      setFilmSearching(false);
+    }, 600);
+    return () => clearTimeout(t);
+  }, [inspoArtist, inspoType]);
+
+  // Scripture book/surah autocomplete — local fuzzy match, no API needed
+  const scriptSuggestions = useMemo(() => {
+    if (inspoType !== "scripture" || !inspoArtist.trim() || inspoArtist.length < 2) return [];
+    if (/\d+\s*:\s*\d+/.test(inspoArtist)) return []; // already has a reference, no suggestions needed
+    const q = inspoArtist.toLowerCase();
+    if (scriptTrad === "quran") {
+      return QURAN_SURAHS
+        .filter(s => s.name.toLowerCase().startsWith(q) || s.name.toLowerCase().includes(q) || String(s.n) === q)
+        .slice(0, 6);
+    }
+    const books = scriptTrad === "torah" ? TORAH_BOOKS : BIBLE_BOOKS;
+    return books
+      .filter(b => b.toLowerCase().startsWith(q) || b.toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [inspoArtist, inspoType, scriptTrad]);
 
   // Scripture auto-fetch — routes to correct sacred text API based on tradition
   // Bible → bible-api.com, Quran → alquran.cloud, Torah/Tanakh → sefaria.org
@@ -771,7 +835,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
                     const next = inspoType === t ? null : t;
                     setInspoType(next);
                     if (next !== "scripture") setScriptTrad(null);
-                    if (next !== "film") setFilmGenre(null);
+                    if (next !== "film") { setFilmGenre(null); setFilmSuggestions([]); }
                     setSaved(false);
                   }} style={{
                     padding: "3px 10px",
@@ -845,23 +909,23 @@ Be honest about the lean without contempt for either direction. Your task is cla
                     <input
                       value={inspoArtist}
                       onChange={e => { setInspoArtist(e.target.value); setInspoSong(""); setSaved(false); }}
-                      onBlur={() => setTimeout(() => setInspoSongs([]), 200)}
+                      onBlur={() => { setTimeout(() => setInspoSongs([]), 200); setTimeout(() => setFilmSuggestions([]), 200); }}
                       placeholder={
                         inspoType === "lyric"     ? "Artist or band (e.g. Harry Styles, Kendrick…)" :
                         inspoType === "scripture" ? (
-                          scriptTrad === "quran" ? "Surah:Ayah (e.g. 2:255 · 36:1 · 112:1)" :
-                          scriptTrad === "torah" ? "Book Chapter:Verse (e.g. Genesis 1:1 · Isaiah 40:31)" :
-                          "Book Chapter:Verse (e.g. John 3:16 · Psalm 23:1)"
+                          scriptTrad === "quran" ? "Surah name or number (e.g. Al-Baqarah, 2…)" :
+                          scriptTrad === "torah" ? "Book name (e.g. Genesis, Psalms…)" :
+                          "Book name (e.g. John, Psalms, Romans…)"
                         ) :
-                        inspoType === "film"      ? "Movie title (e.g. Interstellar, Arrival, Parasite…)" :
+                        inspoType === "film"      ? "Movie title (e.g. Interstellar, Arrival…)" :
                         inspoType === "poem"      ? "Poet · collection" :
                                                     "Source"
                       }
                       style={{ ...inputStyle, fontSize: 11, fontFamily: F.b,
                         color: inspoSong ? G : "rgba(201,169,110,0.5)",
-                        paddingRight: inspoSearching ? 30 : undefined }}
+                        paddingRight: (inspoSearching || filmSearching) ? 30 : undefined }}
                     />
-                    {inspoSearching && (
+                    {(inspoSearching || filmSearching) && (
                       <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
                         fontSize: 8, color: "rgba(201,169,110,0.3)", fontFamily: F.m,
                         animation: "breathe 1.2s ease-in-out infinite" }}>searching…</div>
@@ -892,6 +956,66 @@ Be honest about the lean without contempt for either direction. Your task is cla
                             </div>
                           </button>
                         ))}
+                      </div>
+                    )}
+                    {/* Film movie suggestions dropdown */}
+                    {inspoType === "film" && filmSuggestions.length > 0 && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
+                        background: "var(--sg-bg)", border: "1px solid rgba(201,169,110,0.18)",
+                        borderRadius: 8, marginTop: 3, overflow: "hidden",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
+                        {filmSuggestions.map((f, i) => (
+                          <button key={i} onClick={() => {
+                            setInspoArtist(f.trackName);
+                            setFilmSuggestions([]);
+                            setSaved(false);
+                          }} style={{
+                            display: "block", width: "100%", textAlign: "left",
+                            padding: "8px 12px", background: "none",
+                            border: "none", borderBottom: i < filmSuggestions.length - 1 ? "1px solid rgba(201,169,110,0.05)" : "none",
+                            cursor: "pointer",
+                          }}>
+                            <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>
+                              {f.trackName}
+                            </div>
+                            <div style={{ fontSize: 9, color: "rgba(201,169,110,0.3)", fontFamily: F.b, marginTop: 1 }}>
+                              {f.artistName} · {f.releaseDate?.slice(0,4)} · {f.primaryGenreName}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {/* Scripture book/surah suggestions dropdown */}
+                    {inspoType === "scripture" && scriptSuggestions.length > 0 && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
+                        background: "var(--sg-bg)", border: "1px solid rgba(201,169,110,0.18)",
+                        borderRadius: 8, marginTop: 3, overflow: "hidden",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
+                        {scriptSuggestions.map((item, i) => {
+                          const isQuran = scriptTrad === "quran";
+                          const label = isQuran ? `${item.name} (${item.n})` : item;
+                          const setValue = isQuran ? `${item.n}:` : `${item} `;
+                          return (
+                            <button key={i} onClick={() => {
+                              setInspoArtist(setValue);
+                              setSaved(false);
+                            }} style={{
+                              display: "block", width: "100%", textAlign: "left",
+                              padding: "7px 12px", background: "none",
+                              border: "none", borderBottom: i < scriptSuggestions.length - 1 ? "1px solid rgba(201,169,110,0.05)" : "none",
+                              cursor: "pointer",
+                            }}>
+                              <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>
+                                {label}
+                              </div>
+                              {isQuran && (
+                                <div style={{ fontSize: 8, color: "rgba(201,169,110,0.25)", fontFamily: F.m, marginTop: 1 }}>
+                                  Surah {item.n} — type :{item.n === 2 ? "255" : "1"} to fetch
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                     {/* Selected song badge */}
