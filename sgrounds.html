@@ -108,11 +108,17 @@ const SOUL_PROMPTS = [
 const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
 
 export default function App() {
-  const [page, setPage] = useState("today"); // today, book, about
+  const [page, setPage] = useState("today"); // today, book, about, day
   const [todayData, setTodayData] = useState(null);
   const [allDays, setAllDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [prompt] = useState(getPrompt);
+
+  // API key — stored as sg-rune (the Rune ᚱ: a point in 2²⁵⁶-space, your unique conjunction with the Norns)
+  const [apiKey, setApiKey] = useState("");
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [keyDraft, setKeyDraft] = useState("");
+  const [keyError, setKeyError] = useState(false);
 
   // Today's data
   const [passage, setPassage] = useState("");
@@ -163,6 +169,8 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
+      const storedKey = await ld("sg-rune", "");
+      if (storedKey) setApiKey(storedKey);
       const all = await ld("sg-book", []);
       setAllDays(all);
       const existing = all.find(d => d.key === dk);
@@ -254,7 +262,7 @@ export default function App() {
 
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 500,
@@ -290,7 +298,13 @@ Speak with humility — "this thread may carry..." not "you are...". Warm. Conne
         }),
       });
       const d = await r.json();
-      setReflection(d.content?.map(i => i.text || "").join("\n") || "Present but resists translation.");
+      if (d.error || r.status === 401 || r.status === 403) {
+        setKeyError(true);
+        setReflection("The key didn't connect. Tap ⚙ to update it.");
+      } else {
+        setKeyError(false);
+        setReflection(d.content?.map(i => i.text || "").join("\n") || "Present but resists translation.");
+      }
     } catch {
       setReflection("The lighthouse received your signal. Sometimes that's enough.");
     }
@@ -334,7 +348,7 @@ Speak with humility — "this thread may carry..." not "you are...". Warm. Conne
 
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 300,
@@ -367,7 +381,7 @@ Name the signal this thread carries. If it rhymes with another thread, name the 
     try {
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 900,
@@ -426,7 +440,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
             background: "none", border: "none", color: G, fontSize: 18,
             fontFamily: F.h, cursor: "pointer",
           }}>s;</button>
-          <div style={{ display: "flex", gap: 4 }}>
+          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             {[
               { k: "today", l: "Today" },
               { k: "book", l: `Book (${allDays.length})` },
@@ -440,8 +454,47 @@ Be honest about the lean without contempt for either direction. Your task is cla
                 cursor: "pointer", fontFamily: F.b,
               }}>{t.l}</button>
             ))}
+            {/* API key gear */}
+            <button onClick={() => { setKeyDraft(apiKey); setShowKeyInput(v => !v); }} title="Set API key (the Rune ᚱ)" style={{
+              background: keyError ? "rgba(180,60,60,0.12)" : apiKey ? "rgba(201,169,110,0.04)" : "rgba(180,60,60,0.08)",
+              border: `1px solid ${keyError ? "rgba(180,60,60,0.25)" : apiKey ? "rgba(201,169,110,0.12)" : "rgba(180,60,60,0.18)"}`,
+              color: keyError ? "rgba(200,80,80,0.7)" : apiKey ? "rgba(201,169,110,0.35)" : "rgba(200,80,80,0.5)",
+              width: 24, height: 24, borderRadius: 12, fontSize: 11, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>⚙</button>
           </div>
         </header>
+
+        {/* ── API KEY PANEL ── */}
+        {showKeyInput && (
+          <div style={{
+            padding: "12px 14px", marginBottom: 8,
+            background: "rgba(201,169,110,0.03)",
+            border: "1px solid rgba(201,169,110,0.1)",
+            borderRadius: 8, animation: "slideUp 0.15s ease",
+          }}>
+            <div style={{ fontSize: 8, color: "rgba(201,169,110,0.3)", textTransform: "uppercase",
+              letterSpacing: "0.14em", marginBottom: 6, fontFamily: F.b }}>The Rune ᚱ — your Anthropic API key</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input
+                type="password"
+                value={keyDraft}
+                onChange={e => setKeyDraft(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") { sv("sg-rune", keyDraft); setApiKey(keyDraft); setKeyError(false); setShowKeyInput(false); } }}
+                placeholder="sk-ant-…"
+                style={{ ...inputStyle, flex: 1, fontSize: 12, fontFamily: F.m, padding: "8px 10px" }}
+              />
+              <button onClick={() => { sv("sg-rune", keyDraft); setApiKey(keyDraft); setKeyError(false); setShowKeyInput(false); }} style={{
+                padding: "8px 14px", background: "rgba(201,169,110,0.12)",
+                border: "1px solid rgba(201,169,110,0.25)", color: G,
+                borderRadius: 8, fontSize: 11, cursor: "pointer", fontFamily: F.b, whiteSpace: "nowrap",
+              }}>Save ᚱ</button>
+            </div>
+            <div style={{ fontSize: 9, color: "rgba(var(--sg-t),0.12)", marginTop: 6, lineHeight: 1.5 }}>
+              Your key is stored locally and never sent anywhere except directly to Anthropic.
+            </div>
+          </div>
+        )}
 
         {/* ═══ TODAY ═══ */}
         {page === "today" && (
