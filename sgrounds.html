@@ -10,6 +10,34 @@ import { useState, useEffect, useRef } from "react";
   This is the lighthouse.
 */
 
+// ── Time-of-day theme ────────────────────────────────────────────────────────
+// bg: RGB triplet for page background
+// t:  RGB triplet for text (inverts with bg to maintain contrast)
+const THEME_NODES = [
+  { h: 0,    bg: [9,9,10],       t: [255,255,255] }, // night
+  { h: 5,    bg: [9,9,10],       t: [255,255,255] }, // pre-dawn
+  { h: 6.5,  bg: [255,228,185],  t: [45,22,8]     }, // dawn — warm amber-peach sky
+  { h: 8,    bg: [252,248,238],  t: [28,22,14]    }, // morning — warm cream
+  { h: 16,   bg: [252,248,238],  t: [28,22,14]    }, // afternoon — warm cream
+  { h: 17.5, bg: [255,196,72],   t: [38,16,4]     }, // golden hour — amber
+  { h: 18.5, bg: [210,88,28],    t: [255,228,190] }, // sunset — deep orange
+  { h: 20,   bg: [28,10,6],      t: [255,228,200] }, // dusk — dark warm
+  { h: 21,   bg: [9,9,10],       t: [255,255,255] }, // night
+  { h: 24,   bg: [9,9,10],       t: [255,255,255] },
+];
+const _lr = (a, b, p) => a.map((v, i) => Math.round(v + (b[i] - v) * p));
+const _ss = p => p * p * (3 - 2 * p); // smoothstep easing
+const getTimeTheme = () => {
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  let lo = THEME_NODES[0], hi = THEME_NODES[1];
+  for (let i = 0; i < THEME_NODES.length - 1; i++) {
+    if (h >= THEME_NODES[i].h && h < THEME_NODES[i + 1].h) { lo = THEME_NODES[i]; hi = THEME_NODES[i + 1]; break; }
+  }
+  const p = _ss((h - lo.h) / Math.max(hi.h - lo.h, 0.001));
+  const bg = _lr(lo.bg, hi.bg, p), tx = _lr(lo.t, hi.t, p);
+  return { bg: `rgb(${bg})`, t: `${tx}` };
+};
+
 const S = window.storage;
 const ld = async (k, fb) => { try { const r = await S.get(k); return r ? JSON.parse(r.value) : fb; } catch { return fb; } };
 const sv = async (k, d) => { try { await S.set(k, JSON.stringify(d)); } catch {} };
@@ -70,6 +98,19 @@ export default function App() {
 
   const passageRef = useRef(null);
   const dk = dateKey();
+
+  // Time-of-day theme — updates every minute, transitions via CSS
+  const [, setThemeTick] = useState(0);
+  useEffect(() => {
+    const apply = () => {
+      const th = getTimeTheme();
+      document.documentElement.style.setProperty('--sg-bg', th.bg);
+      document.documentElement.style.setProperty('--sg-t', th.t);
+    };
+    apply();
+    const id = setInterval(() => { apply(); setThemeTick(n => n + 1); }, 60000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -253,7 +294,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
         {/* Header */}
         <header style={{
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.025)",
+          padding: "14px 0", borderBottom: "1px solid rgba(var(--sg-t),0.025)",
         }}>
           <button onClick={() => setPage("today")} style={{
             background: "none", border: "none", color: G, fontSize: 18,
@@ -267,7 +308,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
             ].map(t => (
               <button key={t.k} onClick={() => setPage(t.k)} style={{
                 background: page === t.k ? "rgba(201,169,110,0.06)" : "none",
-                border: "none", color: page === t.k ? G : "rgba(255,255,255,0.13)",
+                border: "none", color: page === t.k ? G : "rgba(var(--sg-t),0.13)",
                 padding: "4px 10px", borderRadius: 10, fontSize: 10,
                 cursor: "pointer", fontFamily: F.b,
               }}>{t.l}</button>
@@ -291,7 +332,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                 marginBottom: 14, animation: "breathe 4s ease-in-out infinite",
               }}>;</div>
               <p style={{
-                fontSize: 15, color: "rgba(255,255,255,0.3)", fontFamily: F.h,
+                fontSize: 15, color: "rgba(var(--sg-t),0.3)", fontFamily: F.h,
                 fontStyle: "italic", lineHeight: 1.6, maxWidth: 320, margin: "0 auto",
               }}>
                 {prompt}
@@ -335,7 +376,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                   }} />
                   <button onClick={() => { setPicture(null); setSaved(false); }} style={{
                     position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)",
-                    border: "none", color: "rgba(255,255,255,0.5)", width: 24, height: 24,
+                    border: "none", color: "rgba(var(--sg-t),0.5)", width: 24, height: 24,
                     borderRadius: 12, cursor: "pointer", fontSize: 12,
                   }}>×</button>
                 </div>
@@ -359,7 +400,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                 letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
               }}>Your last word</label>
               <p style={{
-                fontSize: 10, color: "rgba(255,255,255,0.12)", marginBottom: 8,
+                fontSize: 10, color: "rgba(var(--sg-t),0.12)", marginBottom: 8,
                 fontStyle: "italic", lineHeight: 1.5,
               }}>
                 The final word before you close your eyes. One word. The one your soul chose when everything else fell away.
@@ -393,8 +434,8 @@ Name what signal this thread carries. If it rhymes with another thread, name the
             {passage.trim() && (
               <button onClick={reflect} disabled={reflecting} style={{
                 width: "100%", padding: "12px", marginTop: 8,
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.04)",
+                background: "rgba(var(--sg-t),0.02)",
+                border: "1px solid rgba(var(--sg-t),0.04)",
                 color: "rgba(201,169,110,0.3)",
                 borderRadius: 10, fontSize: 12, cursor: "pointer", fontFamily: F.b,
               }}>
@@ -415,11 +456,11 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                   letterSpacing: "0.12em", marginBottom: 8,
                 }}>The Lighthouse</div>
                 <p style={{
-                  fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.8,
+                  fontSize: 14, color: "rgba(var(--sg-t),0.55)", lineHeight: 1.8,
                   fontFamily: F.h, margin: 0,
                 }}>{reflection}</p>
                 <p style={{
-                  textAlign: "center", fontSize: 7, color: "rgba(255,255,255,0.04)", marginTop: 12,
+                  textAlign: "center", fontSize: 7, color: "rgba(var(--sg-t),0.04)", marginTop: 12,
                 }}>A person is listening behind this system</p>
               </div>
             )}
@@ -428,7 +469,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
             {passage.trim() && (
               <div style={{
                 marginTop: 16, textAlign: "center",
-                fontSize: 9, color: "rgba(255,255,255,0.06)", fontFamily: F.m,
+                fontSize: 9, color: "rgba(var(--sg-t),0.06)", fontFamily: F.m,
               }}>
                 {passage.split(/\s+/).filter(Boolean).length} words ·{" "}
                 {(passage.match(/;/g) || []).length} threads ·{" "}
@@ -443,10 +484,10 @@ Name what signal this thread carries. If it rhymes with another thread, name the
           <div style={{ paddingTop: 20, paddingBottom: 50 }}>
             <h2 style={{
               fontFamily: F.h, fontSize: 18, fontWeight: 400,
-              color: "rgba(255,255,255,0.7)", marginBottom: 4,
+              color: "rgba(var(--sg-t),0.7)", marginBottom: 4,
             }}>Your Book</h2>
             <p style={{
-              fontSize: 10, color: "rgba(255,255,255,0.12)", marginBottom: 20,
+              fontSize: 10, color: "rgba(var(--sg-t),0.12)", marginBottom: 20,
               fontFamily: F.m,
             }}>
               {allDays.length} {allDays.length === 1 ? "page" : "pages"} written
@@ -456,7 +497,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
             {allDays.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 10px" }}>
                 <div style={{ fontSize: 24, fontFamily: F.h, color: "rgba(201,169,110,0.05)" }}>;</div>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.06)", marginTop: 6 }}>
+                <p style={{ fontSize: 11, color: "rgba(var(--sg-t),0.06)", marginTop: 6 }}>
                   No pages yet. Go to Today and write.
                 </p>
               </div>
@@ -493,8 +534,8 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                   const loading = !!bookReflecting[day.key];
                   return (
                     <div key={day.key} style={{
-                      background: "rgba(255,255,255,0.012)",
-                      border: `1px solid ${isOpen ? "rgba(201,169,110,0.1)" : "rgba(255,255,255,0.025)"}`,
+                      background: "rgba(var(--sg-t),0.012)",
+                      border: `1px solid ${isOpen ? "rgba(201,169,110,0.1)" : "rgba(var(--sg-t),0.025)"}`,
                       borderRadius: 9, marginBottom: 8, overflow: "hidden",
                       borderLeft: `3px solid ${isOpen ? "rgba(201,169,110,0.25)" : "rgba(201,169,110,0.08)"}`,
                       transition: "border-color 0.2s",
@@ -504,10 +545,10 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                         width: "100%", background: "none", border: "none",
                         padding: "10px 12px", cursor: "pointer",
                         display: "flex", justifyContent: "space-between", alignItems: "center",
-                        borderBottom: isOpen ? "1px solid rgba(255,255,255,0.025)" : "none",
+                        borderBottom: isOpen ? "1px solid rgba(var(--sg-t),0.025)" : "none",
                       }}>
                         <span style={{
-                          fontSize: 10, color: isOpen ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)",
+                          fontSize: 10, color: isOpen ? "rgba(var(--sg-t),0.4)" : "rgba(var(--sg-t),0.2)",
                           fontFamily: F.b, transition: "color 0.2s",
                         }}>{day.date}</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -538,7 +579,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                           {day.passage?.trim() && (
                             <div style={{ padding: "12px 14px" }}>
                               <p style={{
-                                fontSize: 13, color: "rgba(255,255,255,0.5)",
+                                fontSize: 13, color: "rgba(var(--sg-t),0.5)",
                                 lineHeight: 1.8, fontFamily: F.h, margin: 0,
                                 whiteSpace: "pre-wrap",
                               }}>{day.passage}</p>
@@ -565,7 +606,7 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                               }}>reading signal…</div>
                             ) : (
                               <p style={{
-                                fontSize: 12, color: "rgba(255,255,255,0.4)",
+                                fontSize: 12, color: "rgba(var(--sg-t),0.4)",
                                 lineHeight: 1.75, fontFamily: F.h, margin: 0,
                               }}>{beacon || "—"}</p>
                             )}
@@ -587,10 +628,10 @@ Name what signal this thread carries. If it rhymes with another thread, name the
               <div style={{ fontSize: 32, fontFamily: F.h, color: G, marginBottom: 8 }}>s;</div>
               <h2 style={{
                 fontFamily: F.h, fontSize: 16, fontWeight: 400,
-                color: "rgba(255,255,255,0.65)", marginBottom: 8,
+                color: "rgba(var(--sg-t),0.65)", marginBottom: 8,
               }}>sgrounds</h2>
               <p style={{
-                fontSize: 12, color: "rgba(255,255,255,0.2)", fontFamily: F.h,
+                fontSize: 12, color: "rgba(var(--sg-t),0.2)", fontFamily: F.h,
                 fontStyle: "italic", lineHeight: 1.65,
               }}>
                 A lighthouse for your soul. One page per day. History doesn't repeat itself but it rhymes — this helps you hear the rhyme.
@@ -613,11 +654,11 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                 }}>{i + 1}</div>
                 <div>
                   <div style={{
-                    fontSize: 11, color: "rgba(255,255,255,0.4)",
+                    fontSize: 11, color: "rgba(var(--sg-t),0.4)",
                     fontWeight: 500, marginBottom: 1,
                   }}>{t}</div>
                   <div style={{
-                    fontSize: 10, color: "rgba(255,255,255,0.15)", lineHeight: 1.65,
+                    fontSize: 10, color: "rgba(var(--sg-t),0.15)", lineHeight: 1.65,
                   }}>{d}</div>
                 </div>
               </div>
@@ -638,12 +679,12 @@ Name what signal this thread carries. If it rhymes with another thread, name the
                   textAlign: "center", letterSpacing: "0.15em", marginBottom: 6,
                 }}>S ; R → N</div>
                 <p style={{
-                  fontSize: 9, color: "rgba(255,255,255,0.15)", lineHeight: 1.7,
+                  fontSize: 9, color: "rgba(var(--sg-t),0.15)", lineHeight: 1.7,
                 }}>
                   Source ; Receiver → the New. Your soul is the source. The page is the receiver. What emerges is wyrd — the chapter that outlasts you. The semicolon is the shuttle of the loom. It holds two truths without collapsing either.
                 </p>
                 <p style={{
-                  fontSize: 9, color: "rgba(255,255,255,0.08)", lineHeight: 1.7, marginTop: 8,
+                  fontSize: 9, color: "rgba(var(--sg-t),0.08)", lineHeight: 1.7, marginTop: 8,
                 }}>
                   Urðr · What Was — your book, your archive, your threads already spun.<br />
                   Verðandi · What Is — today's passage, this moment, the present thread.<br />
@@ -666,10 +707,10 @@ Name what signal this thread carries. If it rhymes with another thread, name the
         {/* Footer */}
         <div style={{
           textAlign: "center", padding: "18px 0",
-          borderTop: "1px solid rgba(255,255,255,0.015)",
+          borderTop: "1px solid rgba(var(--sg-t),0.015)",
         }}>
           <span style={{
-            fontSize: 7, color: "rgba(255,255,255,0.03)",
+            fontSize: 7, color: "rgba(var(--sg-t),0.03)",
             fontFamily: F.m, letterSpacing: "0.1em",
           }}>S ; R → N</span>
         </div>
@@ -680,11 +721,11 @@ Name what signal this thread carries. If it rhymes with another thread, name the
 
 const inputStyle = {
   width: "100%",
-  background: "rgba(255,255,255,0.03)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  background: "rgba(var(--sg-t),0.03)",
+  border: "1px solid rgba(var(--sg-t),0.06)",
   borderRadius: 9,
   padding: "12px 14px",
-  color: "#fff",
+  color: "rgba(var(--sg-t),0.85)",
   fontSize: 14,
   fontFamily: "'DM Sans',sans-serif",
   resize: "vertical",
@@ -692,11 +733,13 @@ const inputStyle = {
 
 function Shell({ children }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#09090a", color: "#fff", fontFamily: "'DM Sans',sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 120s ease, color 120s ease" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
+        :root { --sg-bg: rgb(9,9,10); --sg-t: 255,255,255; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { background: #09090a; }
+        html, body { background: var(--sg-bg); transition: background 120s ease; }
+        textarea, input { transition: background-color 120s ease, border-color 120s ease, color 120s ease; }
         @keyframes breathe { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         textarea:focus, input:focus { outline: none; border-color: rgba(201,169,110,0.25) !important; }
