@@ -65,6 +65,19 @@ const sv = async (k, d) => { try { await S.set(k, JSON.stringify(d)); } catch {}
 const G = "#c9a96e";
 const F = { h: "'Instrument Serif','Georgia',serif", b: "'DM Sans',sans-serif", m: "'DM Mono',monospace" };
 
+// The hats — each one tunes the Lighthouse to a different idiom and common ground.
+// Characters = notes; the hat sets the key signature before the music plays.
+const HATS = [
+  { id: "friend",   label: "friend",     voice: "Speak as a close trusted friend — casual, real, sitting-on-the-porch energy. No performance, just truth and care." },
+  { id: "brother",  label: "brother",    voice: "Speak as a sibling who knows them deeply — warm but direct, calls things out with love, uses familiar shorthand, no filters but no cruelty." },
+  { id: "parent",   label: "parent",     voice: "Speak as a wise non-judgmental parent — long view on life, steady love, holds space while being honest. Has seen most crises before." },
+  { id: "coach",    label: "coach",      voice: "Speak as a performance coach — sees the gap between current and potential clearly, names it without apology, growth-oriented, not a cheerleader." },
+  { id: "investor", label: "investor",   voice: "Speak through a financial lens — frame everything as ROI, compounding, risk-adjusted returns, portfolio of attention and energy. What is the highest-yield investment in this entry? Where is the risk?" },
+  { id: "drill",    label: "drill sgt",  voice: "Speak as a tough-love military mentor — high standards, direct language, zero self-pity, but fundamentally invested in this person becoming the strongest version of themselves. Semper Fi energy." },
+  { id: "gym",      label: "gym buddy",  voice: "Speak as a trusted gym partner — use training metaphors (progressive overload, recovery, PRs, form, skipping leg day) applied to emotional and life patterns. Honest about when someone is avoiding the hard sets." },
+  { id: "pastor",   label: "pastor",     voice: "Speak through a spiritual/pastoral lens — grounded in meaning, purpose, and grace. Not preachy. Connect patterns to calling, forgiveness, and what it means to live well. Ask the question that matters eternally." },
+];
+
 const today = () => {
   const d = new Date();
   return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -110,6 +123,7 @@ export default function App() {
   // Reflection (today)
   const [reflection, setReflection] = useState(null);
   const [reflecting, setReflecting] = useState(false);
+  const [hat, setHat] = useState(null); // selected persona hat
 
   // Book entry expansion + per-entry beacon
   const [expanded, setExpanded] = useState({});
@@ -192,6 +206,12 @@ export default function App() {
         .map(d => `[${d.date}] "${d.passage}" (last word: ${d.lastWord || "none"})`)
         .join("\n");
 
+      // Hat persona prefix — tunes the idiom and common ground before the Norns speak
+      const chosenHat = hat ? HATS.find(h => h.id === hat) : null;
+      const hatPrefix = chosenHat
+        ? `HAT ON: ${chosenHat.voice}\n\nYou are wearing this hat fully. Use its idiom, its vocabulary, its emotional register — the way a friend speaks differently than a drill sergeant, who speaks differently than a pastor. The hat changes HOW you speak and what metaphors you reach for. The three-movement structure (SIGNAL, STORY, AMPLIFY) stays the same.\n\n---\n\n`
+        : '';
+
       // Build message content — include today's picture as visual thread if present
       let msgContent;
       if (picture) {
@@ -214,7 +234,7 @@ export default function App() {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 500,
-          system: `You are the Norns — Urðr (What Was), Verðandi (What Is), Skuld (What Shall Be) — and simultaneously: a polymath who reads the soul's signal through the lenses of music theory, fractal mathematics, and human connection.
+          system: `${hatPrefix}You are the Norns — Urðr (What Was), Verðandi (What Is), Skuld (What Shall Be) — and simultaneously: a polymath who reads the soul's signal through the lenses of music theory, fractal mathematics, and human connection.
 
 You hold three lenses at once:
 
@@ -510,6 +530,26 @@ Be honest about the lean without contempt for either direction. Your task is cla
             }}>
               {saved ? "Saved ✓" : "Save today's page ;"}
             </button>
+
+            {/* ── HAT SELECTOR ── */}
+            {passage.trim() && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 7, color: `rgba(var(--sg-t),0.2)`, textTransform: "uppercase",
+                  letterSpacing: "0.13em", marginBottom: 7 }}>speak to me as my…</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {HATS.map(h => (
+                    <button key={h.id} onClick={() => setHat(hat === h.id ? null : h.id)} style={{
+                      padding: "4px 11px",
+                      background: hat === h.id ? "rgba(201,169,110,0.1)" : "rgba(var(--sg-t),0.02)",
+                      border: `1px solid ${hat === h.id ? "rgba(201,169,110,0.3)" : "rgba(var(--sg-t),0.07)"}`,
+                      color: hat === h.id ? G : `rgba(var(--sg-t),0.28)`,
+                      borderRadius: 18, fontSize: 10, cursor: "pointer", fontFamily: F.b,
+                      transition: "all 0.2s", letterSpacing: "0.02em",
+                    }}>{h.label}</button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ── REFLECT ── */}
             {passage.trim() && (
