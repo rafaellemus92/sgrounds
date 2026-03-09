@@ -14,16 +14,16 @@ import { useState, useEffect, useRef, useMemo } from "react";
 // bg: RGB triplet for page background
 // t:  RGB triplet for text (inverts with bg to maintain contrast)
 const THEME_NODES = [
-  { h: 0,    bg: [248,245,240], t: [40,30,18]  }, // night — warm parchment
-  { h: 6,    bg: [255,246,224], t: [50,36,10]  }, // pre-dawn — soft gold
-  { h: 6.5,  bg: [255,235,200], t: [50,28,8]   }, // dawn — warm peach
-  { h: 8,    bg: [255,255,255], t: [30,24,16]  }, // morning — pure white
-  { h: 17,   bg: [255,255,255], t: [30,24,16]  }, // afternoon — pure white
-  { h: 18.5, bg: [255,220,130], t: [55,30,8]   }, // golden hour — amber
-  { h: 19.5, bg: [255,200,160], t: [55,28,10]  }, // sunset — warm peach
-  { h: 21,   bg: [248,240,225], t: [40,30,15]  }, // dusk — warm parchment
-  { h: 22,   bg: [248,245,240], t: [40,30,18]  }, // night — warm parchment
-  { h: 24,   bg: [248,245,240], t: [40,30,18]  },
+  { h: 0,    bg: [250,248,244], t: [40,30,18]  }, // night — warm off-white
+  { h: 6,    bg: [252,250,245], t: [45,34,16]  }, // pre-dawn — soft cream
+  { h: 7,    bg: [254,252,248], t: [40,30,16]  }, // dawn — near-white
+  { h: 8,    bg: [255,255,253], t: [35,28,16]  }, // morning — clean white
+  { h: 17,   bg: [255,255,253], t: [35,28,16]  }, // afternoon — clean white
+  { h: 18.5, bg: [255,252,242], t: [42,32,14]  }, // golden hour — whisper of warmth
+  { h: 19.5, bg: [253,249,240], t: [42,30,16]  }, // sunset — soft cream
+  { h: 21,   bg: [251,248,243], t: [40,30,16]  }, // dusk — warm off-white
+  { h: 22,   bg: [250,248,244], t: [40,30,18]  }, // night — warm off-white
+  { h: 24,   bg: [250,248,244], t: [40,30,18]  },
 ];
 const _lr = (a, b, p) => a.map((v, i) => Math.round(v + (b[i] - v) * p));
 const _ss = p => p * p * (3 - 2 * p); // smoothstep easing
@@ -401,16 +401,17 @@ Constraint: if the entry is simple, let the reflection be simple. Match the weig
     if (inspoType !== "lyric" || !inspoArtist.trim() || inspoArtist.length < 2) {
       setInspoSongs([]); return;
     }
+    const ac = new AbortController();
     const t = setTimeout(async () => {
       setInspoSearching(true);
       try {
-        const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(inspoArtist)}&media=music&entity=song&limit=6`);
+        const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(inspoArtist)}&media=music&entity=song&limit=6`, { signal: ac.signal });
         const d = await r.json();
-        setInspoSongs(d.results || []);
-      } catch { setInspoSongs([]); }
-      setInspoSearching(false);
+        if (!ac.signal.aborted) setInspoSongs(d.results || []);
+      } catch (e) { if (e.name !== 'AbortError') setInspoSongs([]); }
+      if (!ac.signal.aborted) setInspoSearching(false);
     }, 600);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); ac.abort(); };
   }, [inspoArtist, inspoType]);
 
   // iTunes movie search — debounced 600ms, fires when film title field changes
@@ -418,16 +419,17 @@ Constraint: if the entry is simple, let the reflection be simple. Match the weig
     if (inspoType !== "film" || !inspoArtist.trim() || inspoArtist.length < 2) {
       setFilmSuggestions([]); return;
     }
+    const ac = new AbortController();
     const t = setTimeout(async () => {
       setFilmSearching(true);
       try {
-        const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(inspoArtist)}&media=movie&entity=movie&limit=6`);
+        const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(inspoArtist)}&media=movie&entity=movie&limit=6`, { signal: ac.signal });
         const d = await r.json();
-        setFilmSuggestions(d.results || []);
-      } catch { setFilmSuggestions([]); }
-      setFilmSearching(false);
+        if (!ac.signal.aborted) setFilmSuggestions(d.results || []);
+      } catch (e) { if (e.name !== 'AbortError') setFilmSuggestions([]); }
+      if (!ac.signal.aborted) setFilmSearching(false);
     }, 600);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); ac.abort(); };
   }, [inspoArtist, inspoType]);
 
   // Scripture book/surah autocomplete — local fuzzy match, no API needed
@@ -451,38 +453,37 @@ Constraint: if the entry is simple, let the reflection be simple. Match the weig
   useEffect(() => {
     if (inspoType !== "scripture" || !inspoArtist.trim()) return;
     if (!/\d+\s*:\s*\d+/.test(inspoArtist)) return;
+    const ac = new AbortController();
     const t = setTimeout(async () => {
       setScriptureSearching(true);
       try {
         const ref = inspoArtist.trim();
+        const sig = ac.signal;
         let text = null;
         if (scriptTrad === "quran") {
-          // alquran.cloud — numeric surah:ayah (e.g. "2:255")
           const m = ref.match(/(\d+)\s*:\s*(\d+)/);
           if (m) {
-            const r = await fetch(`https://api.alquran.cloud/v1/ayah/${m[1]}:${m[2]}/en.sahih`);
+            const r = await fetch(`https://api.alquran.cloud/v1/ayah/${m[1]}:${m[2]}/en.sahih`, { signal: sig });
             const d = await r.json();
             if (d.data?.text) text = d.data.text.trim();
           }
         } else if (scriptTrad === "torah") {
-          // Sefaria — accepts "Genesis 1:1", "Proverbs 3:5", etc.
-          const r = await fetch(`https://www.sefaria.org/api/texts/${encodeURIComponent(ref)}?context=0`);
+          const r = await fetch(`https://www.sefaria.org/api/texts/${encodeURIComponent(ref)}?context=0`, { signal: sig });
           const d = await r.json();
           if (d.text) {
             const raw = Array.isArray(d.text) ? d.text.flat().filter(Boolean).join(' ') : d.text;
             text = raw.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
           }
         } else {
-          // Bible (default / explicit)
-          const r = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}`);
+          const r = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}`, { signal: sig });
           const d = await r.json();
           if (d.text && !d.error) text = d.text.trim().replace(/\s+/g, ' ');
         }
-        if (text) { setInspoText(text); setSaved(false); }
-      } catch {}
-      setScriptureSearching(false);
+        if (!ac.signal.aborted && text) { setInspoText(text); setSaved(false); }
+      } catch (e) { if (e.name === 'AbortError') return; }
+      if (!ac.signal.aborted) setScriptureSearching(false);
     }, 800);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); ac.abort(); setScriptureSearching(false); };
   }, [inspoArtist, inspoType, scriptTrad]);
 
   // AI pull — scripture verse, poem excerpt, or film quote based on passage/keyword
@@ -2167,7 +2168,7 @@ function Shell({ children }) {
     <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 60s ease, color 60s ease" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
-        :root { --sg-bg: rgb(248,245,240); --sg-t: 40,30,18; }
+        :root { --sg-bg: rgb(250,248,244); --sg-t: 40,30,18; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { background: var(--sg-bg); transition: background 60s ease; }
         textarea, input { transition: background-color 60s ease, border-color 60s ease, color 60s ease; }
