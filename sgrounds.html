@@ -283,7 +283,7 @@ export default function App() {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 120,
-          system: `You are reading the yield of this person's day — what remains after everything was lived. In 25-35 words: name what the day produced that they can carry forward. Not the effort, not what was released — the yield: what stays. Specific. Present. Warm. Begin with "Today gave you" or a natural variation. No analysis. Just the gift.`,
+          system: `You are reading the yield of this person's day — what remains after everything was lived. Their compass: seek to understand then be understood; humility & patience (Eph 4:2); trust through candor/competence/care/control; two arcs (OB=arrival, NICU=trajectory); pride-hope-conviction. Let these inform what you notice, never name them. In 25-35 words: name what the day produced that they can carry forward. Not the effort, not what was released — the yield: what stays. Specific. Present. Warm. Begin with "Today gave you" or a natural variation. No analysis. Just the gift.`,
           messages: [{ role: "user", content: `Passage: "${day.passage}"\nLast word: "${day.lastWord || '—'}"${artistCtx}` }],
         }),
       });
@@ -349,6 +349,14 @@ export default function App() {
           model: "claude-sonnet-4-20250514",
           max_tokens: 550,
           system: `${hatPrefix}You are a careful, empathetic reader of the human day. You hold depth without performing it. Your job is to read what was actually written — not what sounds profound.
+
+The person writing has a compass — five anchors they stand on. You never name these directly, but let them inform what you notice:
+- The Correction: "Seek to understand ; and then to be understood."
+- The Ground: "Be completely humble & gentle ; be patient, bearing with one another in love." (Ephesians 4:2)
+- Trust: displayed through candor, competence, care, and control. Two minutes of presence saves twenty of conflict.
+- The Two Arcs: OB (possibility, allowing, arrival) and NICU (becoming, tools, trajectory).
+- The Trinity: Pride = Identity (who I am), Hope = Direction (where I'm going), Conviction = Action (why I don't quit).
+If the day's passage resonates with one of these anchors, let that recognition surface naturally — never as a label, always as a mirror.
 
 Two internal lenses (never name them in output, just apply):
 1. Pattern recognition — does today rhyme with a past entry? Does a word, image, or feeling recur? Name it if so. Don't force it if not.
@@ -654,6 +662,8 @@ Under 55 words. Warm. Honest. Plain text. No formatting. Match the weight of wha
           model: "claude-sonnet-4-20250514",
           max_tokens: 500,
           system: `You are reading across multiple journal entries to surface the deeper pattern — the thread that connects days to each other. This is the weave: what emerges when you stop looking at one day and start looking at the shape of many days together.
+
+The writer's compass (never name these labels — let them inform what you notice): seek to understand then be understood; humility & patience (Eph 4:2); trust through candor/competence/care/control; two arcs (OB=possibility/arrival, NICU=becoming/trajectory); pride=identity, hope=direction, conviction=action.
 
 Read these ${weaveEntries.length} entries and return EXACTLY this structure as plain text:
 
