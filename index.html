@@ -180,6 +180,8 @@ Respond as plain text only.`;
       // Reflection
       const [reflection, setReflection]   = useState(null);
       const [reflecting, setReflecting]   = useState(false);
+      const [amplifying, setAmplifying]   = useState(false);
+      const fileRef = useRef(null);
 
       const dk = dateKey();
 
@@ -275,6 +277,37 @@ Respond as plain text only.`;
         setReflecting(false);
       };
 
+      // Amplify image description via LLM
+      const amplifyDesc = async () => {
+        if (!picDesc.trim()) return;
+        const key = localStorage.getItem("sg-apikey");
+        if (!key) { setShowKeyModal(true); return; }
+        setAmplifying(true);
+        try {
+          const r = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": key,
+              "anthropic-version": "2023-06-01",
+              "anthropic-dangerous-direct-browser-access": "true",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 120,
+              system: "You are a lyric distiller. Take a raw image description and rewrite it in 1–2 sentences of precise, sensory, evocative prose — no sentimentality, no metaphors unless they're earned. Preserve every concrete detail. Remove nothing important. Return only the rewritten description, nothing else.",
+              messages: [{ role: "user", content: picDesc }],
+            }),
+          });
+          const d = await r.json();
+          if (!d.error) {
+            const amplified = d.content?.map(i => i.text || "").join("").trim();
+            if (amplified) { setPicDesc(amplified); setSaved(false); }
+          }
+        } catch {}
+        setAmplifying(false);
+      };
+
       // Time
       const h    = String(now.getHours() % 12 || 12).padStart(2, "0");
       const min  = String(now.getMinutes()).padStart(2, "0");
@@ -332,21 +365,10 @@ Respond as plain text only.`;
 
               {/* Timestamp block */}
               <div style={{ textAlign:"center", padding:"8px 0 6px", flexShrink:0 }}>
-                <div style={{ fontSize:8, color:"rgba(201,169,110,0.3)", fontFamily:F.m, letterSpacing:"0.1em", marginBottom:2 }}>
-                  {dateLabel.toUpperCase()}
+                <div style={{ fontSize:9, color:"rgba(201,169,110,0.3)", fontFamily:F.m, letterSpacing:"0.09em", marginBottom:5 }}>
+                  {dateLabel.toUpperCase()} · {h}:{min}:{sec} {ampm} {tz}
                 </div>
-                <div style={{ display:"flex", alignItems:"baseline", justifyContent:"center", gap:0, lineHeight:1 }}>
-                  <span style={{ fontSize:30, fontFamily:F.m, fontWeight:300, color:"rgba(255,255,255,0.88)", letterSpacing:"0.04em" }}>
-                    {h}:{min}
-                  </span>
-                  <span style={{ fontSize:17, fontFamily:F.m, fontWeight:300, color:"rgba(255,255,255,0.28)", letterSpacing:"0.04em" }}>
-                    :{sec}
-                  </span>
-                  <span style={{ fontSize:9, fontFamily:F.m, color:"rgba(255,255,255,0.15)", marginLeft:5 }}>
-                    {ampm} {tz}
-                  </span>
-                </div>
-                <p style={{ fontSize:13, color:"rgba(255,255,255,0.25)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.4, marginTop:5 }}>
+                <p style={{ fontSize:13, color:"rgba(255,255,255,0.25)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.4 }}>
                   {prompt}
                 </p>
               </div>
@@ -355,7 +377,7 @@ Respond as plain text only.`;
               <div style={{ marginBottom:7, flexShrink:0 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
                   <label style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", fontFamily:F.b }}>
-                    Your passage
+                    What's on your mind
                   </label>
                   <span style={{
                     fontSize:8, fontFamily:F.m,
@@ -401,23 +423,37 @@ Respond as plain text only.`;
                       }}>×</button>
                     </div>
                   ) : (
-                    <label style={{
-                      display:"flex", alignItems:"center", justifyContent:"center",
-                      height:40, border:"1px dashed rgba(201,169,110,0.08)", borderRadius:8,
-                      cursor:"pointer", color:"rgba(201,169,110,0.2)", fontSize:11, fontFamily:F.b,
-                    }}>
-                      <input type="file" accept="image/*" onChange={handlePicture} style={{ display:"none" }}/>
-                      Tap to add
-                    </label>
+                    <>
+                      <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handlePicture} style={{ display:"none" }}/>
+                      <div
+                        onClick={() => fileRef.current && fileRef.current.click()}
+                        style={{
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                          height:40, border:"1px dashed rgba(201,169,110,0.08)", borderRadius:8,
+                          cursor:"pointer", color:"rgba(201,169,110,0.2)", fontSize:11, fontFamily:F.b,
+                        }}>
+                        Tap to add
+                      </div>
+                    </>
                   )
                 ) : (
-                  <textarea
-                    value={picDesc}
-                    onChange={e => { setPicDesc(e.target.value); setSaved(false); }}
-                    placeholder="Describe a moment that stood out — the image your mind took today."
-                    rows={2}
-                    style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", lineHeight:1.5 }}
-                  />
+                  <>
+                    <textarea
+                      value={picDesc}
+                      onChange={e => { setPicDesc(e.target.value); setSaved(false); }}
+                      placeholder="Describe a moment that stood out — the image your mind took today."
+                      rows={2}
+                      style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", lineHeight:1.5 }}
+                    />
+                    {picDesc.trim() && (
+                      <button onClick={amplifyDesc} disabled={amplifying} style={{
+                        marginTop:4, padding:"4px 10px", fontSize:9, cursor:"pointer", fontFamily:F.b,
+                        background:"rgba(201,169,110,0.06)", border:"1px solid rgba(201,169,110,0.12)",
+                        color: amplifying ? "rgba(201,169,110,0.25)" : "rgba(201,169,110,0.45)",
+                        borderRadius:6,
+                      }}>{amplifying ? "Amplifying..." : "✦ Amplify"}</button>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -433,6 +469,24 @@ Respond as plain text only.`;
                   spellCheck={false}
                   style={{ ...inputStyle, fontSize:20, fontFamily:F.h, textAlign:"center", padding:"9px 14px", letterSpacing:"0.05em" }}
                 />
+                {/* Suggestion pool — past user words + universals */}
+                {!lastWord && (() => {
+                  const universals = ["enough","peace","home","grateful","still","ready","loved","clear","open","rest","done","safe","here","free","yes"];
+                  const pastWords = allDays.filter(d => d.lastWord?.trim() && d.key !== dk).map(d => d.lastWord.trim().toLowerCase());
+                  const pool = [...new Set([...pastWords, ...universals])].slice(0, 12);
+                  return (
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:5 }}>
+                      {pool.map(w => (
+                        <button key={w} onClick={() => { setLastWord(w); setSaved(false); }} style={{
+                          fontSize:10, padding:"3px 9px", borderRadius:6, cursor:"pointer",
+                          fontFamily:F.h, fontStyle:"italic",
+                          background:"rgba(201,169,110,0.04)", border:"1px solid rgba(201,169,110,0.07)",
+                          color:"rgba(201,169,110,0.35)",
+                        }}>{w}</button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Quote — optional */}
