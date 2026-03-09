@@ -14,16 +14,16 @@ import { useState, useEffect, useRef, useMemo } from "react";
 // bg: RGB triplet for page background
 // t:  RGB triplet for text (inverts with bg to maintain contrast)
 const THEME_NODES = [
-  { h: 0,    bg: [12,10,8],      t: [255,255,255] }, // night — near-black
-  { h: 5,    bg: [12,10,8],      t: [255,255,255] }, // pre-dawn
-  { h: 6.5,  bg: [255,235,200],  t: [50,28,8]     }, // dawn — warm peach
-  { h: 8,    bg: [255,255,255],  t: [30,24,16]    }, // morning — pure white
-  { h: 17,   bg: [255,255,255],  t: [30,24,16]    }, // afternoon — pure white
-  { h: 18.5, bg: [255,200,80],   t: [40,18,4]     }, // golden hour — amber
-  { h: 19.5, bg: [210,85,25],    t: [255,228,190] }, // sunset — deep orange
-  { h: 21,   bg: [18,12,8],      t: [255,248,238] }, // dusk into night
-  { h: 22,   bg: [12,10,8],      t: [255,255,255] }, // night
-  { h: 24,   bg: [12,10,8],      t: [255,255,255] },
+  { h: 0,    bg: [248,245,240], t: [40,30,18]  }, // night — warm parchment
+  { h: 6,    bg: [255,246,224], t: [50,36,10]  }, // pre-dawn — soft gold
+  { h: 6.5,  bg: [255,235,200], t: [50,28,8]   }, // dawn — warm peach
+  { h: 8,    bg: [255,255,255], t: [30,24,16]  }, // morning — pure white
+  { h: 17,   bg: [255,255,255], t: [30,24,16]  }, // afternoon — pure white
+  { h: 18.5, bg: [255,220,130], t: [55,30,8]   }, // golden hour — amber
+  { h: 19.5, bg: [255,200,160], t: [55,28,10]  }, // sunset — warm peach
+  { h: 21,   bg: [248,240,225], t: [40,30,15]  }, // dusk — warm parchment
+  { h: 22,   bg: [248,245,240], t: [40,30,18]  }, // night — warm parchment
+  { h: 24,   bg: [248,245,240], t: [40,30,18]  },
 ];
 const _lr = (a, b, p) => a.map((v, i) => Math.round(v + (b[i] - v) * p));
 const _ss = p => p * p * (3 - 2 * p); // smoothstep easing
@@ -141,6 +141,8 @@ export default function App() {
   const [inspoSong, setInspoSong] = useState(""); // selected song title from iTunes lookup
   const [inspoSongs, setInspoSongs] = useState([]); // iTunes search results dropdown
   const [inspoSearching, setInspoSearching] = useState(false);
+  const [inspoPulling, setInspoPulling] = useState(false); // AI pull for scripture/poem/film
+  const [scriptureSearching, setScriptureSearching] = useState(false); // bible-api auto-lookup
 
   // Time machine — drill into a specific book entry as a full-page view
   const [timeMachineKey, setTimeMachineKey] = useState(null);
@@ -370,6 +372,71 @@ Minimal entropy. Maximum coupling efficiency. Every word in your output should d
     }, 600);
     return () => clearTimeout(t);
   }, [inspoArtist, inspoType]);
+
+  // Scripture auto-fetch — when reference looks like "Book chapter:verse", pull from bible-api.com
+  useEffect(() => {
+    if (inspoType !== "scripture" || !inspoArtist.trim()) return;
+    if (!/\d+\s*:\s*\d+/.test(inspoArtist)) return;
+    const t = setTimeout(async () => {
+      setScriptureSearching(true);
+      try {
+        const r = await fetch(`https://bible-api.com/${encodeURIComponent(inspoArtist.trim())}`);
+        const d = await r.json();
+        if (d.text && !d.error) {
+          setInspoText(d.text.trim().replace(/\s+/g, ' '));
+          setSaved(false);
+        }
+      } catch {}
+      setScriptureSearching(false);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [inspoArtist, inspoType]);
+
+  // AI pull — scripture verse, poem excerpt, or film quote based on passage/keyword
+  const pullInspo = async () => {
+    if (!apiKey) return;
+    setInspoPulling(true);
+    try {
+      const refCtx = inspoArtist.trim();
+      const passageCtx = passage.trim() ? `\nJournal entry: "${passage.slice(0, 200)}"` : '';
+      let sys, userMsg;
+      if (inspoType === "scripture") {
+        sys = `You are a scholar of sacred texts — Bible (KJV/NIV), Quran, Torah, Psalms, Proverbs, Gospels. Return ONE verse that resonates. Format EXACTLY:\n[verse text]\n— Book Chapter:Verse (translation)\nPlain text only. No extra explanation.`;
+        userMsg = refCtx ? `Find a verse related to: ${refCtx}${passageCtx}` : `Find a verse that resonates with:${passageCtx}`;
+      } else if (inspoType === "poem") {
+        sys = `You are a poetry librarian who knows Rumi, Mary Oliver, Rilke, Hopkins, Whitman, Hughes, Dickinson, Neruda, Keats. Return ONE short excerpt (2–6 lines) that resonates. Format EXACTLY:\n[poem lines]\n— Poet Name, "Poem Title"\nPlain text only.`;
+        userMsg = refCtx ? `Find a poem by or related to: ${refCtx}${passageCtx}` : `Find a poem that resonates with:${passageCtx}`;
+      } else if (inspoType === "film") {
+        sys = `You are a film scholar. Return ONE memorable film quote that resonates. Format EXACTLY:\n[the quote]\n— Film Title (Year), Character\nPlain text only.`;
+        userMsg = refCtx ? `Find a quote from or related to: ${refCtx}${passageCtx}` : `Find a film quote that resonates with:${passageCtx}`;
+      } else {
+        sys = `You are a cultural archivist. Return ONE resonant quote from literature, music, or culture. Format: the quote, then on a new line — Source. Plain text only.`;
+        userMsg = refCtx ? `Find a quote related to: ${refCtx}${passageCtx}` : `Find a quote that resonates with:${passageCtx}`;
+      }
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 200, system: sys, messages: [{ role: "user", content: userMsg }] }),
+      });
+      const d = await r.json();
+      if (!d.error) {
+        const text = d.content?.map(i => i.text || '').join('\n').trim() || '';
+        if (text) {
+          const lines = text.split('\n').filter(l => l.trim());
+          const last = lines[lines.length - 1];
+          const isAttrib = /^[—–-]/.test(last);
+          if (isAttrib && lines.length > 1) {
+            setInspoText(lines.slice(0, -1).join('\n').replace(/^["""]|["""]$/g, '').trim());
+            setInspoArtist(last.replace(/^[—–-]\s*/, '').trim());
+          } else {
+            setInspoText(text.replace(/^["""]|["""]$/g, '').trim());
+          }
+          setSaved(false);
+        }
+      }
+    } catch {}
+    setInspoPulling(false);
+  };
 
   const toggleEntry = (key) => {
     const opening = !expanded[key];
@@ -699,9 +766,10 @@ Be honest about the lean without contempt for either direction. Your task is cla
                     <input
                       value={inspoArtist}
                       onChange={e => { setInspoArtist(e.target.value); setInspoSong(""); setSaved(false); }}
+                      onBlur={() => setTimeout(() => setInspoSongs([]), 200)}
                       placeholder={
                         inspoType === "lyric"     ? "Artist or band (e.g. Harry Styles, Kendrick…)" :
-                        inspoType === "scripture" ? "Book, chapter · verse" :
+                        inspoType === "scripture" ? "Book chapter:verse  (e.g. John 3:16, Psalm 23…)" :
                         inspoType === "film"      ? "Film title · director" :
                         inspoType === "poem"      ? "Poet · collection" :
                                                     "Source"
@@ -718,9 +786,9 @@ Be honest about the lean without contempt for either direction. Your task is cla
                     {/* Song results dropdown */}
                     {inspoSongs.length > 0 && !inspoSong && (
                       <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
-                        background: "rgb(18,16,14)", border: "1px solid rgba(201,169,110,0.12)",
+                        background: "var(--sg-bg)", border: "1px solid rgba(201,169,110,0.18)",
                         borderRadius: 8, marginTop: 3, overflow: "hidden",
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
                         {inspoSongs.map((s, i) => (
                           <button key={i} onClick={() => {
                             setInspoArtist(s.artistName);
@@ -754,6 +822,28 @@ Be honest about the lean without contempt for either direction. Your task is cla
                           fontSize: 9, color: "rgba(var(--sg-t),0.2)", fontFamily: F.b,
                         }}>×</button>
                       </div>
+                    )}
+                    {/* Scripture auto-lookup indicator */}
+                    {scriptureSearching && (
+                      <div style={{ marginTop: 5, fontSize: 9, color: "rgba(201,169,110,0.4)",
+                        fontFamily: F.m, animation: "breathe 1.2s ease-in-out infinite" }}>looking up verse…</div>
+                    )}
+                    {/* Pull button — scripture / poem / film / other */}
+                    {inspoType !== "lyric" && apiKey && (
+                      <button onClick={pullInspo} disabled={inspoPulling} style={{
+                        marginTop: 8, padding: "5px 13px",
+                        background: "rgba(201,169,110,0.07)",
+                        border: "1px solid rgba(201,169,110,0.18)",
+                        color: inspoPulling ? "rgba(201,169,110,0.3)" : "rgba(201,169,110,0.6)",
+                        borderRadius: 18, fontSize: 10, cursor: inspoPulling ? "default" : "pointer",
+                        fontFamily: F.b, letterSpacing: "0.03em", transition: "all 0.2s",
+                      }}>
+                        {inspoPulling ? "searching…" :
+                          inspoType === "scripture" ? "find a verse ›" :
+                          inspoType === "poem"      ? "pull a poem ›" :
+                          inspoType === "film"      ? "pull a quote ›" :
+                                                      "pull a quote ›"}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1387,7 +1477,7 @@ function Shell({ children }) {
     <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 60s ease, color 60s ease" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
-        :root { --sg-bg: rgb(255,255,255); --sg-t: 30,24,16; }
+        :root { --sg-bg: rgb(248,245,240); --sg-t: 40,30,18; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { background: var(--sg-bg); transition: background 60s ease; }
         textarea, input { transition: background-color 60s ease, border-color 60s ease, color 60s ease; }
