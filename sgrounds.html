@@ -822,14 +822,35 @@ Be honest about the lean without contempt for either direction. Your task is cla
               />
             </div>
 
-            {/* ── INSPIRATION / RESONANCE ── */}
+            {/* ── BRIGHTEST MOMENT / RESONANCE ── */}
             <div style={{ marginBottom: 20 }}>
               <label style={{
                 fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
-                letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 8,
-              }}>What's resonating with you today</label>
-              {/* Type chips */}
-              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+                letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 5,
+              }}>Brightest moment</label>
+              <p style={{ fontSize: 10, color: "rgba(var(--sg-t),0.13)", marginBottom: 8,
+                fontStyle: "italic", lineHeight: 1.5, fontFamily: F.b }}>
+                The scene, verse, line, or moment that hit hardest today.
+              </p>
+              {/* ONE BOX — the moment itself, always first */}
+              <textarea
+                value={inspoText}
+                onChange={e => { setInspoText(e.target.value); setSaved(false); }}
+                placeholder={
+                  inspoType === "film"      ? "Which scene? What about it hit you?…" :
+                  inspoType === "scripture" ? "Verse will appear here — or write what it means to you…" :
+                  inspoType === "lyric"     ? "The lyric that's with you today…" :
+                  inspoType === "poem"      ? "Lines that found you today…" :
+                                              "The scene, verse, line, or moment that landed…"
+                }
+                rows={3}
+                style={{ ...inputStyle, fontSize: 14, fontFamily: F.h, fontStyle: "italic",
+                  resize: "none", marginBottom: 10 }}
+              />
+              {/* Tag it — type chips as optional sourcing */}
+              <div style={{ fontSize: 8, color: "rgba(var(--sg-t),0.13)", textTransform: "uppercase",
+                letterSpacing: "0.1em", fontFamily: F.b, marginBottom: 5 }}>tag it (optional)</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: inspoType ? 8 : 0 }}>
                 {["lyric","scripture","film","poem","other"].map(t => (
                   <button key={t} onClick={() => {
                     const next = inspoType === t ? null : t;
@@ -847,88 +868,69 @@ Be honest about the lean without contempt for either direction. Your task is cla
                   }}>{t}</button>
                 ))}
               </div>
-              {/* Scripture tradition pills — which sacred archive to draw from */}
-              {inspoType === "scripture" && (
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
-                  {[
-                    { id: "bible", label: "Bible" },
-                    { id: "quran", label: "Quran" },
-                    { id: "torah", label: "Torah" },
-                  ].map(tr => (
-                    <button key={tr.id} onClick={() => { setScriptTrad(scriptTrad === tr.id ? null : tr.id); setSaved(false); }} style={{
-                      padding: "2px 9px",
-                      background: scriptTrad === tr.id ? "rgba(201,169,110,0.12)" : "rgba(var(--sg-t),0.015)",
-                      border: `1px solid ${scriptTrad === tr.id ? "rgba(201,169,110,0.35)" : "rgba(var(--sg-t),0.05)"}`,
-                      color: scriptTrad === tr.id ? G : "rgba(var(--sg-t),0.2)",
-                      borderRadius: 14, fontSize: 9, cursor: "pointer", fontFamily: F.b,
-                      transition: "all 0.2s", letterSpacing: "0.04em",
-                    }}>{tr.label}</button>
-                  ))}
-                  <span style={{ fontSize: 8, color: "rgba(var(--sg-t),0.1)", fontFamily: F.m,
-                    alignSelf: "center", paddingLeft: 2 }}>
-                    {scriptTrad === "quran" ? "type surah:ayah (e.g. 2:255)" :
-                     scriptTrad === "torah" ? "type reference (e.g. Genesis 1:1)" :
-                     scriptTrad === "bible" ? "type reference (e.g. John 3:16)" : "select a tradition"}
-                  </span>
-                </div>
-              )}
-              {/* Film genre pills — give the genres life */}
-              {inspoType === "film" && (
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
-                  {["sci-fi","drama","thriller","comedy","horror","animation"].map(g => (
-                    <button key={g} onClick={() => { setFilmGenre(filmGenre === g ? null : g); setSaved(false); }} style={{
-                      padding: "2px 9px",
-                      background: filmGenre === g ? "rgba(201,169,110,0.12)" : "rgba(var(--sg-t),0.015)",
-                      border: `1px solid ${filmGenre === g ? "rgba(201,169,110,0.35)" : "rgba(var(--sg-t),0.05)"}`,
-                      color: filmGenre === g ? G : "rgba(var(--sg-t),0.2)",
-                      borderRadius: 14, fontSize: 9, cursor: "pointer", fontFamily: F.b,
-                      transition: "all 0.2s", letterSpacing: "0.03em",
-                    }}>{g}</button>
-                  ))}
-                </div>
-              )}
-              {/* Quote / lyric text input */}
+              {/* Source details — shown only when a type is tagged */}
               {inspoType && (
-                <div>
-                  <textarea
-                    value={inspoText}
-                    onChange={e => { setInspoText(e.target.value); setSaved(false); }}
-                    placeholder={
-                      inspoType === "lyric"     ? "A lyric that's with you today…" :
-                      inspoType === "scripture" ? "Verse will appear here — or type your own…" :
-                      inspoType === "film"      ? "A line or scene you keep returning to…" :
-                      inspoType === "poem"      ? "Lines that found you today…" :
-                                                  "Something that's resonating…"
-                    }
-                    rows={2}
-                    style={{ ...inputStyle, fontSize: 13, fontFamily: F.h, fontStyle: "italic",
-                      resize: "none", marginBottom: 6 }}
-                  />
-                  {/* Artist / source search */}
+                <div style={{ animation: "slideUp 0.15s ease" }}>
+                  {/* Scripture tradition pills */}
+                  {inspoType === "scripture" && (
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
+                      {[{ id: "bible", label: "Bible" }, { id: "quran", label: "Quran" }, { id: "torah", label: "Torah" }].map(tr => (
+                        <button key={tr.id} onClick={() => { setScriptTrad(scriptTrad === tr.id ? null : tr.id); setSaved(false); }} style={{
+                          padding: "2px 9px",
+                          background: scriptTrad === tr.id ? "rgba(201,169,110,0.12)" : "rgba(var(--sg-t),0.015)",
+                          border: `1px solid ${scriptTrad === tr.id ? "rgba(201,169,110,0.35)" : "rgba(var(--sg-t),0.05)"}`,
+                          color: scriptTrad === tr.id ? G : "rgba(var(--sg-t),0.2)",
+                          borderRadius: 14, fontSize: 9, cursor: "pointer", fontFamily: F.b,
+                          transition: "all 0.2s", letterSpacing: "0.04em",
+                        }}>{tr.label}</button>
+                      ))}
+                    </div>
+                  )}
+                  {/* Film genre pills */}
+                  {inspoType === "film" && (
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
+                      {["sci-fi","drama","thriller","comedy","horror","animation"].map(g => (
+                        <button key={g} onClick={() => { setFilmGenre(filmGenre === g ? null : g); setSaved(false); }} style={{
+                          padding: "2px 9px",
+                          background: filmGenre === g ? "rgba(201,169,110,0.12)" : "rgba(var(--sg-t),0.015)",
+                          border: `1px solid ${filmGenre === g ? "rgba(201,169,110,0.35)" : "rgba(var(--sg-t),0.05)"}`,
+                          color: filmGenre === g ? G : "rgba(var(--sg-t),0.2)",
+                          borderRadius: 14, fontSize: 9, cursor: "pointer", fontFamily: F.b,
+                          transition: "all 0.2s", letterSpacing: "0.03em",
+                        }}>{g}</button>
+                      ))}
+                    </div>
+                  )}
+                  {/* Source / title / reference search input */}
                   <div style={{ position: "relative" }}>
                     <input
                       value={inspoArtist}
                       onChange={e => { setInspoArtist(e.target.value); setInspoSong(""); setSaved(false); }}
                       onBlur={() => { setTimeout(() => setInspoSongs([]), 200); setTimeout(() => setFilmSuggestions([]), 200); }}
                       placeholder={
-                        inspoType === "lyric"     ? "Artist or band (e.g. Harry Styles, Kendrick…)" :
+                        inspoType === "lyric"     ? "Artist or band — search for the song…" :
                         inspoType === "scripture" ? (
                           scriptTrad === "quran" ? "Surah name or number (e.g. Al-Baqarah, 2…)" :
-                          scriptTrad === "torah" ? "Book name (e.g. Genesis, Psalms…)" :
-                          "Book name (e.g. John, Psalms, Romans…)"
+                          scriptTrad === "torah" ? "Book + reference (e.g. Genesis 1:1)" :
+                          "Book + reference (e.g. John 3:16, Psalms 23…)"
                         ) :
-                        inspoType === "film"      ? "Movie title (e.g. Interstellar, Arrival…)" :
+                        inspoType === "film"      ? "Film title — search to confirm (e.g. Interstellar…)" :
                         inspoType === "poem"      ? "Poet · collection" :
                                                     "Source"
                       }
                       style={{ ...inputStyle, fontSize: 11, fontFamily: F.b,
                         color: inspoSong ? G : "rgba(201,169,110,0.5)",
-                        paddingRight: (inspoSearching || filmSearching) ? 30 : undefined }}
+                        paddingRight: (inspoSearching || filmSearching || scriptureSearching) ? 30 : undefined }}
                     />
                     {(inspoSearching || filmSearching) && (
                       <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
                         fontSize: 8, color: "rgba(201,169,110,0.3)", fontFamily: F.m,
                         animation: "breathe 1.2s ease-in-out infinite" }}>searching…</div>
+                    )}
+                    {scriptureSearching && (
+                      <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                        fontSize: 8, color: "rgba(201,169,110,0.3)", fontFamily: F.m,
+                        animation: "breathe 1.2s ease-in-out infinite" }}>fetching verse…</div>
                     )}
                     {/* Song results dropdown */}
                     {inspoSongs.length > 0 && !inspoSong && (
@@ -948,9 +950,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
                             border: "none", borderBottom: i < inspoSongs.length - 1 ? "1px solid rgba(201,169,110,0.05)" : "none",
                             cursor: "pointer",
                           }}>
-                            <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>
-                              {s.trackName}
-                            </div>
+                            <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>{s.trackName}</div>
                             <div style={{ fontSize: 9, color: "rgba(201,169,110,0.3)", fontFamily: F.b, marginTop: 1 }}>
                               {s.artistName} · {s.collectionName}
                             </div>
@@ -958,7 +958,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
                         ))}
                       </div>
                     )}
-                    {/* Film movie suggestions dropdown */}
+                    {/* Film suggestions dropdown */}
                     {inspoType === "film" && filmSuggestions.length > 0 && (
                       <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
                         background: "var(--sg-bg)", border: "1px solid rgba(201,169,110,0.18)",
@@ -975,11 +975,9 @@ Be honest about the lean without contempt for either direction. Your task is cla
                             border: "none", borderBottom: i < filmSuggestions.length - 1 ? "1px solid rgba(201,169,110,0.05)" : "none",
                             cursor: "pointer",
                           }}>
-                            <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>
-                              {f.trackName}
-                            </div>
+                            <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>{f.trackName}</div>
                             <div style={{ fontSize: 9, color: "rgba(201,169,110,0.3)", fontFamily: F.b, marginTop: 1 }}>
-                              {f.artistName} · {f.releaseDate?.slice(0,4)} · {f.primaryGenreName}
+                              {f.releaseDate?.slice(0,4)} · {f.primaryGenreName}
                             </div>
                           </button>
                         ))}
@@ -996,21 +994,16 @@ Be honest about the lean without contempt for either direction. Your task is cla
                           const label = isQuran ? `${item.name} (${item.n})` : item;
                           const setValue = isQuran ? `${item.n}:` : `${item} `;
                           return (
-                            <button key={i} onClick={() => {
-                              setInspoArtist(setValue);
-                              setSaved(false);
-                            }} style={{
+                            <button key={i} onClick={() => { setInspoArtist(setValue); setSaved(false); }} style={{
                               display: "block", width: "100%", textAlign: "left",
                               padding: "7px 12px", background: "none",
                               border: "none", borderBottom: i < scriptSuggestions.length - 1 ? "1px solid rgba(201,169,110,0.05)" : "none",
                               cursor: "pointer",
                             }}>
-                              <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>
-                                {label}
-                              </div>
+                              <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>{label}</div>
                               {isQuran && (
                                 <div style={{ fontSize: 8, color: "rgba(201,169,110,0.25)", fontFamily: F.m, marginTop: 1 }}>
-                                  Surah {item.n} — type :{item.n === 2 ? "255" : "1"} to fetch
+                                  Surah {item.n} — add :{item.n === 2 ? "255" : "1"} to fetch verse
                                 </div>
                               )}
                             </button>
@@ -1021,19 +1014,18 @@ Be honest about the lean without contempt for either direction. Your task is cla
                     {/* Selected song badge */}
                     {inspoSong && (
                       <div style={{ marginTop: 5, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 10, color: G, fontFamily: F.b, opacity: 0.6 }}>
-                          ♩ {inspoSong}
-                        </span>
+                        <span style={{ fontSize: 10, color: G, fontFamily: F.b, opacity: 0.6 }}>♩ {inspoSong}</span>
                         <button onClick={() => { setInspoSong(""); setSaved(false); }} style={{
                           background: "none", border: "none", cursor: "pointer",
                           fontSize: 9, color: "rgba(var(--sg-t),0.2)", fontFamily: F.b,
                         }}>×</button>
                       </div>
                     )}
-                    {/* Scripture auto-lookup indicator */}
-                    {scriptureSearching && (
-                      <div style={{ marginTop: 5, fontSize: 9, color: "rgba(201,169,110,0.4)",
-                        fontFamily: F.m, animation: "breathe 1.2s ease-in-out infinite" }}>looking up verse…</div>
+                    {/* Hint text for scripture reference format */}
+                    {inspoType === "scripture" && inspoArtist && !/\d+\s*:\s*\d+/.test(inspoArtist) && !scriptureSearching && (
+                      <div style={{ marginTop: 4, fontSize: 8, color: "rgba(var(--sg-t),0.12)", fontFamily: F.m, fontStyle: "italic" }}>
+                        {scriptTrad === "quran" ? "add :ayah to fetch (e.g. 2:255)" : "add :verse to fetch (e.g. John 3:16)"}
+                      </div>
                     )}
                     {/* Pull button — scripture / poem / film / other */}
                     {inspoType !== "lyric" && apiKey && (
@@ -1048,7 +1040,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
                         {inspoPulling ? "searching…" :
                           inspoType === "scripture" ? `find a ${scriptTrad || "verse"} verse ›` :
                           inspoType === "poem"      ? "pull a poem ›" :
-                          inspoType === "film"      ? (inspoArtist.trim() ? `pull from "${inspoArtist.trim()}" ›` : filmGenre ? `pull a ${filmGenre} quote ›` : "pull a film quote ›") :
+                          inspoType === "film"      ? (inspoArtist.trim() ? `pull a line from "${inspoArtist.trim()}" ›` : filmGenre ? `pull a ${filmGenre} quote ›` : "pull a film line ›") :
                                                       "pull a quote ›"}
                       </button>
                     )}
