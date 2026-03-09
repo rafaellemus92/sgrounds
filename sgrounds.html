@@ -190,6 +190,11 @@ export default function App() {
   const [bookReflections, setBookReflections] = useState({});
   const [bookReflecting, setBookReflecting] = useState({});
 
+  // The Weave — weekly/monthly pattern summary
+  const [weaveResult, setWeaveResult] = useState(null);
+  const [weaveLoading, setWeaveLoading] = useState(false);
+  const [weavePeriod, setWeavePeriod] = useState("week"); // "week" | "month" | "all"
+
   // Lens — media bias / signal reader
   const [lensUrl, setLensUrl] = useState("");
   const [lensText, setLensText] = useState("");
@@ -278,7 +283,7 @@ export default function App() {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 120,
-          system: `You are reading the net ATP yield of this soul's day — what usable energy was actually produced after all the metabolic work. In 25-35 words: name what the day synthesized that they can now carry forward. Not effort expended (glucose consumed), not CO₂ released (what was expressed or let go) — the ATP: the stored, usable form. Specific. Present. Warm. Begin with "Today gave you" or a natural variation. No analysis. Just the yield.`,
+          system: `You are reading the yield of this person's day — what remains after everything was lived. In 25-35 words: name what the day produced that they can carry forward. Not the effort, not what was released — the yield: what stays. Specific. Present. Warm. Begin with "Today gave you" or a natural variation. No analysis. Just the gift.`,
           messages: [{ role: "user", content: `Passage: "${day.passage}"\nLast word: "${day.lastWord || '—'}"${artistCtx}` }],
         }),
       });
@@ -343,39 +348,29 @@ export default function App() {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 550,
-          system: `${hatPrefix}You are a polymath reader of the human day: part Norn, part composer, part metabolic biochemist. You hold three simultaneous frameworks — Norse mythology (wyrd, tapestry, Loki), music theory (frequency, chord, key signature), and human metabolism (substrate → cycle → ATP). All three are lenses on the same truth. You do not announce the framework. You apply it.
+          system: `${hatPrefix}You are a careful, empathetic reader of the human day. You hold depth without performing it. Your job is to read what was actually written — not what sounds profound.
 
-━━━ THE METABOLIC LENS (background always — never stated explicitly in output) ━━━
+Two internal lenses (never name them in output, just apply):
+1. Pattern recognition — does today rhyme with a past entry? Does a word, image, or feeling recur? Name it if so. Don't force it if not.
+2. Emotional frequency — what key is this day actually in? Not what sounds poetic. What's true.
+${inspoCtx || ""}
+${artistLine ? `\n${artistLine} — let their sensibility influence your tone, not your vocabulary.` : ""}
 
-A day is a metabolic substrate entering the cell:
-• The passage = glucose at the membrane — raw fuel, not yet usable. Break it to its constituent acetyl units (irreducible 2-carbon truths from each moment).
-• Each sentence/action = a reaction step: what did it transform? What did it oxidize (release, express, let go)? What did it reduce (store as NADH — charged potential not yet expressed)?
-• The TCA cycle = where all threads converge: passage + image + lyric + last word + past entries all enter the citric acid hub and circulate. Every input leaves as a different molecule. Look for what emerges.
-• The last word = terminal electron acceptor (O₂ in oxidative phosphorylation). Everything flows toward it. Without it, the chain doesn't complete. Name why.
-• Output = ATP: minimum sufficient, maximum energy-dense. 36 molecules of clarity from one molecule of substrate. Not more. Entropy is uncoupled energy — heat, noise, friction. Eliminate it.
-• FEEDBACK INHIBITION (the pruning rule, made biochemically precise): High product = inhibited enzyme. When the core insight is reached, stop adding substrate. Efficiency > volume. The cell doesn't keep glycolyzing when ATP is full.
-
-━━━ THE MUSICAL LENS (always present) ━━━
-
-Every word is a note. The day is a 24-hour composition. Most notes are passing tones — they create movement but don't define the key. Find the tonic. Find what the day was actually in.
-${inspoCtx || "No resonance substrate given — derive the key from the passage itself."}
-${artistLine ? `\n${artistLine} = the allosteric regulator: it changes the shape of the processing enzyme without being consumed. Use their musical DNA (what they emphasize, what they prune, what they let breathe) as the modulator of this reading. Not literally — structurally.` : ""}
-
-━━━ THE TAPESTRY (Urðr — what has already been spun) ━━━
-${prevPassages || "First thread. The loom is just set."}
+Previous entries:
+${prevPassages || "First entry. No prior threads yet."}
 
 Today's last word: "${lastWord || "not yet chosen"}"
-Today's image (if present): the visual metabolite — what the eye chose to phosphorylate into memory. Let it enter the cycle.
+Today's image (if present): let it inform the reading naturally.
 
-━━━ OUTPUT — three movements, labeled exactly, no markdown inside ━━━
+OUTPUT — three movements, labeled exactly, no markdown inside:
 
-VERSE:: [30-35 words. The oxidation state of today — what was the net charge? What frequency was this soul broadcasting at the membrane level, before the day was processed? Lyrical. Dense. Not a summary — the substrate itself, named precisely.]
+VERSE:: [25-35 words. The emotional frequency of today — what was this person actually feeling beneath the surface of what they wrote? Lyrical but honest. Not a summary — the feeling itself, named.]
 
-SONG:: [65-75 words. The TCA cycle completes. This is the ATP — the day read back as its most energy-dense form. The story that remains after all tangential carbons are released as CO₂. Write it so the reader FEELS before they think. Let the myth, the math, the music, and the metabolic all speak in the same sentence. The polymath skeleton is invisible — only the insight breathes. Let the lyric/artist's allosteric influence be felt in the rhythm and weight of the words.]
+SONG:: [55-75 words. The day read back in its most distilled form. The story that remains when everything unnecessary falls away. Write so the reader feels recognized, not impressed. If a past entry rhymes with today, name the echo. Let the insight breathe — don't overwork it.]
 
-NOTE:: [18-22 words. The single highest-yield bond in today's molecule. The one coupling that produced the most ATP. Name it exactly.]
+NOTE:: [15-22 words. The one thing worth carrying from today into tomorrow. Specific. Warm. Not grand — true.]
 
-Minimal entropy. Maximum coupling efficiency. Every word in your output should do metabolic work.`,
+Constraint: if the entry is simple, let the reflection be simple. Match the weight of what was written. Not every day is mythic. Some days are just true.`,
           messages: [{ role: "user", content: msgContent }],
         }),
       });
@@ -576,16 +571,16 @@ Minimal entropy. Maximum coupling efficiency. Every word in your output should d
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 300,
-          system: `You are reading the metabolic signature of a single day in someone's life. Three lenses, applied simultaneously: (1) metabolic — what substrate entered, what was oxidized/released, what was stored as usable energy (ATP equivalent); (2) musical — what chord does this entry play, what key is it in, does it resolve or remain suspended; (3) mythological — does this thread rhyme with another in the tapestry (wyrd), and where is the Loki-moment (the branch that diverged and revealed something true)?
+          system: `You are rereading a single day in someone's journal. Look for what's true in it — not what sounds meaningful. Does this day rhyme with another entry? Name the echo if you see one. If not, just read what's here.
 
-Other threads in the tapestry:
-${ctx || "No other threads yet. This stands alone."}
+Other entries:
+${ctx || "No other entries yet."}
 
-Last word: "${day.lastWord || "none"}" — the terminal electron acceptor. What does everything reduce toward?
+Last word: "${day.lastWord || "none"}"
 
-If an image is provided, it is the visual metabolite — let it enter the cycle.
+If an image is provided, let it inform your reading naturally.
 
-Under 55 words. Name the net yield. Warm. Plain text. No formatting. Minimal entropy — every word does work.`,
+Under 55 words. Warm. Honest. Plain text. No formatting. Match the weight of what was written.`,
           messages: [{ role: "user", content: msgContent }],
         }),
       });
@@ -596,6 +591,88 @@ Under 55 words. Name the net yield. Warm. Plain text. No formatting. Minimal ent
       setBookReflections(prev => ({ ...prev, [key]: "Signal received." }));
     }
     setBookReflecting(prev => ({ ...prev, [key]: false }));
+  };
+
+  // ── The Weave — cross-entry pattern summary ────────────────────────────────
+  const weaveEntries = useMemo(() => {
+    if (!allDays.length) return [];
+    const now = new Date();
+    if (weavePeriod === "week") {
+      const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
+      return allDays.filter(d => new Date(d.key) >= cutoff);
+    }
+    if (weavePeriod === "month") {
+      const cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth() - 1);
+      return allDays.filter(d => new Date(d.key) >= cutoff);
+    }
+    return allDays;
+  }, [allDays, weavePeriod]);
+
+  const weaveLocal = useMemo(() => {
+    if (weaveEntries.length < 2) return null;
+    // Recurring last words
+    const lwCounts = {};
+    weaveEntries.forEach(d => {
+      const w = d.lastWord?.trim().toLowerCase();
+      if (w) lwCounts[w] = (lwCounts[w] || 0) + 1;
+    });
+    const recurringLW = Object.entries(lwCounts).filter(([,c]) => c > 1).sort((a,b) => b[1] - a[1]);
+    // Word frequency across passages (stop words removed)
+    const stop = new Set(["the","a","an","and","or","but","in","on","at","to","for","of","with","is","it","i","my","me","was","that","this","so","have","had","been","be","not","no","just","very","all","if","do","did","are","as","from","its","what","when","who","how","can","will","about","up","out","like","more","than","would","into","one","their","we","they","your","you","he","she","her","his","our","them","some","could","which","there","been","has","any","only","even","also","then","were","now","after","over","these","those","back","through","much","way","down","each","still","where","before","here","between","both","own","same","because","off","most","well","too","got","am","get","go","going","went","come","came","want","make","know","see","say","said","think","take","really","right","being","thing","time","day","today","felt","feel","something","don't","didn't","i'm"]);
+    const wordCounts = {};
+    weaveEntries.forEach(d => {
+      if (!d.passage) return;
+      d.passage.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !stop.has(w))
+        .forEach(w => { wordCounts[w] = (wordCounts[w] || 0) + 1; });
+    });
+    const topWords = Object.entries(wordCounts).filter(([,c]) => c > 1).sort((a,b) => b[1] - a[1]).slice(0, 12);
+    // Hat usage
+    const hatCounts = {};
+    weaveEntries.forEach(d => {
+      if (d.hat) hatCounts[d.hat] = (hatCounts[d.hat] || 0) + 1;
+    });
+    // Inspo types used
+    const inspoCounts = {};
+    weaveEntries.forEach(d => {
+      if (d.inspoType) inspoCounts[d.inspoType] = (inspoCounts[d.inspoType] || 0) + 1;
+    });
+    return { recurringLW, topWords, hatCounts: Object.entries(hatCounts).sort((a,b) => b[1] - a[1]), inspoCounts: Object.entries(inspoCounts).sort((a,b) => b[1] - a[1]), count: weaveEntries.length };
+  }, [weaveEntries]);
+
+  const generateWeave = async () => {
+    if (!apiKey || weaveEntries.length < 2) return;
+    setWeaveLoading(true);
+    setWeaveResult(null);
+    try {
+      const entrySummaries = weaveEntries.slice(0, 20).map(d =>
+        `[${d.date}] passage: "${(d.passage || '').slice(0, 150)}" | last word: "${d.lastWord || '—'}"${d.inspoArtist ? ` | resonance: ${d.inspoArtist}` : ''}`
+      ).join("\n");
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 500,
+          system: `You are reading across multiple journal entries to surface the deeper pattern — the thread that connects days to each other. This is the weave: what emerges when you stop looking at one day and start looking at the shape of many days together.
+
+Read these ${weaveEntries.length} entries and return EXACTLY this structure as plain text:
+
+THREAD:: [25-35 words. The single strongest recurring theme, emotion, or question across these entries. Name it precisely — not vaguely. What is this person circling around?]
+
+DRIFT:: [25-35 words. How has the emotional tone shifted from the earliest entry to the most recent? What direction is the inner weather moving? Name the arc, not just the endpoints.]
+
+RHYME:: [20-30 words. Two specific moments from different days that echo each other — the same feeling, image, or question appearing in different clothing. Name both.]
+
+UNSAID:: [15-25 words. What is present between the lines but never named directly? The question being avoided, or the truth being approached sideways.]
+
+Plain text only. No markdown. Warm but precise. Every word earns its place.`,
+          messages: [{ role: "user", content: entrySummaries }],
+        }),
+      });
+      const d = await r.json();
+      if (!d.error) setWeaveResult(d.content?.map(i => i.text || '').join('\n') || null);
+    } catch {}
+    setWeaveLoading(false);
   };
 
   const readSignal = async () => {
@@ -1224,6 +1301,135 @@ Be honest about the lean without contempt for either direction. Your task is cla
                   </div>
                 )}
 
+                {/* ── The Weave ── */}
+                {allDays.length >= 2 && (
+                  <div style={{
+                    marginBottom: 20, padding: "16px 16px 14px",
+                    background: "rgba(201,169,110,0.015)",
+                    border: "1px solid rgba(201,169,110,0.06)",
+                    borderRadius: 10,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <div style={{ fontSize: 8, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                        letterSpacing: "0.14em", fontFamily: F.b }}>The Weave</div>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {["week","month","all"].map(p => (
+                          <button key={p} onClick={() => { setWeavePeriod(p); setWeaveResult(null); }} style={{
+                            padding: "2px 8px",
+                            background: weavePeriod === p ? "rgba(201,169,110,0.1)" : "rgba(var(--sg-t),0.015)",
+                            border: `1px solid ${weavePeriod === p ? "rgba(201,169,110,0.25)" : "rgba(var(--sg-t),0.04)"}`,
+                            color: weavePeriod === p ? G : "rgba(var(--sg-t),0.2)",
+                            borderRadius: 12, fontSize: 9, cursor: "pointer", fontFamily: F.b,
+                          }}>{p}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Local pattern stats */}
+                    {weaveLocal && (
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 9, color: "rgba(var(--sg-t),0.15)", fontFamily: F.m, marginBottom: 6 }}>
+                          {weaveLocal.count} {weaveLocal.count === 1 ? "entry" : "entries"}
+                        </div>
+                        {weaveLocal.recurringLW.length > 0 && (
+                          <div style={{ marginBottom: 6 }}>
+                            <span style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", fontFamily: F.b, textTransform: "uppercase",
+                              letterSpacing: "0.1em" }}>recurring last words </span>
+                            <span style={{ fontSize: 11, color: G, fontFamily: F.h, fontStyle: "italic", opacity: 0.5 }}>
+                              {weaveLocal.recurringLW.map(([w, c]) => `${w} ×${c}`).join("  ·  ")}
+                            </span>
+                          </div>
+                        )}
+                        {weaveLocal.topWords.length > 0 && (
+                          <div style={{ marginBottom: 4 }}>
+                            <span style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", fontFamily: F.b, textTransform: "uppercase",
+                              letterSpacing: "0.1em" }}>recurring words </span>
+                            <span style={{ fontSize: 10, color: "rgba(var(--sg-t),0.22)", fontFamily: F.m }}>
+                              {weaveLocal.topWords.map(([w, c]) => `${w} ×${c}`).join("  ·  ")}
+                            </span>
+                          </div>
+                        )}
+                        {weaveLocal.inspoCounts.length > 0 && (
+                          <div style={{ marginBottom: 2 }}>
+                            <span style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", fontFamily: F.b, textTransform: "uppercase",
+                              letterSpacing: "0.1em" }}>resonance </span>
+                            <span style={{ fontSize: 10, color: "rgba(var(--sg-t),0.2)", fontFamily: F.m }}>
+                              {weaveLocal.inspoCounts.map(([t, c]) => `${t} ×${c}`).join("  ·  ")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* AI weave button + result */}
+                    {apiKey && weaveEntries.length >= 2 && !weaveResult && (
+                      <button onClick={generateWeave} disabled={weaveLoading} style={{
+                        padding: "6px 16px",
+                        background: "rgba(201,169,110,0.07)",
+                        border: "1px solid rgba(201,169,110,0.18)",
+                        color: weaveLoading ? "rgba(201,169,110,0.3)" : "rgba(201,169,110,0.55)",
+                        borderRadius: 18, fontSize: 10, cursor: weaveLoading ? "default" : "pointer",
+                        fontFamily: F.b, transition: "all 0.2s",
+                      }}>
+                        {weaveLoading ? "reading the threads…" : "read the weave ;"}
+                      </button>
+                    )}
+                    {weaveResult && (() => {
+                      const get = (label) => {
+                        const others = ['THREAD','DRIFT','RHYME','UNSAID'].filter(l => l !== label).join('|');
+                        const m = weaveResult.match(new RegExp(label + '::[\\s\\S]*?(?=' + others + '::|$)'));
+                        return m ? m[0].replace(label + '::', '').trim() : null;
+                      };
+                      const thread = get('THREAD'), drift = get('DRIFT'), rhyme = get('RHYME'), unsaid = get('UNSAID');
+                      const hasStructure = thread || drift || rhyme || unsaid;
+                      const sectionStyle = { borderTop: "1px solid rgba(201,169,110,0.06)", marginTop: 10, paddingTop: 10 };
+                      return (
+                        <div style={{ animation: "slideUp 0.3s ease" }}>
+                          {hasStructure ? (
+                            <>
+                              {thread && (
+                                <div>
+                                  <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                                    letterSpacing: "0.14em", marginBottom: 4, fontFamily: F.b }}>thread</div>
+                                  <p style={{ fontSize: 13, color: "rgba(var(--sg-t),0.55)", lineHeight: 1.8,
+                                    fontFamily: F.h, margin: 0 }}>{thread}</p>
+                                </div>
+                              )}
+                              {drift && (
+                                <div style={sectionStyle}>
+                                  <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                                    letterSpacing: "0.14em", marginBottom: 4, fontFamily: F.b }}>drift</div>
+                                  <p style={{ fontSize: 12, color: "rgba(var(--sg-t),0.4)", lineHeight: 1.8,
+                                    fontFamily: F.h, fontStyle: "italic", margin: 0 }}>{drift}</p>
+                                </div>
+                              )}
+                              {rhyme && (
+                                <div style={sectionStyle}>
+                                  <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                                    letterSpacing: "0.14em", marginBottom: 4, fontFamily: F.b }}>rhyme</div>
+                                  <p style={{ fontSize: 12, color: "rgba(var(--sg-t),0.4)", lineHeight: 1.8,
+                                    fontFamily: F.h, margin: 0 }}>{rhyme}</p>
+                                </div>
+                              )}
+                              {unsaid && (
+                                <div style={sectionStyle}>
+                                  <div style={{ fontSize: 7, color: "rgba(201,169,110,0.22)", textTransform: "uppercase",
+                                    letterSpacing: "0.14em", marginBottom: 4, fontFamily: F.b }}>unsaid</div>
+                                  <p style={{ fontSize: 12, color: "rgba(var(--sg-t),0.35)", lineHeight: 1.8,
+                                    fontFamily: F.h, fontStyle: "italic", margin: 0 }}>{unsaid}</p>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <p style={{ fontSize: 12, color: "rgba(var(--sg-t),0.4)", lineHeight: 1.8,
+                              fontFamily: F.h, margin: 0 }}>{weaveResult}</p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 {/* Day entries */}
                 {allDays.map(day => {
                   const isOpen = !!expanded[day.key];
@@ -1325,7 +1531,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
               <div style={{ padding: "14px 16px", background: "rgba(201,169,110,0.02)",
                 border: "1px solid rgba(201,169,110,0.07)", borderRadius: 10 }}>
                 <div style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
-                  letterSpacing: "0.12em", marginBottom: 8, fontFamily: F.b }}>· ) ) ) the norns read this thread</div>
+                  letterSpacing: "0.12em", marginBottom: 8, fontFamily: F.b }}>the lighthouse reads this thread</div>
                 {loading ? (
                   <div style={{ fontSize: 12, color: "rgba(201,169,110,0.2)", fontFamily: F.m,
                     animation: "breathe 1.5s ease-in-out infinite" }}>reading the tapestry…</div>
@@ -1548,27 +1754,14 @@ const inputStyle = {
   resize: "vertical",
 };
 
-// ── MeaningProbability ────────────────────────────────────────────────────────
-// Monte Carlo × Mandelbrot × Newton's third law applied to text.
-//
-// Every passage is a signal with a wavelength. The question is:
-// does the meaning converge (bounded, like π emerging from randomness)
-// or diverge (chaotic, like escaping the Mandelbrot set)?
+// ── SignalCoherence ───────────────────────────────────────────────────────────
+// A symbolic signal index — not literal probability, but a poetic computational
+// score reflecting the internal coherence of the passage.
 //
 // Three probes:
-//  1. Monte Carlo π̃ — use character code pairs as (x,y) points; ratio inside
-//     the unit circle × 4 approximates π. Deviation from π = signal noise.
-//  2. Mandelbrot depth — map the passage fingerprint to c in the complex plane;
-//     count iterations z→z²+c before escape. Bounded (depth=100) = coherent
-//     meaning; escaped = still forming, or intentionally chaotic.
-//  3. Signal density — ratio of semantic characters (letters) to total.
-//
-// P(meaning) = exp(−|π̃−π|) × 0.5 + (depth/100) × 0.3 + signal_density × 0.2
-//
-// Newton: the passage (action) generates the reflection (reaction). The canvas
-// IS the Monte Carlo scatter — dots that hit the arc are the signal, dots that
-// miss are the noise. Mandelbrot is the feedback loop: does the soul's signal
-// stay bounded, or does it spiral outward into something new?
+//  1. Monte Carlo π̃ — character code pairs as (x,y) scatter; convergence to π.
+//  2. Mandelbrot depth — passage fingerprint mapped to complex plane; bounded = coherent.
+//  3. Signal density — ratio of semantic characters to total.
 function MeaningProbability({ passage }) {
   const canvasRef = useRef(null);
 
@@ -1656,7 +1849,7 @@ function MeaningProbability({ passage }) {
         <div style={{
           fontSize: 8, color: "rgba(201,169,110,0.18)", fontFamily: F.m,
           textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 5,
-        }}>signal probability</div>
+        }}>signal coherence</div>
         <div style={{
           fontSize: 22, fontFamily: F.m, color: "rgba(201,169,110,0.42)", lineHeight: 1, marginBottom: 5,
         }}>{(m.p * 100).toFixed(1)}%</div>
