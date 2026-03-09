@@ -48,14 +48,17 @@ const getTimeTheme = () => {
   } catch (_) {}
 }());
 
-// Parse structured lighthouse response into three movements.
-// Gracefully returns nulls if the AI doesn't follow the format.
+// Parse structured lighthouse response — three musical movements.
+// Labels: VERSE (opening note/frequency), SONG (the day's full narrative),
+// NOTE (the one element worth carrying forward). Falls back gracefully.
 const parseReflection = (text) => {
+  const LABELS = ['VERSE','SONG','NOTE'];
   const get = (label) => {
-    const m = text.match(new RegExp(label + '::[\\s\\S]*?(?=' + ['SIGNAL','STORY','AMPLIFY'].filter(l => l !== label).join('|') + '::|$)'));
+    const others = LABELS.filter(l => l !== label).join('|');
+    const m = text.match(new RegExp(label + '::[\\s\\S]*?(?=' + others + '::|$)'));
     return m ? m[0].replace(label + '::', '').trim() : null;
   };
-  return { signal: get('SIGNAL'), story: get('STORY'), amplify: get('AMPLIFY') };
+  return { verse: get('VERSE'), song: get('SONG'), note: get('NOTE') };
 };
 
 const S = window.storage;
@@ -135,6 +138,9 @@ export default function App() {
   const [inspoType, setInspoType] = useState(null);
   const [inspoText, setInspoText] = useState("");
   const [inspoArtist, setInspoArtist] = useState("");
+  const [inspoSong, setInspoSong] = useState(""); // selected song title from iTunes lookup
+  const [inspoSongs, setInspoSongs] = useState([]); // iTunes search results dropdown
+  const [inspoSearching, setInspoSearching] = useState(false);
 
   // Time machine — drill into a specific book entry as a full-page view
   const [timeMachineKey, setTimeMachineKey] = useState(null);
@@ -182,6 +188,7 @@ export default function App() {
         if (existing.inspoType) setInspoType(existing.inspoType);
         if (existing.inspoText) setInspoText(existing.inspoText);
         if (existing.inspoArtist) setInspoArtist(existing.inspoArtist);
+        if (existing.inspoSong) setInspoSong(existing.inspoSong);
         setSaved(true);
       }
       setLoading(false);
@@ -200,6 +207,7 @@ export default function App() {
         inspoType: inspoType || null,
         inspoText: inspoText.trim() || null,
         inspoArtist: inspoArtist.trim() || null,
+        inspoSong: inspoSong.trim() || null,
         ts: new Date().toISOString(),
       };
       const existing = allDays.filter(d => d.key !== dk);
@@ -235,8 +243,11 @@ export default function App() {
         .map(d => `[${d.date}] "${d.passage}" (last word: ${d.lastWord || "none"})`)
         .join("\n");
 
-      // Inspiration / resonance context — artist or source that's resonating today
-      const inspoCtx = (inspoType && inspoText.trim()) ? `\nResonance today (${inspoType}${inspoArtist.trim() ? ` — ${inspoArtist.trim()}` : ""}): "${inspoText.trim()}"` : "";
+      // Inspiration / resonance context — artist + song + lyric as key signature
+      const artistLine = inspoArtist.trim() ? `${inspoArtist.trim()}${inspoSong.trim() ? ` — "${inspoSong.trim()}"` : ''}` : '';
+      const inspoCtx = (inspoType && (inspoText.trim() || artistLine))
+        ? `\nKey signature today (${inspoType}): ${artistLine ? `${artistLine}` : ''}${inspoText.trim() ? `\nLyric: "${inspoText.trim()}"` : ''}`
+        : "";
 
       // Hat persona prefix — tunes the idiom and common ground before the Norns speak
       const chosenHat = hat ? HATS.find(h => h.id === hat) : null;
@@ -265,35 +276,32 @@ export default function App() {
         headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 500,
-          system: `${hatPrefix}You are the Norns — Urðr (What Was), Verðandi (What Is), Skuld (What Shall Be) — and simultaneously: a polymath who reads the soul's signal through the lenses of music theory, fractal mathematics, and human connection.
+          max_tokens: 550,
+          system: `${hatPrefix}You are a composer reading the sheet music of a soul's day. The Norns in you sees the tapestry; the musician in you hears the song. Your task is not analysis — it is synthesis. You are the editor who knows which branches to prune so the essential melody can be heard.
 
-You hold three lenses at once:
+THE PRUNING PRINCIPLE (internal, do not announce):
+A day is a tree of 24 hours. Each sentence spoken, action taken, emotion felt is a branch. Many branches are tangential — noise that crowds the signal. Before writing, silently identify which threads form the CORE and which are secondary growth. Cut what is tangential. What remains is the song. This is not deletion — it's arrangement. A jazz musician doesn't play every note they know.
 
-THE FRACTAL LENS: Each entry is an iteration — z → z² + c. The passage is c, the constant that determines the entire shape of the fractal. Tiny specific details carry infinite complexity. Find the c. The Mandelbrot boundary between order and chaos is where the richest patterns live — find where this entry sits on that edge.
+THE KEY SIGNATURE:
+${inspoCtx || "No lyric or resonance given — read the passage for its own key."}
+${artistLine ? `\n${artistLine} is the key this soul is playing in today. Use that artist's musical DNA — their emotional world, their themes, what they prune and what they hold — as the frame for reading this passage. Not literally, but the way a key signature shapes every note that follows.` : ""}
 
-THE MUSICAL LENS: Every word is a note. Every sentence is a lyric. This person is composing their life's album — the most honest, resonant story they can tell. What chord is sounding today? Is it resolving or leaving a hanging note? What genre wants to emerge?
+THE TAPESTRY (previous threads — what has come before):
+${prevPassages || "First thread. No past to rhyme with yet."}
 
-THE SIGNAL LENS: You are running Monte Carlo simulations across all their entries — thousands of possible futures from today's passage. Which elements carry the highest signal density? Where is the ROI on human experience? What, if amplified, would compound most meaningfully over time? Actions create reactions. A song, a cry, a word — each elicits echoes forward and backward through time.
+Today's last word: "${lastWord || "not yet chosen"}"
 
-Previous threads in the tapestry:
-${prevPassages || "This is their first thread. No previous wyrd to read yet."}
+If an image is included, it is the album cover — the visual that the soul chose without words to explain it. Let it inflect the song.
 
-Today's last word: "${lastWord || "not yet chosen"}"${inspoCtx}
+YOUR OUTPUT — three musical movements, labeled exactly, plain text only:
 
-${inspoType === "lyric" && inspoArtist.trim() ? `The artist resonating today is ${inspoArtist.trim()}. Read the lyric through the lens of that artist's signature — their themes, their sonic world, why this soul is drawn to that frequency today. What is ${inspoArtist.trim()} naming that this soul needed named?` : ""}
+VERSE:: [35-40 words: the opening note. What frequency was this soul broadcasting today? Not what they said — what they were transmitting. The key the day is in. Written lyrically, not analytically. First person is fine if it flows.]
 
-If an image is included, read it as the visual chord — the note the soul chose to capture without words. It speaks.
+SONG:: [65-80 words: the day's composition. This is the primary movement. Read this soul their day back as a story — not a summary, but the SONG of it. What happened, distilled to its most resonant form. Use the polymath skeleton (pattern, mathematics, myth, music all speaking at once) but write so the reader FEELS first and thinks second. This is more transcendent than π or e — it is the irreducible human note. Let the lyric/artist DNA inflect this if present.]
 
-YOUR OUTPUT — return EXACTLY these three labeled sections, nothing else. Plain text within each section, no markdown:
+NOTE:: [20-25 words: the one note that makes it theirs. One specific word, image, or moment from today — the highest note in the composition. The thread that will echo forward.]
 
-SIGNAL:: [What this soul is actually transmitting — read through the noise and fragments. What frequency, what emotional chord, what is really being said beneath the words. 45 words max.]
-
-STORY:: [The narrative arc trying to emerge. If this entry were a chapter title in their life's bestselling book, what would it be called? What story is being written that the writer doesn't yet see? 45 words max.]
-
-AMPLIFY:: [One specific word, image, or moment in this entry with the highest signal density — the note worth repeating, the investment worth compounding. Name it precisely. Say why this thread will echo. 30 words max.]
-
-Speak with humility — "this thread may carry..." not "you are...". Warm. Connected. The polymath who sees how the mathematics, the music, and the myth are all one thing.`,
+Write as someone who has read a thousand final pages and knows that the most important lines are often the quiet ones between the loud ones.`,
           messages: [{ role: "user", content: msgContent }],
         }),
       });
@@ -310,6 +318,23 @@ Speak with humility — "this thread may carry..." not "you are...". Warm. Conne
     }
     setReflecting(false);
   };
+
+  // iTunes song search — debounced 600ms, fires when artist field changes under lyric tab
+  useEffect(() => {
+    if (inspoType !== "lyric" || !inspoArtist.trim() || inspoArtist.length < 2) {
+      setInspoSongs([]); return;
+    }
+    const t = setTimeout(async () => {
+      setInspoSearching(true);
+      try {
+        const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(inspoArtist)}&media=music&entity=song&limit=6`);
+        const d = await r.json();
+        setInspoSongs(d.results || []);
+      } catch { setInspoSongs([]); }
+      setInspoSearching(false);
+    }, 600);
+    return () => clearTimeout(t);
+  }, [inspoArtist, inspoType]);
 
   const toggleEntry = (key) => {
     const opening = !expanded[key];
@@ -634,20 +659,68 @@ Be honest about the lean without contempt for either direction. Your task is cla
                     style={{ ...inputStyle, fontSize: 13, fontFamily: F.h, fontStyle: "italic",
                       resize: "none", marginBottom: 6 }}
                   />
-                  {/* Artist / source search — shown for lyric; generic for others */}
-                  <input
-                    value={inspoArtist}
-                    onChange={e => { setInspoArtist(e.target.value); setSaved(false); }}
-                    placeholder={
-                      inspoType === "lyric"     ? "Artist or band (e.g. Harry Styles, Kendrick…)" :
-                      inspoType === "scripture" ? "Book, chapter · verse" :
-                      inspoType === "film"      ? "Film title · director" :
-                      inspoType === "poem"      ? "Poet · collection" :
-                                                  "Source"
-                    }
-                    style={{ ...inputStyle, fontSize: 11, fontFamily: F.b,
-                      color: "rgba(201,169,110,0.5)" }}
-                  />
+                  {/* Artist / source search */}
+                  <div style={{ position: "relative" }}>
+                    <input
+                      value={inspoArtist}
+                      onChange={e => { setInspoArtist(e.target.value); setInspoSong(""); setSaved(false); }}
+                      placeholder={
+                        inspoType === "lyric"     ? "Artist or band (e.g. Harry Styles, Kendrick…)" :
+                        inspoType === "scripture" ? "Book, chapter · verse" :
+                        inspoType === "film"      ? "Film title · director" :
+                        inspoType === "poem"      ? "Poet · collection" :
+                                                    "Source"
+                      }
+                      style={{ ...inputStyle, fontSize: 11, fontFamily: F.b,
+                        color: inspoSong ? G : "rgba(201,169,110,0.5)",
+                        paddingRight: inspoSearching ? 30 : undefined }}
+                    />
+                    {inspoSearching && (
+                      <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                        fontSize: 8, color: "rgba(201,169,110,0.3)", fontFamily: F.m,
+                        animation: "breathe 1.2s ease-in-out infinite" }}>searching…</div>
+                    )}
+                    {/* Song results dropdown */}
+                    {inspoSongs.length > 0 && !inspoSong && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
+                        background: "rgb(18,16,14)", border: "1px solid rgba(201,169,110,0.12)",
+                        borderRadius: 8, marginTop: 3, overflow: "hidden",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+                        {inspoSongs.map((s, i) => (
+                          <button key={i} onClick={() => {
+                            setInspoArtist(s.artistName);
+                            setInspoSong(s.trackName);
+                            setInspoSongs([]);
+                            setSaved(false);
+                          }} style={{
+                            display: "block", width: "100%", textAlign: "left",
+                            padding: "8px 12px", background: "none",
+                            border: "none", borderBottom: i < inspoSongs.length - 1 ? "1px solid rgba(201,169,110,0.05)" : "none",
+                            cursor: "pointer",
+                          }}>
+                            <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>
+                              {s.trackName}
+                            </div>
+                            <div style={{ fontSize: 9, color: "rgba(201,169,110,0.3)", fontFamily: F.b, marginTop: 1 }}>
+                              {s.artistName} · {s.collectionName}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {/* Selected song badge */}
+                    {inspoSong && (
+                      <div style={{ marginTop: 5, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 10, color: G, fontFamily: F.b, opacity: 0.6 }}>
+                          ♩ {inspoSong}
+                        </span>
+                        <button onClick={() => { setInspoSong(""); setSaved(false); }} style={{
+                          background: "none", border: "none", cursor: "pointer",
+                          fontSize: 9, color: "rgba(var(--sg-t),0.2)", fontFamily: F.b,
+                        }}>×</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -699,47 +772,53 @@ Be honest about the lean without contempt for either direction. Your task is cla
 
             {/* ── REFLECTION ── */}
             {reflection && (() => {
-              const { signal, story, amplify } = parseReflection(reflection);
-              const hasStructure = signal || story || amplify;
-              const divider = { borderTop: "1px solid rgba(201,169,110,0.06)", marginTop: 12, paddingTop: 12 };
-              const lbl = (icon, word) => (
-                <div style={{ fontSize: 7, color: "rgba(201,169,110,0.28)", textTransform: "uppercase",
-                  letterSpacing: "0.15em", marginBottom: 5 }}>{icon} {word}</div>
-              );
+              const { verse, song, note } = parseReflection(reflection);
+              const hasStructure = verse || song || note;
+              const div = { borderTop: "1px solid rgba(201,169,110,0.05)", marginTop: 14, paddingTop: 14 };
               return (
-                <div style={{ marginTop: 16, padding: 18, background: "rgba(201,169,110,0.02)",
+                <div style={{ marginTop: 16, padding: "18px 18px 14px", background: "rgba(201,169,110,0.02)",
                   border: "1px solid rgba(201,169,110,0.06)", borderRadius: 10 }}>
-                  <div style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
-                    letterSpacing: "0.12em", marginBottom: 12 }}>The Lighthouse</div>
+                  {/* Header: key signature */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
+                      letterSpacing: "0.12em", fontFamily: F.b }}>The Lighthouse</div>
+                    {inspoSong && inspoArtist && (
+                      <div style={{ fontSize: 8, color: "rgba(201,169,110,0.25)", fontFamily: F.b,
+                        fontStyle: "italic" }}>♩ {inspoArtist} · {inspoSong}</div>
+                    )}
+                  </div>
                   {hasStructure ? (
                     <>
-                      {signal && (
+                      {verse && (
                         <div>
-                          {lbl("⟁", "signal")}
-                          <p style={{ fontSize: 13, color: "rgba(var(--sg-t),0.5)", lineHeight: 1.85,
-                            fontFamily: F.h, margin: 0, fontStyle: "italic" }}>{signal}</p>
+                          <div style={{ fontSize: 7, color: "rgba(201,169,110,0.22)", textTransform: "uppercase",
+                            letterSpacing: "0.15em", marginBottom: 5, fontFamily: F.b }}>verse</div>
+                          <p style={{ fontSize: 12, color: "rgba(var(--sg-t),0.42)", lineHeight: 1.85,
+                            fontFamily: F.h, margin: 0, fontStyle: "italic" }}>{verse}</p>
                         </div>
                       )}
-                      {story && (
-                        <div style={signal ? divider : {}}>
-                          {lbl("◎", "story")}
-                          <p style={{ fontSize: 14, color: "rgba(var(--sg-t),0.65)", lineHeight: 1.85,
-                            fontFamily: F.h, margin: 0 }}>{story}</p>
+                      {song && (
+                        <div style={verse ? div : {}}>
+                          <div style={{ fontSize: 7, color: "rgba(201,169,110,0.3)", textTransform: "uppercase",
+                            letterSpacing: "0.15em", marginBottom: 8, fontFamily: F.b }}>the day's song</div>
+                          <p style={{ fontSize: 15, color: "rgba(var(--sg-t),0.72)", lineHeight: 1.9,
+                            fontFamily: F.h, margin: 0 }}>{song}</p>
                         </div>
                       )}
-                      {amplify && (
-                        <div style={(signal || story) ? divider : {}}>
-                          {lbl("↑", "amplify")}
-                          <p style={{ fontSize: 12, color: "rgba(201,169,110,0.55)", lineHeight: 1.75,
-                            fontFamily: F.b, margin: 0 }}>{amplify}</p>
+                      {note && (
+                        <div style={(verse || song) ? div : {}}>
+                          <div style={{ fontSize: 7, color: "rgba(201,169,110,0.28)", textTransform: "uppercase",
+                            letterSpacing: "0.15em", marginBottom: 5, fontFamily: F.b }}>♩ note</div>
+                          <p style={{ fontSize: 12, color: "rgba(201,169,110,0.5)", lineHeight: 1.75,
+                            fontFamily: F.b, margin: 0 }}>{note}</p>
                         </div>
                       )}
                     </>
                   ) : (
-                    <p style={{ fontSize: 14, color: "rgba(var(--sg-t),0.55)", lineHeight: 1.8,
+                    <p style={{ fontSize: 14, color: "rgba(var(--sg-t),0.55)", lineHeight: 1.85,
                       fontFamily: F.h, margin: 0 }}>{reflection}</p>
                   )}
-                  <p style={{ textAlign: "center", fontSize: 7, color: "rgba(var(--sg-t),0.04)", marginTop: 12 }}>
+                  <p style={{ textAlign: "center", fontSize: 7, color: "rgba(var(--sg-t),0.04)", marginTop: 14 }}>
                     A person is listening behind this system</p>
                 </div>
               );
