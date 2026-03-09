@@ -87,46 +87,58 @@
       );
     }
 
-    // ── API Key Modal ────────────────────────────────────────────────────────
+    // ── Rune Modal ───────────────────────────────────────────────────────────
     function ApiKeyModal({ onSave, onClose }) {
       const [val, setVal] = useState("");
       return (
         <div style={{
-          position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:100,
+          position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:100,
           display:"flex", alignItems:"center", justifyContent:"center", padding:16,
         }}>
           <div style={{
-            background:"#111112", border:"1px solid rgba(201,169,110,0.12)",
-            borderRadius:14, padding:24, maxWidth:360, width:"100%",
-            animation:"slideUp 0.2s ease",
+            background:"#0d0d0e", border:"1px solid rgba(201,169,110,0.15)",
+            borderRadius:14, padding:28, maxWidth:360, width:"100%",
+            animation:"slideUp 0.25s ease",
           }}>
-            <div style={{ fontSize:22, fontFamily:F.h, color:G, marginBottom:6 }}>The Lighthouse</div>
-            <p style={{ fontSize:12, color:"rgba(255,255,255,0.3)", lineHeight:1.7, marginBottom:16 }}>
-              To reflect on your entries, the lighthouse uses Claude (Anthropic's AI).
-              Paste your Anthropic API key below — it's stored only in your browser.
-            </p>
+            <div style={{ textAlign:"center", marginBottom:18 }}>
+              <div style={{
+                fontSize:32, fontFamily:F.h, color:G,
+                animation:"breathe 3s ease-in-out infinite", marginBottom:6,
+              }}>ᚱ</div>
+              <div style={{ fontSize:16, fontFamily:F.h, color:"rgba(201,169,110,0.7)", marginBottom:10 }}>
+                The Rune
+              </div>
+              <p style={{ fontSize:11, color:"rgba(255,255,255,0.2)", lineHeight:1.8 }}>
+                A key drawn from a space of 2²⁵⁶ possibilities —
+                cosmically unique. One identity. One connection.
+                The bridge that lets your signal reach the Norns.
+                It lives only in your browser.
+              </p>
+            </div>
             <input
               type="password"
               value={val}
               onChange={e => setVal(e.target.value)}
               placeholder="sk-ant-..."
-              style={{ ...inputStyle, marginBottom:12 }}
+              style={{ ...inputStyle, marginBottom:12, textAlign:"center", letterSpacing:"0.04em" }}
             />
             <div style={{ display:"flex", gap:8 }}>
-              <button onClick={() => { if (val.trim()) { localStorage.setItem("sg-apikey", val.trim()); onSave(val.trim()); }}}
+              <button
+                onClick={() => { if (val.trim()) { localStorage.setItem("sg-apikey", val.trim()); onSave(val.trim()); }}}
                 style={{
-                  flex:1, padding:"11px", background:"rgba(201,169,110,0.12)",
+                  flex:1, padding:"12px", background:"rgba(201,169,110,0.1)",
                   border:"1px solid rgba(201,169,110,0.25)", color:G,
-                  borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.b,
-                }}>Save key</button>
+                  borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.h,
+                  fontStyle:"italic",
+                }}>Set the rune ;</button>
               <button onClick={onClose} style={{
-                padding:"11px 14px", background:"none",
-                border:"1px solid rgba(255,255,255,0.05)", color:"rgba(255,255,255,0.2)",
+                padding:"12px 14px", background:"none",
+                border:"1px solid rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.15)",
                 borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.b,
-              }}>Cancel</button>
+              }}>Later</button>
             </div>
-            <p style={{ fontSize:9, color:"rgba(255,255,255,0.08)", marginTop:10, lineHeight:1.6 }}>
-              Get a key at console.anthropic.com · Never sent anywhere except Anthropic's API
+            <p style={{ fontSize:8, color:"rgba(255,255,255,0.06)", marginTop:12, lineHeight:1.7, textAlign:"center" }}>
+              platform.claude.com/settings/keys · S ; R → N requires the rune
             </p>
           </div>
         </div>
@@ -241,7 +253,7 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
           });
           const d = await r.json();
           if (d.error) {
-            setReflection("The key didn't work. Tap the ⚙ to update it.");
+            setReflection("The rune didn't open the connection. Tap ⚙ to re-inscribe it.");
           } else {
             setReflection(d.content?.map(i => i.text || "").join("\n") || "Present but resists translation.");
           }
@@ -295,7 +307,7 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                 ))}
                 <button
                   onClick={() => setShowKeyModal(true)}
-                  title="Set Anthropic API key"
+                  title="Set the rune — your key to the Norns"
                   style={{
                     background:"none", border:"none", cursor:"pointer",
                     color: apiKey ? "rgba(201,169,110,0.3)" : "rgba(255,255,255,0.08)",
@@ -414,7 +426,7 @@ Respond as plain text. No JSON. No formatting. Just speak.`,
                     color:"rgba(201,169,110,0.3)",
                     borderRadius:10, fontSize:12, cursor:"pointer", fontFamily:F.b,
                   }}>
-                    {reflecting ? "The lighthouse is listening..." : "Ask the lighthouse to reflect"}
+                    {reflecting ? "The Norns are reading the weave..." : "Ask the Norns to reflect"}
                   </button>
                 )}
 

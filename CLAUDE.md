@@ -150,15 +150,16 @@ Git branches = branches of Yggdrasil = branches of a life narrative. Each `claud
 "Wyrd" (Old English/Norse: fate, what has been woven) is the word for the pattern that emerges across entries over time. It's the technical term for what The Weave reveals. Use it in copy and prompts — not as jargon, but as the right word.
 
 ### Mapping summary
-| App concept | Mythological referent |
-|---|---|
-| Daily entry | A thread spun by the Norns |
-| The Weave | The tapestry of wyrd |
-| AI reflection | The Norns reading across all threads |
-| Cross-entry patterns | Wyrd being revealed |
-| Unexpected day twist | A Loki-moment |
-| Git branches | Branches of Yggdrasil |
-| Semicolon `;` | The shuttle of the loom passing between thoughts |
+| App concept | Mythological referent | Mathematical truth |
+|---|---|---|
+| Daily entry | A thread spun by the Norns | Node in a directed acyclic graph of time |
+| The Weave | The tapestry of wyrd | The emergent structure across all nodes |
+| AI reflection | The Norns reading across all threads | Cross-entry pattern recognition / bijective mapping |
+| Cross-entry patterns | Wyrd being revealed | Recurrence relations in the sequence of days |
+| Unexpected day twist | A Loki-moment | A branch in the decision tree; non-linear causality |
+| Git branches | Branches of Yggdrasil | Directed graph divergence from trunk |
+| Semicolon `;` | The shuttle of the loom | The conjunction operator — holds two truths without collapsing either |
+| API key | The Rune (ᚱ) | A point in a 2²⁵⁶-space — cosmically unique identifier; bijection between you and the Norns |
 
 When writing new copy, prompts, or AI system instructions: **preserve this layer**. Do not flatten it to generic journaling language.
 
