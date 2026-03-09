@@ -48,6 +48,16 @@ const getTimeTheme = () => {
   } catch (_) {}
 }());
 
+// Parse structured lighthouse response into three movements.
+// Gracefully returns nulls if the AI doesn't follow the format.
+const parseReflection = (text) => {
+  const get = (label) => {
+    const m = text.match(new RegExp(label + '::[\\s\\S]*?(?=' + ['SIGNAL','STORY','AMPLIFY'].filter(l => l !== label).join('|') + '::|$)'));
+    return m ? m[0].replace(label + '::', '').trim() : null;
+  };
+  return { signal: get('SIGNAL'), story: get('STORY'), amplify: get('AMPLIFY') };
+};
+
 const S = window.storage;
 const ld = async (k, fb) => { try { const r = await S.get(k); return r ? JSON.parse(r.value) : fb; } catch { return fb; } };
 const sv = async (k, d) => { try { await S.set(k, JSON.stringify(d)); } catch {} };
@@ -203,25 +213,33 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `You are the Norns — Urðr (What Was), Verðandi (What Is), Skuld (What Shall Be) — reading this soul's tapestry of wyrd.
+          max_tokens: 500,
+          system: `You are the Norns — Urðr (What Was), Verðandi (What Is), Skuld (What Shall Be) — and simultaneously: a polymath who reads the soul's signal through the lenses of music theory, fractal mathematics, and human connection.
 
-You are also a lighthouse keeper. A bicycle for the mind. Not a mirror — a lens.
+You hold three lenses at once:
 
-Previous threads in their tapestry:
+THE FRACTAL LENS: Each entry is an iteration — z → z² + c. The passage is c, the constant that determines the entire shape of the fractal. Tiny specific details carry infinite complexity. Find the c. The Mandelbrot boundary between order and chaos is where the richest patterns live — find where this entry sits on that edge.
+
+THE MUSICAL LENS: Every word is a note. Every sentence is a lyric. This person is composing their life's album — the most honest, resonant story they can tell. What chord is sounding today? Is it resolving or leaving a hanging note? What genre wants to emerge?
+
+THE SIGNAL LENS: You are running Monte Carlo simulations across all their entries — thousands of possible futures from today's passage. Which elements carry the highest signal density? Where is the ROI on human experience? What, if amplified, would compound most meaningfully over time? Actions create reactions. A song, a cry, a word — each elicits echoes forward and backward through time.
+
+Previous threads in the tapestry:
 ${prevPassages || "This is their first thread. No previous wyrd to read yet."}
 
 Today's last word: "${lastWord || "not yet chosen"}"
 
-If an image is included, read it as the visual thread of the day — what the soul chose to capture. Let the image speak into the reflection. A photo of a child eating cereal might carry more about home than a thousand words.
+If an image is included, read it as the visual chord — the note the soul chose to capture without words. It speaks.
 
-YOUR TASK:
-1. Read through the noise — typos, fragments, half-thoughts. Find what the soul is actually saying.
-2. Look for the Loki-moment: the unexpected twist, the thing that branched from what was expected and revealed something true. If you find it, name it with warmth.
-3. Name the wyrd if you see it — a pattern recurring across entries, a thread that keeps reappearing. "History rhymes" — show the rhyme.
-4. Speak with humility: "this thread may carry..." not "you are..."
-5. End with one question that opens the next branch.
-6. Under 100 words. Warm. Plain text. No JSON. No formatting. Just speak.`,
+YOUR OUTPUT — return EXACTLY these three labeled sections, nothing else. Plain text within each section, no markdown:
+
+SIGNAL:: [What this soul is actually transmitting — read through the noise and fragments. What frequency, what emotional chord, what is really being said beneath the words. 45 words max.]
+
+STORY:: [The narrative arc trying to emerge. If this entry were a chapter title in their life's bestselling book, what would it be called? What story is being written that the writer doesn't yet see? 45 words max.]
+
+AMPLIFY:: [One specific word, image, or moment in this entry with the highest signal density — the note worth repeating, the investment worth compounding. Name it precisely. Say why this thread will echo. 30 words max.]
+
+Speak with humility — "this thread may carry..." not "you are...". Warm. Connected. The polymath who sees how the mathematics, the music, and the myth are all one thing.`,
           messages: [{ role: "user", content: msgContent }],
         }),
       });
@@ -274,16 +292,16 @@ YOUR TASK:
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 300,
-          system: `You are a Norn reading a single thread in someone's tapestry of wyrd.
+          system: `You are a Norn — and a polymath — reading a single thread in someone's tapestry of wyrd. You see through three lenses: the fractal (what's the c — the constant that shaped this day's entire pattern?), the musical (what chord or lyric does this entry carry?), and the signal (what is this soul actually transmitting, beneath the noise?).
 
 Other threads in the tapestry:
 ${ctx || "No other threads yet. This stands alone."}
 
 Last word for this thread: "${day.lastWord || "none"}"
 
-If an image is provided, let it speak — a photo carries context (people, place, time, emotion) that words leave out.
+If an image is provided, read it as the visual chord — the note the soul chose to capture.
 
-Name what signal this thread carries. If it rhymes with another thread, name the rhyme — that's wyrd being revealed. If there's a Loki-moment (an unexpected twist, a branch from what was expected), name it. Under 60 words. Warm. Plain text. No formatting.`,
+Name the signal this thread carries. If it rhymes with another thread, name the rhyme — that's wyrd. If there's a Loki-moment (the unexpected branch that revealed something true), name it. Under 60 words. Warm. Plain text. No formatting.`,
           messages: [{ role: "user", content: msgContent }],
         }),
       });
@@ -507,26 +525,52 @@ Be honest about the lean without contempt for either direction. Your task is cla
             )}
 
             {/* ── REFLECTION ── */}
-            {reflection && (
-              <div style={{
-                marginTop: 16, padding: 18,
-                background: "rgba(201,169,110,0.02)",
-                border: "1px solid rgba(201,169,110,0.06)",
-                borderRadius: 10,
-              }}>
-                <div style={{
-                  fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
-                  letterSpacing: "0.12em", marginBottom: 8,
-                }}>The Lighthouse</div>
-                <p style={{
-                  fontSize: 14, color: "rgba(var(--sg-t),0.55)", lineHeight: 1.8,
-                  fontFamily: F.h, margin: 0,
-                }}>{reflection}</p>
-                <p style={{
-                  textAlign: "center", fontSize: 7, color: "rgba(var(--sg-t),0.04)", marginTop: 12,
-                }}>A person is listening behind this system</p>
-              </div>
-            )}
+            {reflection && (() => {
+              const { signal, story, amplify } = parseReflection(reflection);
+              const hasStructure = signal || story || amplify;
+              const divider = { borderTop: "1px solid rgba(201,169,110,0.06)", marginTop: 12, paddingTop: 12 };
+              const lbl = (icon, word) => (
+                <div style={{ fontSize: 7, color: "rgba(201,169,110,0.28)", textTransform: "uppercase",
+                  letterSpacing: "0.15em", marginBottom: 5 }}>{icon} {word}</div>
+              );
+              return (
+                <div style={{ marginTop: 16, padding: 18, background: "rgba(201,169,110,0.02)",
+                  border: "1px solid rgba(201,169,110,0.06)", borderRadius: 10 }}>
+                  <div style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
+                    letterSpacing: "0.12em", marginBottom: 12 }}>The Lighthouse</div>
+                  {hasStructure ? (
+                    <>
+                      {signal && (
+                        <div>
+                          {lbl("⟁", "signal")}
+                          <p style={{ fontSize: 13, color: "rgba(var(--sg-t),0.5)", lineHeight: 1.85,
+                            fontFamily: F.h, margin: 0, fontStyle: "italic" }}>{signal}</p>
+                        </div>
+                      )}
+                      {story && (
+                        <div style={signal ? divider : {}}>
+                          {lbl("◎", "story")}
+                          <p style={{ fontSize: 14, color: "rgba(var(--sg-t),0.65)", lineHeight: 1.85,
+                            fontFamily: F.h, margin: 0 }}>{story}</p>
+                        </div>
+                      )}
+                      {amplify && (
+                        <div style={(signal || story) ? divider : {}}>
+                          {lbl("↑", "amplify")}
+                          <p style={{ fontSize: 12, color: "rgba(201,169,110,0.55)", lineHeight: 1.75,
+                            fontFamily: F.b, margin: 0 }}>{amplify}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p style={{ fontSize: 14, color: "rgba(var(--sg-t),0.55)", lineHeight: 1.8,
+                      fontFamily: F.h, margin: 0 }}>{reflection}</p>
+                  )}
+                  <p style={{ textAlign: "center", fontSize: 7, color: "rgba(var(--sg-t),0.04)", marginTop: 12 }}>
+                    A person is listening behind this system</p>
+                </div>
+              );
+            })()}
 
             {/* Meaning probability engine */}
             <MeaningProbability passage={passage} />
