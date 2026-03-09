@@ -125,6 +125,15 @@ export default function App() {
   const [reflecting, setReflecting] = useState(false);
   const [hat, setHat] = useState(null); // selected persona hat
 
+  // Inspiration / resonance field (lyric, scripture, film, poem, other)
+  const [inspoType, setInspoType] = useState(null);
+  const [inspoText, setInspoText] = useState("");
+  const [inspoArtist, setInspoArtist] = useState("");
+
+  // Time machine — drill into a specific book entry as a full-page view
+  const [timeMachineKey, setTimeMachineKey] = useState(null);
+  const [saveError, setSaveError] = useState(false);
+
   // Book entry expansion + per-entry beacon
   const [expanded, setExpanded] = useState({});
   const [bookReflections, setBookReflections] = useState({});
@@ -162,6 +171,9 @@ export default function App() {
         setPassage(existing.passage || "");
         setLastWord(existing.lastWord || "");
         setPicture(existing.picture || null);
+        if (existing.inspoType) setInspoType(existing.inspoType);
+        if (existing.inspoText) setInspoText(existing.inspoText);
+        if (existing.inspoArtist) setInspoArtist(existing.inspoArtist);
         setSaved(true);
       }
       setLoading(false);
@@ -169,20 +181,29 @@ export default function App() {
   }, []);
 
   const saveDay = async () => {
-    const day = {
-      key: dk,
-      date: today(),
-      passage: passage.trim(),
-      lastWord: lastWord.trim(),
-      picture,
-      ts: new Date().toISOString(),
-    };
-    const existing = allDays.filter(d => d.key !== dk);
-    const updated = [day, ...existing];
-    setAllDays(updated);
-    setTodayData(day);
-    await sv("sg-book", updated);
-    setSaved(true);
+    setSaveError(false);
+    try {
+      const day = {
+        key: dk,
+        date: today(),
+        passage: passage.trim(),
+        lastWord: lastWord.trim(),
+        picture,
+        inspoType: inspoType || null,
+        inspoText: inspoText.trim() || null,
+        inspoArtist: inspoArtist.trim() || null,
+        ts: new Date().toISOString(),
+      };
+      const existing = allDays.filter(d => d.key !== dk);
+      const updated = [day, ...existing];
+      setAllDays(updated);
+      setTodayData(day);
+      await sv("sg-book", updated);
+      setSaved(true);
+    } catch {
+      setSaveError(true);
+      setTimeout(() => setSaveError(false), 3000);
+    }
   };
 
   const handlePicture = (e) => {
@@ -205,6 +226,9 @@ export default function App() {
         .slice(0, 10)
         .map(d => `[${d.date}] "${d.passage}" (last word: ${d.lastWord || "none"})`)
         .join("\n");
+
+      // Inspiration / resonance context — artist or source that's resonating today
+      const inspoCtx = (inspoType && inspoText.trim()) ? `\nResonance today (${inspoType}${inspoArtist.trim() ? ` — ${inspoArtist.trim()}` : ""}): "${inspoText.trim()}"` : "";
 
       // Hat persona prefix — tunes the idiom and common ground before the Norns speak
       const chosenHat = hat ? HATS.find(h => h.id === hat) : null;
@@ -247,7 +271,9 @@ THE SIGNAL LENS: You are running Monte Carlo simulations across all their entrie
 Previous threads in the tapestry:
 ${prevPassages || "This is their first thread. No previous wyrd to read yet."}
 
-Today's last word: "${lastWord || "not yet chosen"}"
+Today's last word: "${lastWord || "not yet chosen"}"${inspoCtx}
+
+${inspoType === "lyric" && inspoArtist.trim() ? `The artist resonating today is ${inspoArtist.trim()}. Read the lyric through the lens of that artist's signature — their themes, their sonic world, why this soul is drawn to that frequency today. What is ${inspoArtist.trim()} naming that this soul needed named?` : ""}
 
 If an image is included, read it as the visual chord — the note the soul chose to capture without words. It speaks.
 
@@ -519,16 +545,70 @@ Be honest about the lean without contempt for either direction. Your task is cla
               />
             </div>
 
+            {/* ── INSPIRATION / RESONANCE ── */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 8,
+              }}>What's resonating with you today</label>
+              {/* Type chips */}
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+                {["lyric","scripture","film","poem","other"].map(t => (
+                  <button key={t} onClick={() => { setInspoType(inspoType === t ? null : t); setSaved(false); }} style={{
+                    padding: "3px 10px",
+                    background: inspoType === t ? "rgba(201,169,110,0.1)" : "rgba(var(--sg-t),0.02)",
+                    border: `1px solid ${inspoType === t ? "rgba(201,169,110,0.28)" : "rgba(var(--sg-t),0.07)"}`,
+                    color: inspoType === t ? G : "rgba(var(--sg-t),0.28)",
+                    borderRadius: 18, fontSize: 10, cursor: "pointer", fontFamily: F.b,
+                    transition: "all 0.2s", letterSpacing: "0.02em",
+                  }}>{t}</button>
+                ))}
+              </div>
+              {/* Quote / lyric text input */}
+              {inspoType && (
+                <div>
+                  <textarea
+                    value={inspoText}
+                    onChange={e => { setInspoText(e.target.value); setSaved(false); }}
+                    placeholder={
+                      inspoType === "lyric"     ? "A lyric that's with you today…" :
+                      inspoType === "scripture" ? "A verse or passage that landed…" :
+                      inspoType === "film"      ? "A line or scene you keep returning to…" :
+                      inspoType === "poem"      ? "Lines that found you today…" :
+                                                  "Something that's resonating…"
+                    }
+                    rows={2}
+                    style={{ ...inputStyle, fontSize: 13, fontFamily: F.h, fontStyle: "italic",
+                      resize: "none", marginBottom: 6 }}
+                  />
+                  {/* Artist / source search — shown for lyric; generic for others */}
+                  <input
+                    value={inspoArtist}
+                    onChange={e => { setInspoArtist(e.target.value); setSaved(false); }}
+                    placeholder={
+                      inspoType === "lyric"     ? "Artist or band (e.g. Harry Styles, Kendrick…)" :
+                      inspoType === "scripture" ? "Book, chapter · verse" :
+                      inspoType === "film"      ? "Film title · director" :
+                      inspoType === "poem"      ? "Poet · collection" :
+                                                  "Source"
+                    }
+                    style={{ ...inputStyle, fontSize: 11, fontFamily: F.b,
+                      color: "rgba(201,169,110,0.5)" }}
+                  />
+                </div>
+              )}
+            </div>
+
             {/* ── SAVE ── */}
             <button onClick={saveDay} style={{
               width: "100%", padding: "14px",
-              background: saved ? "rgba(100,160,100,0.08)" : "rgba(201,169,110,0.12)",
-              border: `1px solid ${saved ? "rgba(100,160,100,0.15)" : "rgba(201,169,110,0.25)"}`,
-              color: saved ? "rgba(100,160,100,0.5)" : G,
+              background: saveError ? "rgba(180,60,60,0.1)" : saved ? "rgba(100,160,100,0.08)" : "rgba(201,169,110,0.12)",
+              border: `1px solid ${saveError ? "rgba(180,60,60,0.2)" : saved ? "rgba(100,160,100,0.15)" : "rgba(201,169,110,0.25)"}`,
+              color: saveError ? "rgba(200,80,80,0.7)" : saved ? "rgba(100,160,100,0.5)" : G,
               borderRadius: 10, fontSize: 14, cursor: "pointer", fontFamily: F.b,
               transition: "all 0.3s",
             }}>
-              {saved ? "Saved ✓" : "Save today's page ;"}
+              {saveError ? "Couldn't save — try again" : saved ? "Saved ✓" : "Save today's page ;"}
             </button>
 
             {/* ── HAT SELECTOR ── */}
@@ -671,93 +751,113 @@ Be honest about the lean without contempt for either direction. Your task is cla
                   const beacon = bookReflections[day.key];
                   const loading = !!bookReflecting[day.key];
                   return (
-                    <div key={day.key} style={{
+                    <button key={day.key} onClick={() => { setTimeMachineKey(day.key); setPage("day"); }} style={{
+                      width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
                       background: "rgba(var(--sg-t),0.012)",
-                      border: `1px solid ${isOpen ? "rgba(201,169,110,0.1)" : "rgba(var(--sg-t),0.025)"}`,
-                      borderRadius: 9, marginBottom: 8, overflow: "hidden",
-                      borderLeft: `3px solid ${isOpen ? "rgba(201,169,110,0.25)" : "rgba(201,169,110,0.08)"}`,
-                      transition: "border-color 0.2s",
+                      border: "1px solid rgba(var(--sg-t),0.025)",
+                      borderLeft: "3px solid rgba(201,169,110,0.1)",
+                      borderRadius: 9, marginBottom: 8, padding: "12px 14px",
+                      cursor: "pointer", textAlign: "left",
                     }}>
-                      {/* Tappable date header */}
-                      <button onClick={() => toggleEntry(day.key)} style={{
-                        width: "100%", background: "none", border: "none",
-                        padding: "10px 12px", cursor: "pointer",
-                        display: "flex", justifyContent: "space-between", alignItems: "center",
-                        borderBottom: isOpen ? "1px solid rgba(var(--sg-t),0.025)" : "none",
-                      }}>
-                        <span style={{
-                          fontSize: 10, color: isOpen ? "rgba(var(--sg-t),0.4)" : "rgba(var(--sg-t),0.2)",
-                          fontFamily: F.b, transition: "color 0.2s",
-                        }}>{day.date}</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {day.lastWord?.trim() && (
-                            <span style={{
-                              fontSize: 12, color: G, fontFamily: F.h, fontStyle: "italic",
-                              opacity: 0.4,
-                            }}>{day.lastWord}</span>
-                          )}
-                          <span style={{
-                            fontSize: 9, color: "rgba(201,169,110,0.2)", fontFamily: F.m,
-                            transition: "transform 0.2s",
-                            display: "inline-block",
-                            transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
-                          }}>›</span>
+                      <div>
+                        <div style={{ fontSize: 10, color: "rgba(var(--sg-t),0.3)", fontFamily: F.b, marginBottom: 3 }}>
+                          {day.date}
                         </div>
-                      </button>
-
-                      {/* Expanded content */}
-                      {isOpen && (
-                        <div style={{ animation: "slideUp 0.2s ease" }}>
-                          {day.picture && (
-                            <img src={day.picture} alt="" style={{
-                              width: "100%", maxHeight: 200, objectFit: "cover",
-                            }} />
-                          )}
-
-                          {day.passage?.trim() && (
-                            <div style={{ padding: "12px 14px" }}>
-                              <p style={{
-                                fontSize: 13, color: "rgba(var(--sg-t),0.5)",
-                                lineHeight: 1.8, fontFamily: F.h, margin: 0,
-                                whiteSpace: "pre-wrap",
-                              }}>{day.passage}</p>
-                            </div>
-                          )}
-
-                          {/* Beacon */}
-                          <div style={{
-                            margin: "0 12px 12px",
-                            padding: "10px 12px",
-                            background: "rgba(201,169,110,0.02)",
-                            border: "1px solid rgba(201,169,110,0.06)",
-                            borderRadius: 7,
-                          }}>
-                            <div style={{
-                              fontSize: 8, color: "rgba(201,169,110,0.25)",
-                              fontFamily: F.m, letterSpacing: "0.14em",
-                              textTransform: "uppercase", marginBottom: 6,
-                            }}>· ) ) ) beacon</div>
-                            {loading ? (
-                              <div style={{
-                                fontSize: 11, color: "rgba(201,169,110,0.18)",
-                                fontFamily: F.m, animation: "breathe 1.5s ease-in-out infinite",
-                              }}>reading signal…</div>
-                            ) : (
-                              <p style={{
-                                fontSize: 12, color: "rgba(var(--sg-t),0.4)",
-                                lineHeight: 1.75, fontFamily: F.h, margin: 0,
-                              }}>{beacon || "—"}</p>
-                            )}
+                        {day.passage?.trim() && (
+                          <div style={{ fontSize: 12, color: "rgba(var(--sg-t),0.2)", fontFamily: F.h,
+                            fontStyle: "italic", overflow: "hidden", maxHeight: "1.5em",
+                            textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70vw" }}>
+                            {day.passage.slice(0, 80)}{day.passage.length > 80 ? "…" : ""}
                           </div>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        {day.lastWord?.trim() && (
+                          <span style={{ fontSize: 12, color: G, fontFamily: F.h, fontStyle: "italic", opacity: 0.45 }}>
+                            {day.lastWord}
+                          </span>
+                        )}
+                        <span style={{ fontSize: 12, color: "rgba(201,169,110,0.2)", fontFamily: F.m }}>›</span>
+                      </div>
+                    </button>
                   );
                 })}
               </>
             )}
           </div>
         )}
+
+        {/* ═══ TIME MACHINE ═══ */}
+        {page === "day" && (() => {
+          const day = allDays.find(d => d.key === timeMachineKey);
+          if (!day) return <div style={{ paddingTop: 40, textAlign: "center", color: "rgba(var(--sg-t),0.2)", fontFamily: F.b, fontSize: 12 }}>Entry not found.</div>;
+          const beacon = bookReflections[day.key];
+          const loading = !!bookReflecting[day.key];
+          // Trigger Norn beacon if not already read
+          if (!beacon && !loading) setTimeout(() => reflectEntry(day.key), 0);
+          return (
+            <div style={{ paddingTop: 10, paddingBottom: 60, animation: "slideUp 0.3s ease" }}>
+              {/* Back */}
+              <button onClick={() => setPage("book")} style={{
+                background: "none", border: "none", cursor: "pointer",
+                fontSize: 10, color: "rgba(var(--sg-t),0.25)", fontFamily: F.b,
+                letterSpacing: "0.08em", marginBottom: 20, padding: 0,
+              }}>← back to book</button>
+
+              {/* Date */}
+              <div style={{ marginBottom: 4, fontSize: 9, color: "rgba(201,169,110,0.3)",
+                textTransform: "uppercase", letterSpacing: "0.14em", fontFamily: F.b }}>{day.date}</div>
+              {day.lastWord?.trim() && (
+                <div style={{ fontSize: 28, color: G, fontFamily: F.h, fontStyle: "italic",
+                  marginBottom: 20, opacity: 0.7 }}>{day.lastWord}</div>
+              )}
+
+              {/* Picture */}
+              {day.picture && (
+                <img src={day.picture} alt="" style={{
+                  width: "100%", borderRadius: 10, maxHeight: 280, objectFit: "cover",
+                  border: "1px solid rgba(201,169,110,0.08)", marginBottom: 20,
+                }} />
+              )}
+
+              {/* Passage */}
+              {day.passage?.trim() && (
+                <p style={{ fontSize: 15, color: "rgba(var(--sg-t),0.6)", lineHeight: 1.85,
+                  fontFamily: F.h, whiteSpace: "pre-wrap", marginBottom: 20 }}>{day.passage}</p>
+              )}
+
+              {/* Inspiration */}
+              {day.inspoType && day.inspoText && (
+                <div style={{ marginBottom: 20, padding: "12px 14px",
+                  borderLeft: "2px solid rgba(201,169,110,0.15)",
+                  background: "rgba(201,169,110,0.02)" }}>
+                  <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                    letterSpacing: "0.14em", marginBottom: 5, fontFamily: F.b }}>{day.inspoType}</div>
+                  <p style={{ fontSize: 13, color: "rgba(var(--sg-t),0.45)", fontFamily: F.h,
+                    fontStyle: "italic", margin: 0, lineHeight: 1.75 }}>"{day.inspoText}"</p>
+                  {day.inspoArtist && (
+                    <div style={{ fontSize: 10, color: "rgba(201,169,110,0.3)", fontFamily: F.b,
+                      marginTop: 5 }}>— {day.inspoArtist}</div>
+                  )}
+                </div>
+              )}
+
+              {/* Beacon — Norns reading this thread */}
+              <div style={{ padding: "14px 16px", background: "rgba(201,169,110,0.02)",
+                border: "1px solid rgba(201,169,110,0.07)", borderRadius: 10 }}>
+                <div style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
+                  letterSpacing: "0.12em", marginBottom: 8, fontFamily: F.b }}>· ) ) ) the norns read this thread</div>
+                {loading ? (
+                  <div style={{ fontSize: 12, color: "rgba(201,169,110,0.2)", fontFamily: F.m,
+                    animation: "breathe 1.5s ease-in-out infinite" }}>reading the tapestry…</div>
+                ) : (
+                  <p style={{ fontSize: 13, color: "rgba(var(--sg-t),0.4)", lineHeight: 1.8,
+                    fontFamily: F.h, margin: 0, fontStyle: "italic" }}>{beacon || "—"}</p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ═══ LENS ═══ */}
         {page === "lens" && (
