@@ -14,16 +14,16 @@ import { useState, useEffect, useRef, useMemo } from "react";
 // bg: RGB triplet for page background
 // t:  RGB triplet for text (inverts with bg to maintain contrast)
 const THEME_NODES = [
-  { h: 0,    bg: [250,248,244], t: [40,30,18]  }, // night — warm off-white
-  { h: 6,    bg: [252,250,245], t: [45,34,16]  }, // pre-dawn — soft cream
-  { h: 7,    bg: [254,252,248], t: [40,30,16]  }, // dawn — near-white
-  { h: 8,    bg: [255,255,253], t: [35,28,16]  }, // morning — clean white
-  { h: 17,   bg: [255,255,253], t: [35,28,16]  }, // afternoon — clean white
-  { h: 18.5, bg: [255,252,242], t: [42,32,14]  }, // golden hour — whisper of warmth
-  { h: 19.5, bg: [253,249,240], t: [42,30,16]  }, // sunset — soft cream
-  { h: 21,   bg: [251,248,243], t: [40,30,16]  }, // dusk — warm off-white
-  { h: 22,   bg: [250,248,244], t: [40,30,18]  }, // night — warm off-white
-  { h: 24,   bg: [250,248,244], t: [40,30,18]  },
+  { h: 0,    bg: [255,253,245], t: [50,40,20]  }, // night — white-yellow
+  { h: 6,    bg: [255,253,242], t: [50,40,20]  }, // pre-dawn — white-yellow
+  { h: 7,    bg: [255,254,245], t: [48,38,18]  }, // dawn — white-yellow
+  { h: 8,    bg: [255,255,248], t: [45,36,16]  }, // morning — white with warm hint
+  { h: 17,   bg: [255,255,248], t: [45,36,16]  }, // afternoon — white with warm hint
+  { h: 18.5, bg: [255,253,242], t: [50,40,18]  }, // golden hour — white-yellow
+  { h: 19.5, bg: [255,253,242], t: [50,40,18]  }, // sunset — white-yellow
+  { h: 21,   bg: [255,253,245], t: [50,40,20]  }, // dusk — white-yellow
+  { h: 22,   bg: [255,253,245], t: [50,40,20]  }, // night — white-yellow
+  { h: 24,   bg: [255,253,245], t: [50,40,20]  },
 ];
 const _lr = (a, b, p) => a.map((v, i) => Math.round(v + (b[i] - v) * p));
 const _ss = p => p * p * (3 - 2 * p); // smoothstep easing
@@ -2165,13 +2165,13 @@ function MeaningProbability({ passage }) {
 
 function Shell({ children }) {
   return (
-    <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 60s ease, color 60s ease" }}>
+    <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 2s ease, color 2s ease" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
-        :root { --sg-bg: rgb(250,248,244); --sg-t: 40,30,18; }
+        :root { --sg-bg: rgb(255,253,245); --sg-t: 50,40,20; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { background: var(--sg-bg); transition: background 60s ease; }
-        textarea, input { transition: background-color 60s ease, border-color 60s ease, color 60s ease; }
+        html, body { background: var(--sg-bg); transition: background 2s ease; }
+        textarea, input { transition: background-color 2s ease, border-color 2s ease, color 2s ease; }
         @keyframes breathe { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         textarea:focus, input:focus { outline: none; border-color: rgba(201,169,110,0.25) !important; }
