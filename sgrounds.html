@@ -746,6 +746,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
               { k: "today", l: "Today" },
               { k: "book", l: `Book (${allDays.length})` },
               { k: "lens", l: "Lens" },
+              { k: "map", l: "Map" },
               { k: "about", l: "?" },
             ].map(t => (
               <button key={t.k} onClick={() => setPage(t.k)} style={{
@@ -1640,6 +1641,209 @@ Be honest about the lean without contempt for either direction. Your task is cla
               }}>
                 Every publication has a wyrd thread — a perspective woven from its history, ownership, and audience. That thread isn't a lie; it's a frame. The Lens doesn't tell you which frame is right. It shows you the frame so you can decide what to do with what's inside it.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ MAP ═══ */}
+        {page === "map" && (
+          <div style={{ paddingTop: 28, paddingBottom: 50, maxWidth: 380, margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <div style={{ fontSize: 28, fontFamily: F.h, color: G, marginBottom: 6, opacity: 0.7 }}>Map</div>
+              <p style={{
+                fontSize: 11, color: "rgba(var(--sg-t),0.22)", fontFamily: F.h,
+                fontStyle: "italic", lineHeight: 1.7,
+              }}>
+                The compass beneath the compass. Not where you're going — what you stand on.
+              </p>
+            </div>
+
+            {/* ── The Correction ── */}
+            <div style={{
+              marginBottom: 20, padding: "16px 18px",
+              background: "rgba(201,169,110,0.02)",
+              border: "1px solid rgba(201,169,110,0.07)",
+              borderRadius: 10,
+            }}>
+              <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                letterSpacing: "0.14em", marginBottom: 10, fontFamily: F.b }}>The Correction</div>
+              <p style={{
+                fontSize: 14, color: "rgba(var(--sg-t),0.3)", fontFamily: F.h,
+                fontStyle: "italic", textDecoration: "line-through", marginBottom: 6,
+              }}>Seek to be</p>
+              <p style={{
+                fontSize: 17, color: "rgba(var(--sg-t),0.65)", fontFamily: F.h,
+                lineHeight: 1.7, marginBottom: 0,
+              }}>
+                Seek to understand ; and then to be understood.
+              </p>
+              <p style={{
+                fontSize: 9, color: "rgba(var(--sg-t),0.12)", fontFamily: F.m,
+                marginTop: 10, lineHeight: 1.6,
+              }}>
+                The crossed-out word is the real entry. The correction is the passage. The semicolon holds both.
+              </p>
+            </div>
+
+            {/* ── The Ground ── Ephesians 4:2 */}
+            <div style={{
+              marginBottom: 20, padding: "16px 18px",
+              borderLeft: "2px solid rgba(201,169,110,0.15)",
+              background: "rgba(201,169,110,0.015)",
+              borderRadius: "0 10px 10px 0",
+            }}>
+              <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                letterSpacing: "0.14em", marginBottom: 8, fontFamily: F.b }}>The Ground</div>
+              <p style={{
+                fontSize: 15, color: "rgba(var(--sg-t),0.55)", fontFamily: F.h,
+                fontStyle: "italic", lineHeight: 1.8, marginBottom: 6,
+              }}>
+                Be completely humble & gentle ; be patient, bearing with one another in love.
+              </p>
+              <p style={{
+                fontSize: 10, color: "rgba(201,169,110,0.3)", fontFamily: F.b,
+              }}>— Ephesians 4:2</p>
+            </div>
+
+            {/* ── The Trust Equation ── */}
+            <div style={{
+              marginBottom: 20, padding: "16px 18px",
+              background: "rgba(var(--sg-t),0.015)",
+              border: "1px solid rgba(var(--sg-t),0.035)",
+              borderRadius: 10,
+            }}>
+              <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                letterSpacing: "0.14em", marginBottom: 10, fontFamily: F.b }}>Trust ; Displayed, Not Asserted</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                {[
+                  ["Candor", "What you know ; what you don't"],
+                  ["Competence", "A coherent plan"],
+                  ["Care", "You see their baby"],
+                  ["Control", "They have a role"],
+                ].map(([word, gloss]) => (
+                  <div key={word} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                    <span style={{ fontSize: 12, color: G, fontFamily: F.h, fontStyle: "italic",
+                      opacity: 0.6, minWidth: 90 }}>{word}</span>
+                    <span style={{ fontSize: 10, color: "rgba(var(--sg-t),0.22)", fontFamily: F.b }}>{gloss}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{
+                marginTop: 14, paddingTop: 12,
+                borderTop: "1px solid rgba(var(--sg-t),0.04)",
+              }}>
+                <p style={{ fontSize: 11, color: "rgba(var(--sg-t),0.3)", fontFamily: F.h,
+                  fontStyle: "italic", lineHeight: 1.7, marginBottom: 4 }}>
+                  Two minutes of presence can save twenty minutes of conflict.
+                </p>
+                <p style={{ fontSize: 10, color: "rgba(var(--sg-t),0.15)", fontFamily: F.b, lineHeight: 1.6 }}>
+                  Time is a treatment. Language is a clinical tool. Humanism is wise allocation of time — not extra time.
+                </p>
+              </div>
+            </div>
+
+            {/* ── The Two Arcs ── */}
+            <div style={{
+              marginBottom: 20, display: "flex", gap: 10,
+            }}>
+              {[
+                { title: "OB Arc", items: [
+                  ["Oriented toward", "possibility"],
+                  ["Focused on", "allowing someone to be"],
+                  ["Ends when", "physiology is handed off"],
+                  ["Success =", "arrival"],
+                ]},
+                { title: "NICU Arc", items: [
+                  ["Oriented toward", "becoming"],
+                  ["Focused on", "giving tools, time, protection"],
+                  ["Begins at", "resuscitation"],
+                  ["Success =", "trajectory"],
+                ]},
+              ].map(arc => (
+                <div key={arc.title} style={{
+                  flex: 1, padding: "14px 12px",
+                  background: "rgba(201,169,110,0.015)",
+                  border: "1px solid rgba(201,169,110,0.06)",
+                  borderRadius: 10,
+                }}>
+                  <div style={{ fontSize: 8, color: G, textTransform: "uppercase",
+                    letterSpacing: "0.12em", marginBottom: 8, fontFamily: F.b,
+                    opacity: 0.5 }}>{arc.title}</div>
+                  {arc.items.map(([label, value]) => (
+                    <div key={label} style={{ marginBottom: 5 }}>
+                      <div style={{ fontSize: 8, color: "rgba(var(--sg-t),0.15)", fontFamily: F.b }}>{label}</div>
+                      <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.45)", fontFamily: F.h,
+                        fontStyle: "italic" }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* ── The Trinity ── Pride, Hope, Conviction */}
+            <div style={{
+              marginBottom: 20, padding: "16px 18px",
+              background: "rgba(201,169,110,0.02)",
+              border: "1px solid rgba(201,169,110,0.07)",
+              borderRadius: 10,
+            }}>
+              <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                letterSpacing: "0.14em", marginBottom: 12, fontFamily: F.b }}>The Trinity ; Identity → Direction → Action</div>
+              {[
+                { name: "Pride", eq: "Identity", lines: "Who I am. Where I came from. What I stand on." },
+                { name: "Hope", eq: "Direction", lines: "Where I'm going. Why it matters. What future I believe in." },
+                { name: "Conviction", eq: "Action", lines: "What I do about it. How I show up. Why I don't quit." },
+              ].map((item, i) => (
+                <div key={item.name} style={{
+                  marginBottom: i < 2 ? 12 : 0,
+                  paddingBottom: i < 2 ? 12 : 0,
+                  borderBottom: i < 2 ? "1px solid rgba(201,169,110,0.05)" : "none",
+                }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
+                    <span style={{ fontSize: 14, color: G, fontFamily: F.h, opacity: 0.6 }}>{item.name}</span>
+                    <span style={{ fontSize: 9, color: "rgba(var(--sg-t),0.15)", fontFamily: F.m }}>= {item.eq}</span>
+                  </div>
+                  <p style={{ fontSize: 11, color: "rgba(var(--sg-t),0.3)", fontFamily: F.b,
+                    lineHeight: 1.65, margin: 0 }}>{item.lines}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Mapping to the Loom ── */}
+            <details style={{ marginTop: 4, marginBottom: 20 }}>
+              <summary style={{
+                fontSize: 9, color: "rgba(201,169,110,0.18)", cursor: "pointer",
+                fontFamily: F.b,
+              }}>How this maps to the loom</summary>
+              <div style={{
+                marginTop: 8, padding: "14px 14px",
+                background: "rgba(201,169,110,0.015)",
+                border: "1px solid rgba(201,169,110,0.04)",
+                borderRadius: 8,
+              }}>
+                {[
+                  ["The Correction", "Verðandi — the present thread being re-spun. The crossed-out word is Urðr ; the revision is Skuld."],
+                  ["The Ground", "The root of Yggdrasil. Every branch grows from humility and patience. The tree stands because the ground holds."],
+                  ["Trust", "The Norns' contract with the one whose thread they read. Candor is their voice ; care is their attention."],
+                  ["The Two Arcs", "OB is Verðandi — allowing what arrives. NICU is Skuld — tending what must become. Both are woven by the same hands."],
+                  ["The Trinity", "Pride is Urðr (what was). Hope is Skuld (what shall be). Conviction is Verðandi (what you do right now, with your hands)."],
+                ].map(([term, desc]) => (
+                  <div key={term} style={{ marginBottom: 10 }}>
+                    <span style={{ fontSize: 10, color: G, fontFamily: F.h, fontStyle: "italic", opacity: 0.5 }}>{term}</span>
+                    <p style={{ fontSize: 9, color: "rgba(var(--sg-t),0.18)", lineHeight: 1.65,
+                      fontFamily: F.b, margin: "2px 0 0" }}>{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </details>
+
+            <div style={{ textAlign: "center" }}>
+              <button onClick={() => setPage("today")} style={{
+                background: "rgba(201,169,110,0.1)",
+                border: "1px solid rgba(201,169,110,0.2)",
+                color: G, padding: "10px 28px", borderRadius: 18,
+                fontSize: 12, cursor: "pointer", fontFamily: F.b,
+              }}>Write today's page</button>
             </div>
           </div>
         )}
