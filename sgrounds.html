@@ -181,6 +181,26 @@ export default function App() {
   const [lensResult, setLensResult] = useState(null);
   const [lensLoading, setLensLoading] = useState(false);
 
+  // ── Semicolon Page state ──
+  const [spMoment, setSpMoment] = useState("");
+  const [spMeaning, setSpMeaning] = useState("");
+  const [spClosing, setSpClosing] = useState("");
+  const [spEcho, setSpEcho] = useState("");
+  const [spAnd, setSpAnd] = useState("");
+  const [spGift, setSpGift] = useState(null);
+  const [spGiftLoading, setSpGiftLoading] = useState(false);
+  const [spCoherence, setSpCoherence] = useState(null);
+  const [spPicture, setSpPicture] = useState(null);
+  const [spMelodyQuery, setSpMelodyQuery] = useState("");
+  const [spMelodyResults, setSpMelodyResults] = useState([]);
+  const [spMelodySearching, setSpMelodySearching] = useState(false);
+  const [spMelody, setSpMelody] = useState(null);
+  const [spMelodyPlaying, setSpMelodyPlaying] = useState(false);
+  const [spReflection, setSpReflection] = useState(null);
+  const [spReflecting, setSpReflecting] = useState(false);
+  const [spSaved, setSpSaved] = useState(false);
+  const spAudioRef = useRef(null);
+
   const passageRef = useRef(null);
   const dk = dateKey();
 
@@ -215,6 +235,15 @@ export default function App() {
         if (existing.scriptTrad) setScriptTrad(existing.scriptTrad);
         if (existing.filmGenre) setFilmGenre(existing.filmGenre);
         setSaved(true);
+        // restore semicolon page fields
+        if (existing.spMoment) setSpMoment(existing.spMoment);
+        if (existing.spMeaning) setSpMeaning(existing.spMeaning);
+        if (existing.spClosing) setSpClosing(existing.spClosing);
+        if (existing.spEcho) setSpEcho(existing.spEcho);
+        if (existing.spAnd) setSpAnd(existing.spAnd);
+        if (existing.spPicture) setSpPicture(existing.spPicture);
+        if (existing.spMelody) setSpMelody(existing.spMelody);
+        if (existing.spSaved) setSpSaved(true);
       }
       setLoading(false);
     })();
@@ -696,6 +725,176 @@ Be honest about the lean without contempt for either direction. Your task is cla
     setLensLoading(false);
   };
 
+  // ── Semicolon Page: melody search ──
+  useEffect(() => {
+    if (!spMelodyQuery.trim() || spMelodyQuery.length < 3) { setSpMelodyResults([]); return; }
+    const ac = new AbortController();
+    const t = setTimeout(async () => {
+      setSpMelodySearching(true);
+      try {
+        const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(spMelodyQuery)}&media=music&entity=song&limit=5`, { signal: ac.signal });
+        const d = await r.json();
+        if (!ac.signal.aborted) setSpMelodyResults(d.results || []);
+      } catch (e) { if (e.name !== 'AbortError') setSpMelodyResults([]); }
+      if (!ac.signal.aborted) setSpMelodySearching(false);
+    }, 500);
+    return () => { clearTimeout(t); ac.abort(); };
+  }, [spMelodyQuery]);
+
+  const spPlayPause = () => {
+    if (!spMelody?.previewUrl) return;
+    const audio = spAudioRef.current;
+    if (!audio) return;
+    if (spMelodyPlaying) { audio.pause(); setSpMelodyPlaying(false); }
+    else { audio.src = spMelody.previewUrl; audio.play().catch(() => {}); setSpMelodyPlaying(true); }
+  };
+
+  const spCalcCoherence = useMemo(() => {
+    const fields = [spMoment, spMeaning, spEcho, spAnd, spClosing];
+    const filled = fields.filter(f => f.trim().length > 0).length;
+    const total = fields.length;
+    if (filled === 0) return null;
+    const base = filled / total;
+    const momentWeight = spMoment.trim().length > 10 ? 0.15 : 0;
+    const echoWeight = spEcho.trim().length > 5 ? 0.1 : 0;
+    const melodyBonus = spMelody ? 0.05 : 0;
+    const pictureBonus = spPicture ? 0.05 : 0;
+    const p = Math.min(0.99, base * 0.65 + momentWeight + echoWeight + melodyBonus + pictureBonus);
+    return Math.round(p * 100);
+  }, [spMoment, spMeaning, spEcho, spAnd, spClosing, spMelody, spPicture]);
+
+  const spSave = async () => {
+    try {
+      const day = allDays.find(d => d.key === dk) || {};
+      const updated = {
+        ...day,
+        key: dk,
+        date: today(),
+        passage: passage.trim() || day.passage || "",
+        lastWord: lastWord.trim() || day.lastWord || "",
+        picture: picture || day.picture || null,
+        spMoment: spMoment.trim(),
+        spMeaning: spMeaning.trim(),
+        spClosing: spClosing.trim(),
+        spEcho: spEcho.trim(),
+        spAnd: spAnd.trim(),
+        spPicture: spPicture,
+        spMelody: spMelody,
+        spSaved: true,
+        ts: new Date().toISOString(),
+      };
+      const rest = allDays.filter(d => d.key !== dk);
+      const all = [updated, ...rest];
+      setAllDays(all);
+      setTodayData(updated);
+      await sv("sg-book", all);
+      setSpSaved(true);
+    } catch {}
+  };
+
+  const spReflect = async () => {
+    if (!spMoment.trim() || !apiKey) return;
+    setSpReflecting(true);
+    try {
+      const prevEntries = allDays
+        .filter(d => d.key !== dk && (d.passage?.trim() || d.spMoment?.trim()))
+        .slice(0, 8)
+        .map(d => `[${d.date}] moment: "${d.spMoment || d.passage?.slice(0,120) || '—'}" closing: "${d.spClosing || d.lastWord || '—'}"`)
+        .join("\n");
+
+      const melodyCtx = spMelody ? `\nDay melody: ${spMelody.artistName} — "${spMelody.trackName}"` : '';
+
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 600,
+          system: `You are the Lighthouse — a careful reader of endured moments and the arcs they continue. You read what was actually endured, not what sounds heroic. Your job is to name what the semicolon held: the moment that did not end in a period.
+
+The writer's compass (never name these labels): seek to understand then be understood; humility & patience (Eph 4:2); trust through candor/competence/care/control; two arcs (OB=arrival, NICU=trajectory); pride=identity, hope=direction, conviction=action.
+
+Previous entries:
+${prevEntries || "First entry. No prior threads yet."}
+${melodyCtx}
+
+Read the endured moment, its meaning, what echoed it, and the continuation (the And). Return EXACTLY:
+
+WITNESS:: [20-30 words. Name what was actually endured — not the feeling about it, but the thing itself. Precise. Present tense. As if watching it happen.]
+
+ARC:: [35-50 words. What larger story does this moment belong to? Where does the thread lead when you follow it backward through past entries and forward through what's becoming? Name the arc, not the endpoint.]
+
+CARRY:: [15-20 words. The one thing from today that will still matter in a week. Specific. Warm. Not grand — true.]
+
+Plain text only. No markdown. Match the weight of what was endured.`,
+          messages: [{ role: "user", content: `The ; Moment: "${spMoment}"\nWhat I think it meant: "${spMeaning}"\nWhat echoed it: "${spEcho}"\nThe And (the continuation): "${spAnd}"\nClosing word: "${spClosing}"` }],
+        }),
+      });
+      const d = await r.json();
+      if (d.error) {
+        setSpReflection("The lighthouse received your signal. Sometimes that's enough.");
+      } else {
+        setSpReflection(d.content?.map(i => i.text || "").join("\n") || "Signal received.");
+      }
+    } catch {
+      setSpReflection("The lighthouse received your signal. Sometimes that's enough.");
+    }
+    setSpReflecting(false);
+  };
+
+  const spGenerateGift = async () => {
+    if (!apiKey || !spMoment.trim()) return;
+    setSpGiftLoading(true);
+    try {
+      const melodyCtx = spMelody ? `\nMelody: ${spMelody.artistName} — "${spMelody.trackName}"` : '';
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 100,
+          system: `Read the endured moment and its continuation. In 20-30 words, name what today gave this person — not the effort, not the pain, but the yield: what stays after endurance. Begin with "Today gave you" or a variation. Specific. Warm. Present.`,
+          messages: [{ role: "user", content: `Moment: "${spMoment}"\nMeaning: "${spMeaning}"\nEcho: "${spEcho}"\nThe And: "${spAnd}"\nClosing: "${spClosing}"${melodyCtx}` }],
+        }),
+      });
+      const d = await r.json();
+      if (!d.error) setSpGift(d.content?.map(i => i.text || '').join('\n') || null);
+    } catch {}
+    setSpGiftLoading(false);
+  };
+
+  const handleSpPicture = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { setSpPicture(ev.target.result); setSpSaved(false); };
+    reader.readAsDataURL(file);
+  };
+
+  const parseSpReflection = (text) => {
+    const LABELS = ['WITNESS','ARC','CARRY'];
+    const get = (label) => {
+      const others = LABELS.filter(l => l !== label).join('|');
+      const m = text.match(new RegExp(label + '::[\\s\\S]*?(?=' + others + '::|$)'));
+      return m ? m[0].replace(label + '::', '').trim() : null;
+    };
+    return { witness: get('WITNESS'), arc: get('ARC'), carry: get('CARRY') };
+  };
+
+  const spTimeStr = useMemo(() => {
+    const d = new Date();
+    const h = d.getHours();
+    const m = d.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+  }, []);
+
+  const spDateStr = useMemo(() => {
+    const d = new Date();
+    return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  }, []);
+
   if (loading) return (
     <Shell>
       <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -706,7 +905,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
 
   return (
     <Shell>
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 16px" }}>
+      <div style={{ maxWidth: page === "semicolon" ? 760 : 480, margin: "0 auto", padding: "0 16px", transition: "max-width 0.3s ease" }}>
         {/* Header */}
         <header style={{
           display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -718,6 +917,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
           }}>s;</button>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             {[
+              { k: "semicolon", l: ";" },
               { k: "today", l: "Today" },
               { k: "book", l: `Book (${allDays.length})` },
               { k: "lens", l: "Lens" },
@@ -767,6 +967,441 @@ Be honest about the lean without contempt for either direction. Your task is cla
             </div>
             <div style={{ fontSize: 9, color: "rgba(var(--sg-t),0.12)", marginTop: 6, lineHeight: 1.5 }}>
               Your key is stored locally and never sent anywhere except directly to Anthropic.
+            </div>
+          </div>
+        )}
+
+        {/* ═══ SEMICOLON PAGE ═══ */}
+        {page === "semicolon" && (
+          <div style={{ paddingTop: 20, paddingBottom: 50 }}>
+            <audio ref={spAudioRef} onEnded={() => setSpMelodyPlaying(false)} style={{ display: "none" }} />
+
+            {/* ── Header as sentence ── */}
+            <div style={{ marginBottom: 28, animation: "slideUp 0.3s ease" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                <span style={{ fontSize: 11, color: "rgba(201,169,110,0.4)", fontFamily: F.m, letterSpacing: "0.06em" }}>
+                  {spDateStr}
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(201,169,110,0.2)", fontFamily: F.m }}>·</span>
+                <span style={{ fontSize: 11, color: "rgba(201,169,110,0.35)", fontFamily: F.m }}>
+                  {spTimeStr}
+                </span>
+                <span style={{ fontSize: 22, color: G, fontFamily: F.h, lineHeight: 1, opacity: 0.7 }}>;</span>
+              </div>
+              <h1 style={{
+                fontSize: 22, fontFamily: F.h, fontWeight: 400,
+                color: "rgba(var(--sg-t),0.65)", lineHeight: 1.4, marginBottom: 4,
+              }}>
+                What moment did you endure today?
+              </h1>
+              <p style={{
+                fontSize: 13, color: "rgba(var(--sg-t),0.22)", fontFamily: F.h,
+                fontStyle: "italic",
+              }}>
+                and what did it continue?
+              </p>
+            </div>
+
+            {/* ── Two-column layout (stacks on mobile) ── */}
+            <div className="sp-grid" style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+              gap: 20,
+            }}>
+              {/* ═══ LEFT COLUMN: The Endured ═══ */}
+              <div style={{ minWidth: 0 }}>
+                {/* The ; Moment */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{
+                    fontSize: 9, color: G, textTransform: "uppercase",
+                    letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+                    opacity: 0.5,
+                  }}>The ; Moment</label>
+                  <p style={{ fontSize: 10, color: "rgba(var(--sg-t),0.14)", marginBottom: 6,
+                    fontStyle: "italic", lineHeight: 1.5 }}>
+                    The single moment today that asked you to hold on. Not the hardest — the one that mattered.
+                  </p>
+                  <textarea
+                    value={spMoment}
+                    onChange={e => { setSpMoment(e.target.value); setSpSaved(false); }}
+                    placeholder="What happened. No filter. Let the moment speak."
+                    rows={4}
+                    spellCheck={false}
+                    autoCorrect="off"
+                    style={{
+                      ...inputStyle,
+                      fontSize: 15, fontFamily: F.h, lineHeight: 1.7, minHeight: 100,
+                    }}
+                  />
+                </div>
+
+                {/* What I think it meant */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{
+                    fontSize: 9, color: "rgba(201,169,110,0.4)", textTransform: "uppercase",
+                    letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+                  }}>What happened — and what I think it meant</label>
+                  <textarea
+                    value={spMeaning}
+                    onChange={e => { setSpMeaning(e.target.value); setSpSaved(false); }}
+                    placeholder="The meaning you assign right now. It may change tomorrow ; that's the point."
+                    rows={3}
+                    spellCheck={false}
+                    style={{
+                      ...inputStyle,
+                      fontSize: 14, fontFamily: F.h, lineHeight: 1.7, fontStyle: "italic",
+                      minHeight: 80,
+                    }}
+                  />
+                </div>
+
+                {/* Closing word */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{
+                    fontSize: 9, color: "rgba(201,169,110,0.4)", textTransform: "uppercase",
+                    letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+                  }}>Closing word</label>
+                  <p style={{ fontSize: 10, color: "rgba(var(--sg-t),0.12)", marginBottom: 6,
+                    fontStyle: "italic", lineHeight: 1.5 }}>
+                    The word that stays when everything else falls away.
+                  </p>
+                  <input
+                    value={spClosing}
+                    onChange={e => { setSpClosing(e.target.value); setSpSaved(false); }}
+                    placeholder="One word."
+                    spellCheck={false}
+                    style={{
+                      ...inputStyle,
+                      fontSize: 22, fontFamily: F.h, textAlign: "center",
+                      padding: "14px 14px", letterSpacing: "0.05em",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* ═══ RIGHT COLUMN: The Continuation ═══ */}
+              <div style={{ minWidth: 0 }}>
+                {/* What echoed it */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{
+                    fontSize: 9, color: G, textTransform: "uppercase",
+                    letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+                    opacity: 0.5,
+                  }}>What echoed it</label>
+                  <p style={{ fontSize: 10, color: "rgba(var(--sg-t),0.14)", marginBottom: 6,
+                    fontStyle: "italic", lineHeight: 1.5 }}>
+                    A past moment, a lyric, a verse, a memory — anything that rhymes with today's endurance.
+                  </p>
+                  <textarea
+                    value={spEcho}
+                    onChange={e => { setSpEcho(e.target.value); setSpSaved(false); }}
+                    placeholder="What today reminded you of ; where you've felt this before…"
+                    rows={3}
+                    spellCheck={false}
+                    style={{
+                      ...inputStyle,
+                      fontSize: 14, fontFamily: F.h, lineHeight: 1.7,
+                      minHeight: 80,
+                    }}
+                  />
+                </div>
+
+                {/* The And */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{
+                    fontSize: 9, color: "rgba(201,169,110,0.4)", textTransform: "uppercase",
+                    letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+                  }}>The And</label>
+                  <p style={{ fontSize: 10, color: "rgba(var(--sg-t),0.12)", marginBottom: 6,
+                    fontStyle: "italic", lineHeight: 1.5 }}>
+                    Today was a semicolon, not a period. What does it continue? What comes next in this sentence?
+                  </p>
+                  <textarea
+                    value={spAnd}
+                    onChange={e => { setSpAnd(e.target.value); setSpSaved(false); }}
+                    placeholder="The continuation. The clause after the semicolon."
+                    rows={3}
+                    spellCheck={false}
+                    style={{
+                      ...inputStyle,
+                      fontSize: 14, fontFamily: F.h, lineHeight: 1.7,
+                      minHeight: 80,
+                    }}
+                  />
+                </div>
+
+                {/* What today gave you */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{
+                    fontSize: 9, color: "rgba(201,169,110,0.4)", textTransform: "uppercase",
+                    letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+                  }}>What today gave you</label>
+                  {spGiftLoading ? (
+                    <div style={{ padding: "12px 14px", fontSize: 11, color: "rgba(201,169,110,0.4)",
+                      fontFamily: F.m, animation: "breathe 1.5s ease-in-out infinite", letterSpacing: "0.06em",
+                      border: "1px solid rgba(201,169,110,0.06)", borderRadius: 9,
+                    }}>reading what today gave you…</div>
+                  ) : spGift ? (
+                    <div style={{ padding: "12px 14px", border: "1px solid rgba(201,169,110,0.1)",
+                      borderRadius: 9, animation: "slideUp 0.3s ease" }}>
+                      <p style={{ fontSize: 14, color: "rgba(var(--sg-t),0.6)", lineHeight: 1.8,
+                        fontFamily: F.h, fontStyle: "italic", margin: 0 }}>{spGift}</p>
+                    </div>
+                  ) : (
+                    <div style={{ padding: "10px 14px", fontSize: 10, color: "rgba(var(--sg-t),0.1)",
+                      fontFamily: F.b, fontStyle: "italic",
+                      border: "1px dashed rgba(var(--sg-t),0.05)", borderRadius: 9,
+                    }}>Appears after you save and ask the lighthouse to read.</div>
+                  )}
+                </div>
+
+                {/* Signal coherence */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{
+                    fontSize: 9, color: "rgba(201,169,110,0.4)", textTransform: "uppercase",
+                    letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+                  }}>Signal coherence</label>
+                  <p style={{ fontSize: 10, color: "rgba(var(--sg-t),0.12)", marginBottom: 8,
+                    fontStyle: "italic", lineHeight: 1.5 }}>
+                    How clearly this page honors one endured moment and the continuation it belongs to.
+                  </p>
+                  {spCalcCoherence !== null ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{
+                        width: "100%", height: 3, background: "rgba(var(--sg-t),0.04)",
+                        borderRadius: 2, overflow: "hidden",
+                      }}>
+                        <div style={{
+                          width: `${spCalcCoherence}%`, height: "100%",
+                          background: `rgba(201,169,110,${0.2 + spCalcCoherence * 0.006})`,
+                          borderRadius: 2, transition: "width 0.5s ease",
+                        }} />
+                      </div>
+                      <span style={{
+                        fontSize: 18, fontFamily: F.m, color: "rgba(201,169,110,0.45)",
+                        flexShrink: 0, minWidth: 42, textAlign: "right",
+                      }}>{spCalcCoherence}%</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 10, color: "rgba(var(--sg-t),0.08)", fontFamily: F.m }}>
+                      — waiting for signal —
+                    </div>
+                  )}
+                </div>
+
+                {/* Primary CTA */}
+                {spMoment.trim() && apiKey && (
+                  <button onClick={() => { spSave(); spReflect(); spGenerateGift(); }} disabled={spReflecting} style={{
+                    width: "100%", padding: "14px",
+                    background: spReflecting ? "rgba(var(--sg-t),0.02)" : "rgba(201,169,110,0.12)",
+                    border: `1px solid ${spReflecting ? "rgba(var(--sg-t),0.04)" : "rgba(201,169,110,0.25)"}`,
+                    color: spReflecting ? "rgba(201,169,110,0.35)" : G,
+                    borderRadius: 10, fontSize: 13, cursor: spReflecting ? "default" : "pointer",
+                    fontFamily: F.b, transition: "all 0.3s", letterSpacing: "0.02em",
+                  }}>
+                    {spReflecting ? "The lighthouse is reading…" : "Ask the Lighthouse to read ;"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ── Save button (below columns) ── */}
+            <div style={{ marginTop: 16 }}>
+              <button onClick={spSave} style={{
+                width: "100%", padding: "13px",
+                background: spSaved ? "rgba(100,160,100,0.08)" : "rgba(201,169,110,0.1)",
+                border: `1px solid ${spSaved ? "rgba(100,160,100,0.15)" : "rgba(201,169,110,0.2)"}`,
+                color: spSaved ? "rgba(100,160,100,0.5)" : G,
+                borderRadius: 10, fontSize: 13, cursor: "pointer", fontFamily: F.b,
+                transition: "all 0.3s",
+              }}>
+                {spSaved ? "Saved ✓" : "Save today's semicolon ;"}
+              </button>
+            </div>
+
+            {/* ── Lighthouse reflection ── */}
+            {spReflection && (() => {
+              const { witness, arc, carry } = parseSpReflection(spReflection);
+              const hasStructure = witness || arc || carry;
+              const div = { borderTop: "1px solid rgba(201,169,110,0.05)", marginTop: 14, paddingTop: 14 };
+              return (
+                <div style={{ marginTop: 18, padding: "18px 18px 14px", background: "rgba(201,169,110,0.02)",
+                  border: "1px solid rgba(201,169,110,0.06)", borderRadius: 10, animation: "slideUp 0.3s ease" }}>
+                  <div style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
+                    letterSpacing: "0.12em", marginBottom: 14, fontFamily: F.b }}>The Lighthouse reads</div>
+                  {hasStructure ? (
+                    <>
+                      {witness && (
+                        <div>
+                          <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                            letterSpacing: "0.15em", marginBottom: 5, fontFamily: F.b }}>witness</div>
+                          <p style={{ fontSize: 13, color: "rgba(var(--sg-t),0.5)", lineHeight: 1.85,
+                            fontFamily: F.h, margin: 0, fontStyle: "italic" }}>{witness}</p>
+                        </div>
+                      )}
+                      {arc && (
+                        <div style={witness ? div : {}}>
+                          <div style={{ fontSize: 7, color: "rgba(201,169,110,0.3)", textTransform: "uppercase",
+                            letterSpacing: "0.15em", marginBottom: 8, fontFamily: F.b }}>the arc</div>
+                          <p style={{ fontSize: 15, color: "rgba(var(--sg-t),0.68)", lineHeight: 1.9,
+                            fontFamily: F.h, margin: 0 }}>{arc}</p>
+                        </div>
+                      )}
+                      {carry && (
+                        <div style={(witness || arc) ? div : {}}>
+                          <div style={{ fontSize: 7, color: "rgba(201,169,110,0.28)", textTransform: "uppercase",
+                            letterSpacing: "0.15em", marginBottom: 5, fontFamily: F.b }}>carry forward</div>
+                          <p style={{ fontSize: 12, color: "rgba(201,169,110,0.5)", lineHeight: 1.75,
+                            fontFamily: F.b, margin: 0 }}>{carry}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p style={{ fontSize: 14, color: "rgba(var(--sg-t),0.55)", lineHeight: 1.85,
+                      fontFamily: F.h, margin: 0 }}>{spReflection}</p>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── Reserved: Day Signal Image ── */}
+            <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <label style={{
+                  fontSize: 8, color: "rgba(201,169,110,0.3)", textTransform: "uppercase",
+                  letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+                }}>Day Signal Image</label>
+                {spPicture ? (
+                  <div style={{ position: "relative" }}>
+                    <img src={spPicture} alt="Day signal" style={{
+                      width: "100%", borderRadius: 9, maxHeight: 180, objectFit: "cover",
+                      border: "1px solid rgba(201,169,110,0.08)",
+                    }} />
+                    <button onClick={() => { setSpPicture(null); setSpSaved(false); }} style={{
+                      position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.5)",
+                      border: "none", color: "rgba(255,255,255,0.6)", width: 22, height: 22,
+                      borderRadius: 11, cursor: "pointer", fontSize: 11,
+                    }}>×</button>
+                  </div>
+                ) : (
+                  <label style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    height: 80, border: "1px dashed rgba(201,169,110,0.1)", borderRadius: 9,
+                    cursor: "pointer", color: "rgba(201,169,110,0.2)", fontSize: 11,
+                    fontFamily: F.b,
+                  }}>
+                    <input type="file" accept="image/*" onChange={handleSpPicture} style={{ display: "none" }} />
+                    Today's image
+                  </label>
+                )}
+              </div>
+
+              {/* ── Reserved: Day Melody ── */}
+              <div>
+                <label style={{
+                  fontSize: 8, color: "rgba(201,169,110,0.3)", textTransform: "uppercase",
+                  letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 6,
+                }}>Day Melody</label>
+                {spMelody ? (
+                  <div style={{
+                    padding: "10px 12px",
+                    border: "1px solid rgba(201,169,110,0.12)",
+                    borderRadius: 9, background: "rgba(201,169,110,0.02)",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {spMelody.trackName}
+                        </div>
+                        <div style={{ fontSize: 10, color: "rgba(201,169,110,0.4)", fontFamily: F.b, marginTop: 2 }}>
+                          {spMelody.artistName}
+                        </div>
+                      </div>
+                      <button onClick={() => { setSpMelody(null); setSpMelodyPlaying(false); if (spAudioRef.current) spAudioRef.current.pause(); setSpSaved(false); }} style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        fontSize: 10, color: "rgba(var(--sg-t),0.2)", fontFamily: F.b, flexShrink: 0,
+                      }}>×</button>
+                    </div>
+                    {spMelody.artworkUrl100 && (
+                      <img src={spMelody.artworkUrl100} alt="" style={{
+                        width: "100%", borderRadius: 6, marginBottom: 6,
+                        opacity: 0.85,
+                      }} />
+                    )}
+                    {spMelody.previewUrl && (
+                      <button onClick={spPlayPause} style={{
+                        width: "100%", padding: "6px",
+                        background: spMelodyPlaying ? "rgba(201,169,110,0.1)" : "rgba(var(--sg-t),0.03)",
+                        border: `1px solid ${spMelodyPlaying ? "rgba(201,169,110,0.2)" : "rgba(var(--sg-t),0.06)"}`,
+                        color: spMelodyPlaying ? G : "rgba(var(--sg-t),0.3)",
+                        borderRadius: 6, fontSize: 10, cursor: "pointer", fontFamily: F.b,
+                        transition: "all 0.2s",
+                      }}>
+                        {spMelodyPlaying ? "◼ pause" : "▶ preview"}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ position: "relative" }}>
+                    <input
+                      value={spMelodyQuery}
+                      onChange={e => setSpMelodyQuery(e.target.value)}
+                      onBlur={() => setTimeout(() => setSpMelodyResults([]), 200)}
+                      placeholder="Search for today's song…"
+                      spellCheck={false}
+                      style={{
+                        ...inputStyle,
+                        fontSize: 11, fontFamily: F.b,
+                        paddingRight: spMelodySearching ? 70 : undefined,
+                      }}
+                    />
+                    {spMelodySearching && (
+                      <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                        fontSize: 8, color: "rgba(201,169,110,0.3)", fontFamily: F.m,
+                        animation: "breathe 1.2s ease-in-out infinite" }}>searching…</div>
+                    )}
+                    {spMelodyResults.length > 0 && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
+                        background: "var(--sg-bg)", border: "1px solid rgba(201,169,110,0.18)",
+                        borderRadius: 8, marginTop: 3, overflow: "hidden",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
+                        {spMelodyResults.map((s, i) => (
+                          <button key={i} onClick={() => {
+                            setSpMelody({ trackName: s.trackName, artistName: s.artistName, previewUrl: s.previewUrl, artworkUrl100: s.artworkUrl100 });
+                            setSpMelodyResults([]);
+                            setSpMelodyQuery("");
+                            setSpSaved(false);
+                          }} style={{
+                            display: "block", width: "100%", textAlign: "left",
+                            padding: "7px 12px", background: "none",
+                            border: "none", borderBottom: i < spMelodyResults.length - 1 ? "1px solid rgba(201,169,110,0.05)" : "none",
+                            cursor: "pointer",
+                          }}>
+                            <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.55)", fontFamily: F.b }}>{s.trackName}</div>
+                            <div style={{ fontSize: 9, color: "rgba(201,169,110,0.3)", fontFamily: F.b, marginTop: 1 }}>
+                              {s.artistName} · {s.collectionName}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Footer philosophy ── */}
+            <div style={{
+              marginTop: 28, textAlign: "center", padding: "16px 20px",
+              borderTop: "1px solid rgba(var(--sg-t),0.025)",
+            }}>
+              <p style={{
+                fontSize: 10, color: "rgba(var(--sg-t),0.1)", fontFamily: F.h,
+                fontStyle: "italic", lineHeight: 1.7,
+              }}>
+                A semicolon is not a period. It's a held breath between two truths — the endured moment and the arc it continues. This page is a daily artifact of witness, endurance, continuation, and meaning.
+              </p>
             </div>
           </div>
         )}
@@ -2092,6 +2727,9 @@ function Shell({ children }) {
         textarea:focus, input:focus { outline: none; border-color: rgba(201,169,110,0.25) !important; }
         textarea, input { -webkit-text-size-adjust: 100%; }
         ::selection { background: rgba(201,169,110,0.2); }
+        @media (max-width: 640px) {
+          .sp-grid { grid-template-columns: 1fr !important; }
+        }
         ::-webkit-scrollbar { width: 2px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.04); border-radius: 2px; }
