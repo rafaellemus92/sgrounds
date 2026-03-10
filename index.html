@@ -484,4 +484,108 @@ Speak with the weight of deep time. Under 150 words. Plain text only. No list fo
                     <div style={{ position:"relative" }}>
                       <input value={quote} onChange={e => handleQuoteChange(e.target.value)} placeholder={`A ${quoteType} that's with you today...`} style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", padding:"8px 12px" }} />
                       {quoteSuggestions.length > 0 && (quoteType === "lyric" || quoteType === "film") && (
-                        <div style={{ position:"absolute", left:0, right:0, top:"100%", zIndex:20, background:"#121110",
+                        <div style={{ position:"absolute", left:0, right:0, top:"100%", zIndex:20, background:"#121110", border:"1px solid rgba(201,169,110,0.12)", borderRadius:8, marginTop:2, overflow:"hidden", boxShadow:"0 8px 24px rgba(0,0,0,0.5)" }}>
+                          {quoteSuggestions.map((s, i) => { const title = s.trackName || s.collectionName || ""; const artist = s.artistName || ""; return (<button key={s.trackId || s.collectionId || i} onClick={() => { setQuote(title); setQuoteSource(artist); setQuoteSuggestions([]); setSaved(false); }} style={{ width:"100%", textAlign:"left", padding:"8px 11px", background:"none", border:"none", borderBottom:"1px solid rgba(255,255,255,0.03)", cursor:"pointer", display:"block" }}><div style={{ fontSize:12, fontFamily:F.h, fontStyle:"italic", color:"rgba(255,255,255,0.55)" }}>{title}</div>{artist && <div style={{ fontSize:10, fontFamily:F.b, color:"rgba(201,169,110,0.35)", marginTop:1 }}>{artist}</div>}</button>); })}
+                          <button onClick={() => setQuoteSuggestions([])} style={{ width:"100%", padding:"5px", background:"none", border:"none", cursor:"pointer", fontSize:8, fontFamily:F.m, color:"rgba(255,255,255,0.07)", letterSpacing:"0.1em" }}>dismiss</button>
+                        </div>
+                      )}
+                    </div>
+                    <input value={quoteSource} onChange={e => { setQuoteSource(e.target.value); setSaved(false); }} placeholder="Source — artist, book, film..." style={{ ...inputStyle, fontSize:11, fontFamily:F.b, color:"rgba(255,255,255,0.35)", padding:"7px 12px" }} />
+                  </div>
+                )}
+              </div>
+
+              <div style={{ flexShrink:0, paddingBottom:8 }}>
+                <button onClick={() => saveDay()} style={{ width:"100%", padding:"11px", background: saved ? "rgba(100,160,100,0.08)" : "rgba(201,169,110,0.12)", border: `1px solid ${saved ? "rgba(100,160,100,0.15)" : "rgba(201,169,110,0.25)"}`, color: saved ? "rgba(100,160,100,0.5)" : G, borderRadius:10, fontSize:13, cursor:"pointer", fontFamily:F.b, transition:"all 0.3s", marginBottom:5 }}>
+                  {saved ? "Saved ✓" : "Save today's page ;"}
+                </button>
+                {passage.trim() && (<>
+                  <div style={{ display:"flex", gap:4, marginBottom:5, overflowX:"auto", paddingBottom:2 }}>
+                    {WISDOM_LENSES.map(lens => (<button key={lens.k} onClick={() => setWisdomLens(lens.k)} style={{ flexShrink:0, fontSize:9, padding:"3px 9px", borderRadius:6, cursor:"pointer", fontFamily:F.b, background: wisdomLens === lens.k ? "rgba(201,169,110,0.1)" : "none", border:`1px solid ${wisdomLens === lens.k ? "rgba(201,169,110,0.2)" : "rgba(255,255,255,0.04)"}`, color: wisdomLens === lens.k ? G : "rgba(255,255,255,0.15)", whiteSpace:"nowrap" }}>{lens.l}</button>))}
+                  </div>
+                  <button onClick={reflect} disabled={reflecting} style={{ width:"100%", padding:"9px", background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.04)", color:"rgba(201,169,110,0.3)", borderRadius:10, fontSize:11, cursor:"pointer", fontFamily:F.b }}>
+                    {reflecting ? "The Lighthouse is reading..." : "Ask the Lighthouse to reflect"}
+                  </button>
+                  {reflection && !showFortune && (<button onClick={() => setShowFortune(true)} style={{ marginTop:4, width:"100%", padding:"6px", background:"none", border:"1px dashed rgba(201,169,110,0.08)", color:"rgba(201,169,110,0.2)", borderRadius:8, fontSize:9, cursor:"pointer", fontFamily:F.m }}>read again ;</button>)}
+                </>)}
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ BOOK ══════════ */}
+          {page === "book" && (
+            <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 50px" }}>
+              <div style={{ marginBottom:18 }}>
+                <h2 style={{ fontFamily:F.h, fontSize:20, fontWeight:400, color:"rgba(255,255,255,0.7)", marginBottom:2 }}>{profile?.name ? `${profile.name}'s Book` : "Your Book"}</h2>
+                <p style={{ fontSize:9, color:"rgba(255,255,255,0.1)", fontFamily:F.m }}>{allDays.length} {allDays.length === 1 ? "thread" : "threads"}{allDays.length > 0 && ` · ${allDays.filter(d => d.lastWord?.trim()).length} last words`}</p>
+              </div>
+              {allDays.length === 0 ? (<div style={{ textAlign:"center", padding:"40px 10px" }}><div style={{ fontSize:24, fontFamily:F.h, color:"rgba(201,169,110,0.05)" }}>;</div><p style={{ fontSize:11, color:"rgba(255,255,255,0.06)", marginTop:6 }}>No threads yet. Go to Today and write.</p></div>) : (<>
+                {allDays.some(d => d.lastWord?.trim()) && (<div style={{ padding:"12px 14px", background:"rgba(201,169,110,0.02)", border:"1px solid rgba(201,169,110,0.04)", borderRadius:9, marginBottom:16 }}><div style={{ fontSize:8, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:8 }}>Last words</div><div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{allDays.filter(d => d.lastWord?.trim()).map(d => (<span key={d.key} style={{ fontSize:13, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.5 }}>{d.lastWord}</span>))}</div></div>)}
+                {allDays.map(day => { const [y,m,d] = day.key.split("-").map(Number); const verseRef = profile?.name ? `${profile.name} ${m}:${d}:${y}` : day.date; return (
+                  <div key={day.key} style={{ background:"rgba(255,255,255,0.012)", border:"1px solid rgba(255,255,255,0.025)", borderRadius:9, marginBottom:10, overflow:"hidden", borderLeft:"2px solid rgba(201,169,110,0.1)" }}>
+                    <div style={{ padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.015)" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <span style={{ fontSize:9, color:"rgba(201,169,110,0.4)", fontFamily:F.m, letterSpacing:"0.08em" }}>{verseRef}</span>
+                        {day.lastWord?.trim() && <span style={{ fontSize:12, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.45 }}>{day.lastWord}</span>}
+                      </div>
+                      {day.chapterTitle?.trim() && <div style={{ fontSize:15, color:"rgba(201,169,110,0.55)", fontFamily:F.h, fontStyle:"italic", marginTop:4 }}>{day.chapterTitle}</div>}
+                    </div>
+                    {day.picture && <img src={day.picture} alt="" style={{ width:"100%", height:"auto", maxHeight:280, objectFit:"contain", display:"block", background:"rgba(0,0,0,0.3)" }}/>}
+                    {day.picDesc?.trim() && !day.picture && <div style={{ padding:"8px 14px", borderBottom:"1px solid rgba(255,255,255,0.01)" }}><p style={{ fontSize:11, color:"rgba(255,255,255,0.2)", fontFamily:F.h, fontStyle:"italic", margin:0, lineHeight:1.6 }}>{day.picDesc}</p></div>}
+                    {day.passage?.trim() && <div style={{ padding:"12px 14px" }}><p style={{ fontSize:14, color:"rgba(255,255,255,0.55)", lineHeight:1.85, fontFamily:F.h, margin:0, whiteSpace:"pre-wrap" }}>{day.passage}</p></div>}
+                    {day.quote?.trim() && <div style={{ padding:"6px 12px 10px", borderTop:"1px solid rgba(255,255,255,0.01)" }}><p style={{ fontSize:11, color:"rgba(201,169,110,0.3)", fontFamily:F.h, fontStyle:"italic", margin:0 }}>"{day.quote}"{day.quoteSource ? ` — ${day.quoteSource}` : ""}</p></div>}
+                    {day.reflection?.trim() && <div style={{ padding:"10px 14px 12px", borderTop:"1px solid rgba(201,169,110,0.04)", background:"rgba(201,169,110,0.015)" }}><div style={{ fontSize:7, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:6 }}>The Lighthouse</div><p style={{ fontSize:13, color:"rgba(255,255,255,0.4)", fontFamily:F.h, lineHeight:1.8, margin:0 }}>{day.reflection}</p></div>}
+                    {day.weaveText?.trim() && <div style={{ padding:"10px 14px 12px", borderTop:"1px solid rgba(201,169,110,0.03)", background:"rgba(201,169,110,0.008)" }}><div style={{ fontSize:7, color:"rgba(201,169,110,0.15)", textTransform:"uppercase", letterSpacing:"0.15em", marginBottom:6 }}>Urðr · Verðandi · Skuld</div><p style={{ fontSize:12, color:"rgba(255,255,255,0.3)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.9, margin:0 }}>{day.weaveText}</p></div>}
+                  </div>
+                ); })}
+              </>)}
+            </div>
+          )}
+
+          {/* ══════════ ABOUT ══════════ */}
+          {page === "about" && (
+            <div style={{ flex:1, overflowY:"auto", padding:"22px 16px 50px", maxWidth:340, margin:"0 auto", width:"100%" }}>
+              <div style={{ textAlign:"center", marginBottom:22 }}>
+                <Logo size={38}/>
+                <h2 style={{ fontFamily:F.h, fontSize:16, fontWeight:400, color:"rgba(255,255,255,0.65)", margin:"10px 0 8px" }}>sgrounds</h2>
+                <p style={{ fontSize:12, color:"rgba(255,255,255,0.2)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.65 }}>History doesn't repeat itself but it rhymes — this helps you hear the rhyme.</p>
+              </div>
+              {[["One thread per day","Today's date. Your passage. A picture. Your last word. That's the whole book."],["280 characters","The constraint is the feature. Enough to be true. Not enough to be safe."],["The Lighthouse reads","After you write, ask the Lighthouse to reflect. It reads across all your threads and names the pattern it finds."],["Your Book","Every day becomes a thread. Over time the threads form a picture. Recurring words. Emotional shifts. The shape of a life."],["Last word","One word before you close your eyes. The word your soul chose when everything else fell away."]].map(([t, d], i) => (
+                <div key={i} style={{ display:"flex", gap:10, marginBottom:12 }}>
+                  <div style={{ fontFamily:F.h, fontSize:13, color:G, opacity:0.25, minWidth:18, textAlign:"center" }}>{i+1}</div>
+                  <div><div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontWeight:500, marginBottom:2 }}>{t}</div><div style={{ fontSize:10, color:"rgba(255,255,255,0.15)", lineHeight:1.65 }}>{d}</div></div>
+                </div>
+              ))}
+              <details style={{ marginTop:14 }}>
+                <summary style={{ fontSize:9, color:"rgba(201,169,110,0.15)", paddingBottom:2 }}>The equation</summary>
+                <div style={{ marginTop:8, padding:12, background:"rgba(201,169,110,0.015)", border:"1px solid rgba(201,169,110,0.03)", borderRadius:7 }}>
+                  <div style={{ fontFamily:F.m, fontSize:14, color:G, textAlign:"center", letterSpacing:"0.15em", marginBottom:6 }}>S ; R → N</div>
+                  <p style={{ fontSize:9, color:"rgba(255,255,255,0.15)", lineHeight:1.7 }}>Source ; Receiver → the New. Your soul is the source. The page is the receiver. What emerges is the chapter that outlasts you. The semicolon holds both without collapsing either.</p>
+                </div>
+              </details>
+              <details style={{ marginTop:8 }}>
+                <summary style={{ fontSize:9, color:"rgba(201,169,110,0.1)", paddingBottom:2 }}>The lore</summary>
+                <div style={{ marginTop:8, padding:12, background:"rgba(201,169,110,0.01)", border:"1px solid rgba(201,169,110,0.025)", borderRadius:7 }}>
+                  <div style={{ fontFamily:F.m, fontSize:10, color:"rgba(201,169,110,0.3)", marginBottom:8, letterSpacing:"0.1em" }}>Urðr · Verðandi · Skuld</div>
+                  <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>The three Norns sit beneath Yggdrasil and spin wyrd — the fate-thread of every being. Urðr holds what was. Verðandi holds what is. Skuld holds what shall be.</p>
+                  <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8 }}>Each entry is a thread. The Book is the tapestry. The Lighthouse reads across all of them.</p>
+                  <div style={{ fontFamily:F.m, fontSize:8, color:"rgba(201,169,110,0.12)", marginTop:10, letterSpacing:"0.1em" }}>branches of Yggdrasil · branches of git · branches of a life</div>
+                </div>
+              </details>
+              <div style={{ textAlign:"center", marginTop:20 }}>
+                <button onClick={() => setPage("today")} style={{ background:"rgba(201,169,110,0.1)", border:"1px solid rgba(201,169,110,0.2)", color:G, padding:"10px 28px", borderRadius:18, fontSize:12, cursor:"pointer", fontFamily:F.b }}>Write today's thread</button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ textAlign:"center", padding:"6px 0", borderTop:"1px solid rgba(255,255,255,0.015)", flexShrink:0 }}>
+            <span style={{ fontSize:7, color:"rgba(255,255,255,0.03)", fontFamily:F.m, letterSpacing:"0.1em" }}>S ; R → N</span>
+          </div>
+        </Shell>
+      );
+    }
+
+    try { const root = ReactDOM.createRoot(document.getElementById("root")); root.render(<App />); } catch(e) { document.getElementById("root").innerHTML = '<div style="color:#c9a96e;font-family:monospace;padding:40px;font-size:13px;">Error: ' + e.message + '</div>'; }
+  </script>
+</body>
+</html>
