@@ -40,4 +40,22 @@ export interface Coherence {
 export type InspoType = 'lyric' | 'scripture' | 'film' | 'poem' | 'news' | 'quote'
 export type NewsTag = 'world' | 'local' | 'personal'
 export type Archetype = 'spouse' | 'parent' | 'their child' | 'therapist' | 'mentor' | 'pastor' | 'future self' | 'inner critic'
-export type PageView = 'thread' | 'archive' | 'lens' | 'map'
+export type PageView = 'thread' | 'archive' | 'dream' | 'lens' | 'map'
+
+export type DreamState = 'yes' | 'no' | 'fragments'
+export type LucidState = 'yes' | 'partial' | 'no'
+export type DreamQuality = 'threat' | 'resolution' | 'flight' | 'presence' | 'void' | 'light'
+export type ContinuityState = 'yes' | 'no' | 'unclear'
+
+export interface DreamEntry {
+  id?: string
+  user_id?: string
+  entry_date: string
+  dreamed: boolean | null
+  lucid: LucidState | null
+  quality: DreamQuality | null
+  closing_image: string
+  continuity: ContinuityState | null
+  waking_coherence: number | null
+  created_at?: string
+}
