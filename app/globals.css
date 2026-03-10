@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sg-gold: #c9a96e;
+  --sg-gold-dim: rgba(201, 169, 110, 0.4);
+  --sg-bg: rgb(253, 250, 242);
+  --sg-text: rgb(38, 32, 22);
+  --sg-text-rgb: 38, 32, 22;
+}
+
+body {
+  background: var(--sg-bg);
+  color: var(--sg-text);
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+::selection {
+  background: rgba(201, 169, 110, 0.25);
+}
+
+/* Minimal scrollbar */
+::-webkit-scrollbar {
+  width: 2px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--sg-text-rgb), 0.1);
+  border-radius: 1px;
+}
+
+@keyframes zoomSettle {
+  0% { transform: scale(1); opacity: 0; }
+  40% { transform: scale(1.5); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Focus ring override */
+*:focus-visible {
+  outline: 2px solid rgba(201, 169, 110, 0.5);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(201, 169, 110, 0.08);
+}
