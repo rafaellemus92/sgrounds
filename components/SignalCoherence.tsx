@@ -8,27 +8,27 @@ const LABELS: { key: keyof Coherence; label: string; guidance: string }[] = [
   {
     key: 'momentClarity',
     label: 'moment clarity',
-    guidance: 'How precisely have you named what happened? A single, specific event scores higher than a vague feeling. Try: \u201CI [verb] when [moment].\u201D The math reads sentence density.',
+    guidance: 'How precisely have you named what happened? A single specific event scores higher than a vague feeling. Try: I [verb] when [moment]. The math reads sentence density.',
   },
   {
     key: 'arcContinuity',
     label: 'arc continuity',
-    guidance: 'Does THE AND field connect today to a larger pattern? The score rises when you name the specific arc \u2014 not \u201CI felt tired\u201D but \u201Cthe arc of building trust with a new team.\u201D What recurring theme does today belong to?',
+    guidance: 'Does THE AND field connect today to a larger pattern? Name the specific arc \u2014 not I felt tired but the arc of building trust with a new team. What recurring theme does today belong to?',
   },
   {
     key: 'imageResonance',
     label: 'image resonance',
-    guidance: 'An image uploaded creates a visual anchor. The score reflects whether the day has a frame \u2014 a single image that could hold it. If you haven\u2019t uploaded one, ask: what would I photograph from today?',
+    guidance: 'An image creates a visual anchor. Ask: what would I photograph from today? If you have not uploaded one, the signal is still open.',
   },
   {
     key: 'echoFit',
     label: 'echo fit',
-    guidance: 'How specifically does your echo (song, scripture, quote, poem) connect to the passage? Generic echoes score lower. The more the echo could only be from this day, the higher the signal.',
+    guidance: 'How specifically does your echo connect to the passage? The more the echo could only be from this day, the higher the signal.',
   },
   {
     key: 'emotionalUnity',
     label: 'emotional unity',
-    guidance: 'The closing word is the day\u2019s final calibration. One word that holds the whole. If you haven\u2019t chosen one, the signal is still open. What single word names what you\u2019re carrying out of today?',
+    guidance: 'The closing word is the day\u2019s final calibration. One word that holds the whole. If you have not chosen one, the signal is still open.',
   },
 ]
 
