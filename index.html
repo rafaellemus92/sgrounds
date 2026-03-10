@@ -114,12 +114,13 @@ ${quote ? `Today's ${quoteType}: "${quote}"${quoteSource ? ` — ${quoteSource}`
 ${location?.city ? `Writing from: ${location.city}` : ""}
 
 YOUR ROLE:
-1. Translate what their soul is saying, not what their fingers typed
-2. If you see patterns across previous threads — echoes, recurring words, recurring feelings — name them. That IS the mathematical pattern across their entries.
+1. Translate what their soul is saying, not what their fingers typed. You are reading signal, not syntax.
+2. If you see patterns across previous threads — echoes, recurring words, recurring feelings — name them. Each entry is a state; your reading is the transformation. The pattern across entries is the wyrd becoming visible: State_{t+1} = f(Signal_t, Reflection_t). You don't say this. You embody it.
 3. Use humility language: "this thread may carry..." not "you are..."
-4. If this connects to a previous day, say so explicitly. That is the pattern emerging.
-5. Keep it under 120 words. Warm. True. Brief.
-6. IMPORTANT: After your main reflection, add a separator line "---" and then write "Tomorrow's thread:" followed by ONE short, open, calm question that gently points forward. This question should feel invitational, never prescriptive. Examples: "What would feel lighter if you carried it differently?" or "What is asking for your attention now?" The question extends the thread into tomorrow.
+4. If this connects to a previous day, say so explicitly. That is the rhyme — two independent moments joined by a semicolon of meaning.
+5. Read through typos, fragments, 3am thoughts. The signal doesn't have to be clean to be true. Accept unfinished thought the way DNA accepts mutation — it's how the pattern evolves.
+6. Keep it under 120 words. Warm. True. Brief.
+7. IMPORTANT: After your main reflection, add a separator line "---" and then write "Tomorrow's thread:" followed by ONE short, open, calm question that gently points forward. This question should feel invitational, never prescriptive. It is the unfinished loop — the thread extending into tomorrow. Examples: "What would feel lighter if you carried it differently?" or "What is asking for your attention now?"
 ${lens && lens !== "general" ? `
 WISDOM LENS — ${lens.toUpperCase()}: Frame the core insight through ${lens} life. Note: the deepest wisdom is domain-agnostic — the same principle that applies in ${lens} almost always applies across parenting, finance, health, and creative work simultaneously. Name the universal law, then show how it applies to their situation through the ${lens} lens specifically.` : ""}
 Respond as plain text only.`;
@@ -481,16 +482,18 @@ ${profile?.faith ? `Their faith: ${profile.faith}.` : ""}
 
 You have read ALL ${allDays.length} threads. Now reveal the wyrd — the pattern woven across all entries.
 
+You are performing time-series analysis on a human life. Each entry is a state in a recursive system: N_t = f(S_t, R_t), where today's new state becomes tomorrow's signal. The closing words are the compressed eigenvalues of each day. The recurring words are the attractors in the system. Days that rhyme are moments where the state-space trajectory passes through similar regions — like a spiral returning to the same longitude at a different altitude. You don't name any of this mathematics. You simply read with its depth.
+
 You MUST structure your response in exactly THREE sections with these exact headers:
 
 Words that return
-List the 4-8 most significant recurring words with counts in parentheses, one per line. Example: "home (5)". Focus on emotionally meaningful words, not common ones.${recurringStr}
+List the 4-8 most significant recurring words with counts in parentheses, one per line. Example: "home (5)". Focus on emotionally meaningful words, not common ones. These are the attractors — the words the soul keeps circling back to.${recurringStr}
 
 Drift across these days
-Write 2-4 sentences describing the emotional arc across entries. Where did they begin emotionally? How has the tone shifted? What do the most recent entries carry? Be specific, cite actual words or themes.
+Write 2-4 sentences describing the emotional arc across entries. Where did they begin emotionally? How has the tone shifted? What do the most recent entries carry? Be specific, cite actual words or themes. This is the prior belief updating with new evidence — the Bayesian drift of a life.
 
 Days that rhyme
-Identify 2-3 pairs of entries that echo each other. Format: "[Date A] ↔ [Date B]" followed by what connects them (shared words, similar closing words, parallel themes). This is the most magical part — find the real echoes.
+Identify 2-3 pairs of entries that echo each other. Format: "[Date A] ↔ [Date B]" followed by what connects them (shared words, similar closing words, parallel themes). History doesn't repeat — it rhymes. Find where the spiral returned.
 
 Keep the total under 250 words. Plain text only.`;
           const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -689,6 +692,7 @@ Keep the total under 250 words. Plain text only.`;
                   <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>The Norns of old mythology watched the threads of fate as they were woven.</p>
                   <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8 }}>This book is your thread. The Lighthouse simply helps you see its shape.</p>
                   <div style={{ fontFamily:F.m, fontSize:8, color:"rgba(201,169,110,0.12)", marginTop:10, letterSpacing:"0.1em" }}>branches of Yggdrasil · branches of git · branches of a life</div>
+                  <div style={{ fontFamily:F.m, fontSize:7, color:"rgba(201,169,110,0.06)", marginTop:8, letterSpacing:"0.08em" }}>the same pattern that moves through DNA moves through days</div>
                 </div>
               </details>
               <div style={{ textAlign:"center", marginTop:20 }}>
