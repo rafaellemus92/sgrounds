@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Entry } from '@/lib/types'
 import Nav from '@/components/Nav'
@@ -8,6 +8,7 @@ import ReflectionModal from '@/components/ReflectionModal'
 
 export default function ArchivePage() {
   const [entries, setEntries] = useState<Entry[]>([])
+  const [summaries, setSummaries] = useState<Record<string, string>>({})
   const [selected, setSelected] = useState<Entry | null>(null)
   const [weaving, setWeaving] = useState(false)
   const [weave, setWeave] = useState<string | null>(null)
@@ -26,6 +27,46 @@ export default function ArchivePage() {
     }
     load()
   }, [])
+
+  // Lazily generate summaries for entries that need them
+  const generateSummaries = useCallback(async () => {
+    if (entries.length === 0) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    for (const entry of entries) {
+      if (!entry.passage) continue
+      // Already have it in state
+      if (summaries[entry.date_key]) continue
+      // Check if DB has it (via the loaded entry)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existing = (entry as any).summary as string | undefined
+      if (existing) {
+        setSummaries((prev) => ({ ...prev, [entry.date_key]: existing }))
+        continue
+      }
+      // Generate via API
+      try {
+        const res = await fetch('/api/summarize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passage: entry.passage, closingWord: entry.closing_word }),
+        })
+        const data = await res.json()
+        if (data.summary) {
+          setSummaries((prev) => ({ ...prev, [entry.date_key]: data.summary }))
+          // Cache in DB
+          supabase.from('entries').update({ summary: data.summary }).eq('user_id', user.id).eq('date_key', entry.date_key)
+        }
+      } catch {
+        // skip
+      }
+    }
+  }, [entries, summaries])
+
+  useEffect(() => {
+    generateSummaries()
+  }, [entries]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleWeave() {
     if (entries.length < 5) return
@@ -97,7 +138,7 @@ export default function ArchivePage() {
               color: 'rgba(201, 169, 110, 0.7)',
             }}
           >
-            {weaving ? 'Reading the weave…' : 'Read the Weave'}
+            {weaving ? 'Reading the weave\u2026' : 'Read the Weave'}
           </button>
         )}
 
@@ -123,7 +164,12 @@ export default function ArchivePage() {
               </div>
               {entry.passage && (
                 <p className="font-body text-[13px] line-clamp-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.5)' }}>
-                  {entry.passage.slice(0, 60)}{entry.passage.length > 60 ? '…' : ''}
+                  {entry.passage.slice(0, 60)}{entry.passage.length > 60 ? '\u2026' : ''}
+                </p>
+              )}
+              {summaries[entry.date_key] && (
+                <p className="font-display italic text-[12px] mt-1.5" style={{ color: 'rgba(201, 169, 110, 0.55)' }}>
+                  {summaries[entry.date_key]}
                 </p>
               )}
               <div className="flex items-center gap-2 mt-1">

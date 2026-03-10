@@ -7,11 +7,16 @@ export async function middleware(req: NextRequest) {
   const supabase = createMiddlewareClient({ req, res })
   const { data: { session } } = await supabase.auth.getSession()
 
-  if (!session && !req.nextUrl.pathname.startsWith('/auth') && !req.nextUrl.pathname.startsWith('/api')) {
+  // Allow auth routes (login + callback) and API routes
+  const isAuthRoute = req.nextUrl.pathname.startsWith('/auth')
+  const isApiRoute = req.nextUrl.pathname.startsWith('/api')
+
+  if (!session && !isAuthRoute && !isApiRoute) {
     return NextResponse.redirect(new URL('/auth', req.url))
   }
 
-  if (session && req.nextUrl.pathname.startsWith('/auth')) {
+  // Redirect authenticated users away from /auth (but not /auth/callback)
+  if (session && req.nextUrl.pathname === '/auth') {
     return NextResponse.redirect(new URL('/thread', req.url))
   }
 
