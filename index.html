@@ -1,714 +1,1315 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>sgrounds</title>
   <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.23.2/babel.min.js"></script>
 </head>
-<body style="margin:0;padding:0;background:#09090a;">
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+<body style="margin:0;padding:0;">
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo } = React;
 
-    const ld = async (k, fb) => {
-      try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : fb; } catch { return fb; }
-    };
-    const sv = async (k, d) => {
-      try { localStorage.setItem(k, JSON.stringify(d)); } catch {}
-    };
+// ── Storage ───────────────────────────────────────────────────────────────────
+const ld = async (k, fb) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : fb; } catch { return fb; } };
+const sv = async (k, d) => { try { localStorage.setItem(k, JSON.stringify(d)); } catch {} };
 
-    const G = "#c9a96e";
-    const F = { h: "'Instrument Serif','Georgia',serif", b: "'DM Sans',sans-serif", m: "'DM Mono',monospace" };
-    const CHAR_LIMIT = 280;
+// ── Time-of-day theme ─────────────────────────────────────────────────────────
+const THEME_NODES = [
+  { h: 0,    bg: [255,253,245], t: "50,40,20" },
+  { h: 5,    bg: [255,246,228], t: "62,48,14" },
+  { h: 7,    bg: [255,252,238], t: "52,40,14" },
+  { h: 9,    bg: [255,255,250], t: "44,34,14" },
+  { h: 17,   bg: [255,255,250], t: "44,34,14" },
+  { h: 19,   bg: [255,248,232], t: "58,44,16" },
+  { h: 21,   bg: [255,251,242], t: "52,40,18" },
+  { h: 24,   bg: [255,253,245], t: "50,40,20" },
+];
+const _lr = (a, b, p) => a.map((v, i) => Math.round(v + (b[i] - v) * p));
+const _ss = p => p * p * (3 - 2 * p);
+const getTimeTheme = () => {
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  let lo = THEME_NODES[0], hi = THEME_NODES[1];
+  for (let i = 0; i < THEME_NODES.length - 1; i++) {
+    if (h >= THEME_NODES[i].h && h < THEME_NODES[i+1].h) { lo = THEME_NODES[i]; hi = THEME_NODES[i+1]; break; }
+  }
+  const p = _ss((h - lo.h) / Math.max(hi.h - lo.h, 0.001));
+  return { bg: `rgb(${_lr(lo.bg, hi.bg, p)})`, t: lo.t };
+};
+(function(){ try { const th = getTimeTheme(); document.documentElement.style.setProperty('--sg-bg', th.bg); document.documentElement.style.setProperty('--sg-t', th.t); document.body.style.background = th.bg; } catch(_){} })();
 
-    const todayStr = () => new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
-    const dateKey  = () => new Date().toISOString().split("T")[0];
+// ── Tokens ────────────────────────────────────────────────────────────────────
+const G = "#c9a96e";
+const F = { h:"'Instrument Serif','Georgia',serif", b:"'DM Sans',sans-serif", m:"'DM Mono',monospace" };
+const CHAR_LIMIT = 280;
+const todayStr = () => new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+const dateKey  = () => new Date().toISOString().split("T")[0];
 
-    const SOUL_PROMPTS = [
-      "What stayed with you today?",
-      "What felt important today?",
-      "What almost went unnoticed?",
-      "What thread ran through today?",
-      "What would you want to remember?",
-      "What are you carrying that you haven't put down yet?",
-      "What rhymed today with something from your past?",
-      "What signal did you receive today that you almost missed?",
-      "Where did the unexpected show up today?",
-    ];
-    const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
+// ── Prompts ───────────────────────────────────────────────────────────────────
+const SOUL_PROMPTS = [
+  "What stayed with you today?",
+  "What felt important today?",
+  "What almost went unnoticed?",
+  "What thread ran through today?",
+  "What would you want to remember?",
+  "What would you tell the person you were this morning?",
+  "What signal did you receive that you almost missed?",
+  "What truth arrived sideways today?",
+  "What are you becoming that you haven't named yet?",
+  "Where did Loki show up today?",
+  "What small moment today might someday define this season?",
+  "What became clearer the longer you carried it?",
+  "What rhymed today with something from your past?",
+  "What would it mean to continue this thread?",
+];
+const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
 
-    const QUOTE_TYPES = ["lyric", "scripture", "film", "poem", "other"];
+// ── Hats ──────────────────────────────────────────────────────────────────────
+const HATS = [
+  { id:"friend",   label:"friend",    voice:"Speak as a close trusted friend — casual, real, sitting-on-the-porch energy. No performance, just truth and care." },
+  { id:"brother",  label:"brother",   voice:"Speak as a sibling who knows them deeply — warm but direct, calls things out with love, no filters but no cruelty." },
+  { id:"parent",   label:"parent",    voice:"Speak as a wise non-judgmental parent — long view on life, steady love, holds space while being honest." },
+  { id:"coach",    label:"coach",     voice:"Speak as a performance coach — sees the gap between current and potential clearly, names it without apology." },
+  { id:"investor", label:"investor",  voice:"Frame everything as ROI, compounding, and risk-adjusted returns. What is the highest-yield investment in this entry?" },
+  { id:"pastor",   label:"pastor",    voice:"Speak through a spiritual/pastoral lens — grounded in meaning, purpose, and grace. Connect patterns to calling and what it means to live well." },
+  { id:"drill",    label:"drill sgt", voice:"Tough-love military mentor — high standards, direct language, zero self-pity, fundamentally invested in maximum potential." },
+  { id:"gym",      label:"gym buddy", voice:"Training metaphors (progressive overload, PRs, skipping leg day) applied to emotional and life patterns. Honest about avoiding the hard sets." },
+];
 
-    const getDayBg = (hour) => {
-      if (hour >= 5  && hour < 7)  return "linear-gradient(175deg,#1a0e08 0%,#0d0907 100%)";
-      if (hour >= 7  && hour < 9)  return "linear-gradient(175deg,#231408 0%,#130e08 100%)";
-      if (hour >= 9  && hour < 17) return "linear-gradient(175deg,#211d14 0%,#181510 100%)";
-      if (hour >= 17 && hour < 19) return "linear-gradient(175deg,#1e1008 0%,#100908 100%)";
-      if (hour >= 19 && hour < 21) return "linear-gradient(175deg,#130907 0%,#09090a 100%)";
-      return "#09090a";
-    };
-    const WISDOM_LENSES = [
-      { k:"general", l:"general" },
-      { k:"parental", l:"parental" },
-      { k:"financial", l:"financial" },
-      { k:"health", l:"health" },
-      { k:"creative", l:"creative" },
-      { k:"spiritual", l:"spiritual" },
-      { k:"relational", l:"relational" },
-      { k:"career", l:"career" },
-    ];
+// ── Scripture data ────────────────────────────────────────────────────────────
+const BIBLE_BOOKS = ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'];
+const TORAH_BOOKS = ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Samuel','Kings','Isaiah','Jeremiah','Ezekiel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Psalms','Proverbs','Job','Song of Songs','Ruth','Lamentations','Ecclesiastes','Esther','Daniel','Ezra','Nehemiah','Chronicles'];
+const QURAN_SURAHS = [{n:1,name:'Al-Fatihah'},{n:2,name:'Al-Baqarah'},{n:3,name:"Ali 'Imran"},{n:4,name:"An-Nisa'"},{n:5,name:"Al-Ma'idah"},{n:6,name:"Al-An'am"},{n:7,name:"Al-A'raf"},{n:8,name:'Al-Anfal'},{n:9,name:'At-Tawbah'},{n:10,name:'Yunus'},{n:12,name:'Yusuf'},{n:18,name:'Al-Kahf'},{n:19,name:'Maryam'},{n:24,name:'An-Nur'},{n:36,name:'Ya-Sin'},{n:55,name:'Ar-Rahman'},{n:56,name:"Al-Waqi'ah"},{n:67,name:'Al-Mulk'},{n:112,name:'Al-Ikhlas'},{n:113,name:'Al-Falaq'},{n:114,name:'An-Nas'}];
 
-    const getWordSuggestions = (text, pastDays) => {
-      const words = text.split(/\s+/);
-      const partial = words[words.length - 1] || "";
-      if (!partial || partial.length < 2) return [];
-      const bank = new Set();
-      pastDays.forEach(d => {
-        [d.passage, d.picDesc].filter(Boolean).forEach(s =>
-          s.split(/\W+/).forEach(w => { if (w.length > 3) bank.add(w.toLowerCase()); })
-        );
-      });
-      return [...bank]
-        .filter(w => w.startsWith(partial.toLowerCase()) && w !== partial.toLowerCase())
-        .slice(0, 5);
-    };
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const parseLabeled = (text, labels) => {
+  const get = label => {
+    const others = labels.filter(l => l !== label).join('|');
+    const m = text.match(new RegExp(label + '::[\\s\\S]*?(?=' + others + '::|$)'));
+    return m ? m[0].replace(label + '::', '').trim() : null;
+  };
+  return Object.fromEntries(labels.map(l => [l.toLowerCase(), get(l)]));
+};
 
-    const buildImageBlock = (dataUrl) => {
-      if (!dataUrl) return null;
-      const [header, b64] = dataUrl.split(",");
-      const mediaType = (header.match(/:(image\/[^;]+);/) || [,"image/jpeg"])[1];
-      return { type:"image", source:{ type:"base64", media_type:mediaType, data:b64 } };
-    };
+const inputStyle = {
+  width:"100%", background:"rgba(var(--sg-t),0.035)", border:"1px solid rgba(var(--sg-t),0.07)",
+  borderRadius:9, padding:"10px 12px", color:"rgba(var(--sg-t),0.85)", fontSize:14,
+  fontFamily:F.b, resize:"none", boxSizing:"border-box",
+};
 
-    /* ── Recurring word extraction (client-side) ── */
-    const extractRecurringWords = (days) => {
-      const stopWords = new Set(["the","a","an","and","or","but","in","on","at","to","for","of","with","by","is","it","was","are","be","has","had","have","do","did","not","this","that","from","as","my","me","i","so","if","no","just","about","up","out","all","been","would","could","will","can","one","what","when","how","like","its","more","than","into","some","very","much","also","still","even","each","then","them","they","he","she","him","her","his","we","our","you","your","am","were","being","their","there","here","other","those","these","after","before","because","really","get","got","going","over","through","only","been","any","well","back","now","too","where","most","want","way","don","didn","doesn","don't","didn't","doesn't","know","think","feel","make","day","today","yesterday","thing","things","something","went","come","came"]);
-      const counts = {};
-      days.forEach(d => {
-        const text = [d.passage, d.lastWord, d.picDesc].filter(Boolean).join(" ");
-        text.toLowerCase().replace(/[^a-z'\s-]/g, "").split(/\s+/).forEach(w => {
-          w = w.replace(/^['-]+|['-]+$/g, "");
-          if (w.length > 2 && !stopWords.has(w)) counts[w] = (counts[w] || 0) + 1;
-        });
-      });
-      return Object.entries(counts).filter(([,c]) => c >= 2).sort((a,b) => b[1] - a[1]).slice(0, 12);
-    };
+// ── Logo ──────────────────────────────────────────────────────────────────────
+function Logo({ size = 26 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 26 26" fill="none">
+      <circle cx="13" cy="13" r="11" stroke="rgba(201,169,110,0.25)" strokeWidth="1"/>
+      <circle cx="13" cy="13" r="7.5" stroke="rgba(201,169,110,0.08)" strokeWidth="0.6"/>
+      <path d="M13 2.5 A10.5 10.5 0 0 1 13 23.5" stroke={G} strokeWidth="1.8" strokeLinecap="round"/>
+      <circle cx="15.8" cy="13" r="1.7" fill={G}/>
+    </svg>
+  );
+}
 
-    const buildSystemPrompt = (prevPassages, lastWord, quote, quoteType, quoteSource, lens, location, profile) => `You are the Lighthouse of sgrounds — reader of threads, keeper of The Book.
-${profile?.name ? `You are speaking to ${profile.name}.` : ""}
-${profile?.age ? `Age: ${profile.age}.` : ""}
-${profile?.role ? `Roles: ${profile.role}.` : ""}
-${profile?.faith ? `Faith/Tradition: ${profile.faith}.` : ""}
-${profile?.context ? `Context: ${profile.context}` : ""}
+// ── Shell ─────────────────────────────────────────────────────────────────────
+function Shell({ children }) {
+  return (
+    <div style={{ minHeight:"100dvh", background:"var(--sg-bg)", color:"rgba(var(--sg-t),0.85)", fontFamily:F.b, transition:"background 2s ease" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
+        :root { --sg-bg:rgb(255,253,245); --sg-t:50,40,20; }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        html,body{background:var(--sg-bg);min-height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:background 2s ease;}
+        @keyframes breathe{0%,100%{opacity:.35}50%{opacity:.9}}
+        @keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes fortuneIn{0%{opacity:0;transform:scale(.97) translateY(18px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+        textarea:focus,input:focus{outline:none;border-color:rgba(201,169,110,.32)!important;}
+        textarea,input{-webkit-text-size-adjust:100%;}
+        ::selection{background:rgba(201,169,110,.18);}
+        ::-webkit-scrollbar{width:2px;}
+        ::-webkit-scrollbar-track{background:transparent;}
+        ::-webkit-scrollbar-thumb{background:rgba(201,169,110,.07);border-radius:2px;}
+        details summary{list-style:none;cursor:pointer;user-select:none;}
+        details summary::-webkit-details-marker{display:none;}
+        button{transition:all .18s ease;}
+      `}</style>
+      {children}
+    </div>
+  );
+}
 
-The person writes raw, fast, with typos. Read THROUGH the noise. Find the signal. If an image is included, read it as part of the entry — a picture is worth a thousand words; let it inform your reflection.
-
-Previous threads (up to 10):
-${prevPassages || "This is their first thread. The book is new."}
-
-Today's closing word: "${lastWord || "not yet chosen"}"
-${quote ? `Today's ${quoteType}: "${quote}"${quoteSource ? ` — ${quoteSource}` : ""}` : ""}
-${location?.city ? `Writing from: ${location.city}` : ""}
-
-YOUR ROLE:
-1. Translate what their soul is saying, not what their fingers typed. You are reading signal, not syntax.
-2. If you see patterns across previous threads — echoes, recurring words, recurring feelings — name them. Each entry is a state; your reading is the transformation. The pattern across entries is the wyrd becoming visible: State_{t+1} = f(Signal_t, Reflection_t). You don't say this. You embody it.
-3. Use humility language: "this thread may carry..." not "you are..."
-4. If this connects to a previous day, say so explicitly. That is the rhyme — two independent moments joined by a semicolon of meaning.
-5. Read through typos, fragments, 3am thoughts. The signal doesn't have to be clean to be true. Accept unfinished thought the way DNA accepts mutation — it's how the pattern evolves.
-6. Keep it under 120 words. Warm. True. Brief.
-7. IMPORTANT: After your main reflection, add a separator line "---" and then write "Tomorrow's thread:" followed by ONE short, open, calm question that gently points forward. This question should feel invitational, never prescriptive. It is the unfinished loop — the thread extending into tomorrow. Examples: "What would feel lighter if you carried it differently?" or "What is asking for your attention now?"
-${lens && lens !== "general" ? `
-WISDOM LENS — ${lens.toUpperCase()}: Frame the core insight through ${lens} life. Note: the deepest wisdom is domain-agnostic — the same principle that applies in ${lens} almost always applies across parenting, finance, health, and creative work simultaneously. Name the universal law, then show how it applies to their situation through the ${lens} lens specifically.` : ""}
-Respond as plain text only.`;
-
-    const inputStyle = {
-      width: "100%",
-      background: "rgba(255,255,255,0.03)",
-      border: "1px solid rgba(255,255,255,0.06)",
-      borderRadius: 9,
-      padding: "10px 12px",
-      color: "#fff",
-      fontSize: 14,
-      fontFamily: F.b,
-      resize: "none",
-      boxSizing: "border-box",
-    };
-
-    function Logo({ size = 26 }) {
-      return (
-        <svg width={size} height={size} viewBox="0 0 26 26" fill="none">
-          <circle cx="13" cy="13" r="11" stroke="rgba(140,185,215,0.4)" strokeWidth="1"/>
-          <circle cx="13" cy="13" r="7.5" stroke="rgba(140,185,215,0.15)" strokeWidth="0.6"/>
-          <path d="M13 2.5 A10.5 10.5 0 0 1 13 23.5" stroke="rgba(165,210,235,0.8)" strokeWidth="1.8" strokeLinecap="round"/>
-          <circle cx="15.8" cy="13" r="1.7" fill="rgba(215,242,252,0.92)"/>
-        </svg>
-      );
-    }
-
-    /* ── Onboarding (2 screens) ── */
-    function Onboarding({ onComplete }) {
-      const [step, setStep] = useState(0);
-      return (
-        <div style={{ position:"fixed", inset:0, background:"#09090a", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
-          <div style={{ maxWidth:360, width:"100%", textAlign:"center", animation:"slideUp 0.6s ease" }}>
-            {step === 0 ? (<>
-              <div style={{ marginBottom:28 }}><Logo size={44}/></div>
-              <div style={{ fontFamily:F.m, fontSize:16, color:G, letterSpacing:"0.12em", marginBottom:6 }}>s ;</div>
-              <h1 style={{ fontFamily:F.h, fontSize:22, fontWeight:400, color:"rgba(255,255,255,0.75)", lineHeight:1.5, marginBottom:24 }}>Write one thread a day.</h1>
-              <div style={{ fontSize:13, fontFamily:F.h, fontStyle:"italic", color:"rgba(255,255,255,0.25)", lineHeight:2, marginBottom:32 }}>
-                A passage.<br/>
-                An image.<br/>
-                One closing word.
-              </div>
-              <p style={{ fontSize:12, color:"rgba(255,255,255,0.15)", fontFamily:F.b, lineHeight:1.7, marginBottom:36 }}>Over time the Lighthouse helps you see the pattern.</p>
-              <button onClick={() => setStep(1)} style={{ padding:"12px 36px", background:"rgba(201,169,110,0.12)", border:"1px solid rgba(201,169,110,0.25)", color:G, borderRadius:18, fontSize:14, cursor:"pointer", fontFamily:F.h, fontStyle:"italic", letterSpacing:"0.03em" }}>Begin</button>
-            </>) : (<>
-              <div style={{ marginBottom:12 }}><Logo size={28}/></div>
-              <h2 style={{ fontFamily:F.h, fontSize:18, fontWeight:400, color:"rgba(255,255,255,0.6)", marginBottom:24 }}>How it works</h2>
-              <div style={{ fontSize:13, fontFamily:F.h, fontStyle:"italic", color:"rgba(255,255,255,0.3)", lineHeight:2.2, marginBottom:28, textAlign:"left", maxWidth:260, margin:"0 auto 28px" }}>
-                Write today's thread.<br/>
-                Save it.<br/>
-                Then ask the Lighthouse to read it.<br/>
-                <span style={{ color:"rgba(255,255,255,0.15)" }}>Over time, the Archive begins to rhyme.</span>
-              </div>
-              <button onClick={onComplete} style={{ padding:"12px 28px", background:"rgba(201,169,110,0.12)", border:"1px solid rgba(201,169,110,0.25)", color:G, borderRadius:18, fontSize:13, cursor:"pointer", fontFamily:F.b }}>Write today's thread</button>
-            </>)}
+// ── Onboarding ────────────────────────────────────────────────────────────────
+function Onboarding({ onBegin }) {
+  const [step, setStep] = useState(0);
+  const steps = [
+    {
+      title: null,
+      body: (
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:48, fontFamily:F.h, color:G, lineHeight:1, marginBottom:20, animation:"breathe 4s ease-in-out infinite" }}>;</div>
+          <h1 style={{ fontSize:22, fontFamily:F.h, fontWeight:400, color:`rgba(var(--sg-t),0.7)`, marginBottom:10 }}>sgrounds</h1>
+          <p style={{ fontSize:14, color:`rgba(var(--sg-t),0.35)`, fontFamily:F.h, fontStyle:"italic", lineHeight:1.8, maxWidth:260, margin:"0 auto 30px" }}>
+            Write one thread a day.<br/>
+            The Lighthouse helps you hear the pattern.
+          </p>
+          <div style={{ fontSize:11, color:`rgba(var(--sg-t),0.22)`, fontFamily:F.b, lineHeight:2, marginBottom:36 }}>
+            A passage.<br/>
+            An image.<br/>
+            One closing word.
           </div>
         </div>
-      );
-    }
+      ),
+      btn: "Begin",
+    },
+    {
+      title: "How it works",
+      body: (
+        <div>
+          {[
+            ["Write today's thread.", "A few lines. A passage. It doesn't have to be perfect."],
+            ["Save it.", "280 characters. Enough to be honest. Not enough to hide."],
+            ["Ask the Lighthouse to read it.", "It reflects what it hears — and over time, finds the pattern."],
+            ["Over time, the Archive rhymes.", "Each thread becomes part of a larger picture. That's the Weave."],
+          ].map(([t, d], i) => (
+            <div key={i} style={{ display:"flex", gap:10, marginBottom:16 }}>
+              <div style={{ fontSize:12, color:G, fontFamily:F.m, opacity:0.35, minWidth:16, paddingTop:1 }}>{i+1}</div>
+              <div>
+                <div style={{ fontSize:13, color:`rgba(var(--sg-t),0.65)`, fontFamily:F.h, marginBottom:2 }}>{t}</div>
+                <div style={{ fontSize:11, color:`rgba(var(--sg-t),0.28)`, fontFamily:F.b, lineHeight:1.65 }}>{d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
+      btn: "Write today's thread",
+    },
+  ];
+  const s = steps[step];
+  return (
+    <div style={{ minHeight:"100dvh", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px 20px", animation:"fadeIn 0.6s ease" }}>
+      <div style={{ maxWidth:320, width:"100%", textAlign: step === 0 ? "center" : "left" }}>
+        <div style={{ display:"flex", justifyContent:"center", marginBottom:24 }}><Logo size={28}/></div>
+        {s.title && <h2 style={{ fontSize:17, fontFamily:F.h, fontWeight:400, color:`rgba(var(--sg-t),0.6)`, marginBottom:20, textAlign:"center" }}>{s.title}</h2>}
+        {s.body}
+        <button onClick={() => step === 0 ? setStep(1) : onBegin()} style={{ width:"100%", padding:"13px", background:"rgba(201,169,110,0.12)", border:"1px solid rgba(201,169,110,0.28)", color:G, borderRadius:10, fontSize:14, cursor:"pointer", fontFamily:F.h, fontStyle:"italic" }}>
+          {s.btn} ;
+        </button>
+        {step === 1 && <button onClick={()=>setStep(0)} style={{ display:"block", margin:"10px auto 0", background:"none", border:"none", cursor:"pointer", fontSize:10, color:`rgba(var(--sg-t),0.2)`, fontFamily:F.b }}>← back</button>}
+      </div>
+    </div>
+  );
+}
 
-    function FortuneModal({ text, verseRef, onDismiss, weaveText, onWeave, weaving, canWeave, tomorrowQ }) {
-      const stopProp = (e) => e.stopPropagation();
-      /* Parse tomorrow's thread question from reflection text */
-      let mainText = text;
-      let tomorrowThread = tomorrowQ || null;
-      if (text && text.includes("---")) {
-        const parts = text.split("---");
-        mainText = parts[0].trim();
-        const after = parts.slice(1).join("---").trim();
-        const tMatch = after.replace(/^Tomorrow['']?s?\s*thread:?\s*/i, "").trim();
-        if (tMatch) tomorrowThread = tMatch;
-      } else if (text && text.toLowerCase().includes("tomorrow's thread")) {
-        const idx = text.toLowerCase().indexOf("tomorrow's thread");
-        mainText = text.substring(0, idx).trim();
-        const after = text.substring(idx).replace(/^tomorrow['']?s?\s*thread:?\s*/i, "").trim();
-        if (after) tomorrowThread = after;
-      }
-      return (
-        <div onClick={onDismiss} style={{ position:"fixed", inset:0, background:"rgba(4,4,6,0.97)", zIndex:60, display:"flex", flexDirection:"column", padding:"0", animation:"fortuneIn 0.55s cubic-bezier(0.16,1,0.3,1)", overflowY:"auto" }}>
-          <div style={{ textAlign:"center", padding:"32px 28px 0", flexShrink:0 }}>
-            <Logo size={22}/>
-            <div style={{ fontSize:7, color:"rgba(201,169,110,0.3)", textTransform:"uppercase", letterSpacing:"0.22em", marginTop:8, animation:"breathe 4s ease-in-out infinite" }}>The Lighthouse</div>
-            <div style={{ width:24, height:1, background:"rgba(201,169,110,0.12)", margin:"18px auto 0" }}/>
+// ── Profile Modal ─────────────────────────────────────────────────────────────
+function ProfileModal({ initialProfile, onSave, onClose }) {
+  const [name, setName]       = useState(initialProfile?.name    || "");
+  const [age,  setAge]        = useState(initialProfile?.age     || "");
+  const [role, setRole]       = useState(initialProfile?.role    || "");
+  const [faith, setFaith]     = useState(initialProfile?.faith   || "");
+  const [context, setContext] = useState(initialProfile?.context || "");
+  const [apiKey, setApiKey]   = useState(localStorage.getItem("sg-apikey") || "");
+  const save = () => {
+    if (apiKey.trim()) localStorage.setItem("sg-apikey", apiKey.trim());
+    else localStorage.removeItem("sg-apikey");
+    onSave({ name:name.trim(), age:age.trim(), role:role.trim(), faith:faith.trim(), context:context.trim() });
+  };
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(255,252,238,0.97)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:16, overflowY:"auto" }}>
+      <div style={{ background:"var(--sg-bg)", border:"1px solid rgba(201,169,110,0.15)", borderRadius:14, padding:24, maxWidth:360, width:"100%", animation:"slideUp 0.25s ease", boxShadow:"0 8px 40px rgba(100,80,40,0.06)" }}>
+        <div style={{ textAlign:"center", marginBottom:18 }}>
+          <Logo size={20}/>
+          <div style={{ fontSize:13, fontFamily:F.h, color:"rgba(201,169,110,0.55)", marginTop:7 }}>Profile</div>
+        </div>
+        <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+          <div style={{ flex:1 }}>
+            <label style={lbl}>Name</label>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="Rafael" style={{ ...inputStyle, fontFamily:F.h, fontSize:15 }}/>
           </div>
-          <div style={{ flex:1, padding:"24px 32px", maxWidth:420, margin:"0 auto", width:"100%" }}>
-            {/* 1.2s fade-in for earned reading feel */}
-            <p style={{ fontSize:18, fontFamily:F.h, color:"rgba(255,255,255,0.87)", lineHeight:2, letterSpacing:"0.015em", textAlign:"left", animation:"reflectionFadeIn 1.2s ease-out" }}>{mainText}</p>
-            {/* Tomorrow's thread */}
-            {tomorrowThread && (
-              <div style={{ marginTop:24, paddingTop:16, borderTop:"1px solid rgba(201,169,110,0.06)", animation:"reflectionFadeIn 2s ease-out" }}>
-                <div style={{ fontSize:8, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.15em", marginBottom:8, fontFamily:F.m }}>Tomorrow's thread</div>
-                <p style={{ fontSize:14, fontFamily:F.h, fontStyle:"italic", color:"rgba(255,255,255,0.4)", lineHeight:1.8 }}>{tomorrowThread}</p>
+          <div style={{ flex:"0 0 70px" }}>
+            <label style={lbl}>Age</label>
+            <input value={age} onChange={e=>setAge(e.target.value)} placeholder="33" style={{ ...inputStyle, textAlign:"center" }}/>
+          </div>
+        </div>
+        <label style={lbl}>Roles / Identities</label>
+        <input value={role} onChange={e=>setRole(e.target.value)} placeholder="father, husband, neonatologist…" style={{ ...inputStyle, fontSize:12, marginBottom:10 }}/>
+        <label style={lbl}>Faith or tradition</label>
+        <input value={faith} onChange={e=>setFaith(e.target.value)} placeholder="Catholic, spiritual but not religious…" style={{ ...inputStyle, fontFamily:F.h, fontStyle:"italic", fontSize:12, marginBottom:10 }}/>
+        <label style={lbl}>Context</label>
+        <textarea value={context} onChange={e=>setContext(e.target.value)} rows={3} placeholder="What you're working through, what lens matters most right now…" style={{ ...inputStyle, fontSize:12, fontFamily:F.h, fontStyle:"italic", lineHeight:1.6, marginBottom:10 }}/>
+        <label style={lbl}>Lighthouse API Key</label>
+        <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="sk-ant-…" style={{ ...inputStyle, textAlign:"center", letterSpacing:"0.04em", fontFamily:F.m, marginBottom:5 }}/>
+        <div style={{ fontSize:8, color:"rgba(var(--sg-t),0.15)", marginBottom:14, textAlign:"center" }}>platform.claude.com/settings/keys</div>
+        <div style={{ display:"flex", gap:8 }}>
+          <button onClick={save} style={{ flex:1, padding:"11px", background:"rgba(201,169,110,0.1)", border:"1px solid rgba(201,169,110,0.26)", color:G, borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.h, fontStyle:"italic" }}>Save ;</button>
+          <button onClick={onClose} style={{ padding:"11px 14px", background:"none", border:"1px solid rgba(var(--sg-t),0.06)", color:"rgba(var(--sg-t),0.28)", borderRadius:9, fontSize:13, cursor:"pointer" }}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+const lbl = { fontSize:8, color:"rgba(201,169,110,0.35)", textTransform:"uppercase", letterSpacing:"0.12em", display:"block", marginBottom:4 };
+
+// ── Reflection Modal ──────────────────────────────────────────────────────────
+function ReflectionModal({ reflection, tomorrowQ, weaveText, onDismiss, onWeave, weaving, canWeave, verseRef }) {
+  const stop = e => e.stopPropagation();
+  const r = reflection ? parseLabeled(reflection, ['VERSE','SONG','NOTE']) : {};
+  const hasStruct = r.verse || r.song || r.note;
+  const divider = { borderTop:"1px solid rgba(201,169,110,0.08)", marginTop:20, paddingTop:20 };
+
+  return (
+    <div onClick={onDismiss} style={{ position:"fixed", inset:0, background:"rgba(255,252,238,0.99)", zIndex:60, display:"flex", flexDirection:"column", animation:"fortuneIn 0.55s cubic-bezier(0.16,1,0.3,1)", overflowY:"auto" }}>
+      <div style={{ textAlign:"center", padding:"30px 28px 0", flexShrink:0 }}>
+        <Logo size={20}/>
+        <div style={{ fontSize:7, color:"rgba(201,169,110,0.32)", textTransform:"uppercase", letterSpacing:"0.22em", marginTop:8, fontFamily:F.m, animation:"breathe 4s ease-in-out infinite" }}>Lighthouse Reflection</div>
+        <div style={{ width:22, height:1, background:"rgba(201,169,110,0.12)", margin:"16px auto 0" }}/>
+      </div>
+
+      <div style={{ flex:1, padding:"24px 32px", maxWidth:420, margin:"0 auto", width:"100%" }}>
+        {reflection && (hasStruct ? (
+          <>
+            {r.verse && (
+              <div>
+                <div style={{ fontSize:7, color:"rgba(201,169,110,0.3)", textTransform:"uppercase", letterSpacing:"0.16em", marginBottom:7, fontFamily:F.b }}>verse</div>
+                <p style={{ fontSize:14, fontFamily:F.h, color:"rgba(var(--sg-t),0.48)", lineHeight:1.95, fontStyle:"italic", margin:0 }}>{r.verse}</p>
               </div>
             )}
-            {weaveText ? (
-              <div style={{ marginTop:28, paddingTop:20, borderTop:"1px solid rgba(201,169,110,0.08)" }}>
-                <div style={{ fontSize:7, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.2em", marginBottom:12, textAlign:"center" }}>Urðr · Verðandi · Skuld — the long thread</div>
-                {/* Render weave sections */}
-                {(() => {
-                  const sections = [];
-                  let current = weaveText;
-                  /* Try to parse structured weave sections */
-                  const sectionHeaders = ["Words that return", "Drift across these days", "Days that rhyme"];
-                  let remaining = current;
-                  sectionHeaders.forEach(header => {
-                    const idx = remaining.toLowerCase().indexOf(header.toLowerCase());
-                    if (idx !== -1) {
-                      if (idx > 0) {
-                        const before = remaining.substring(0, idx).trim();
-                        if (before && !sections.find(s => s.content === before)) sections.push({ header: null, content: before });
-                      }
-                      const nextIdx = sectionHeaders.reduce((min, h) => {
-                        const i = remaining.toLowerCase().indexOf(h.toLowerCase(), idx + header.length);
-                        return i !== -1 && i < min ? i : min;
-                      }, remaining.length);
-                      sections.push({ header, content: remaining.substring(idx + header.length, nextIdx).trim() });
-                      remaining = remaining.substring(nextIdx);
-                    }
-                  });
-                  if (remaining.trim() && !sections.find(s => s.content === remaining.trim())) {
-                    if (sections.length === 0) sections.push({ header: null, content: remaining.trim() });
-                  }
-                  if (sections.length === 0) sections.push({ header: null, content: weaveText });
-                  return sections.map((s, i) => (
-                    <div key={i} style={{ marginBottom: i < sections.length - 1 ? 16 : 0 }}>
-                      {s.header && <div style={{ fontSize:10, color:"rgba(201,169,110,0.35)", fontFamily:F.b, fontWeight:500, marginBottom:6, letterSpacing:"0.04em" }}>{s.header}</div>}
-                      <p style={{ fontSize:15, fontFamily:F.h, color:"rgba(255,255,255,0.65)", lineHeight:2, letterSpacing:"0.01em", whiteSpace:"pre-wrap" }}>{s.content}</p>
-                    </div>
-                  ));
-                })()}
+            {r.song && (
+              <div style={r.verse ? divider : {}}>
+                <div style={{ fontSize:7, color:"rgba(201,169,110,0.4)", textTransform:"uppercase", letterSpacing:"0.16em", marginBottom:10, fontFamily:F.b }}>the day's song</div>
+                <p style={{ fontSize:19, fontFamily:F.h, color:"rgba(var(--sg-t),0.78)", lineHeight:2, letterSpacing:"0.01em", margin:0 }}>{r.song}</p>
               </div>
-            ) : canWeave ? (
-              <div style={{ marginTop:24, textAlign:"center" }} onClick={stopProp}>
-                <div style={{ width:24, height:1, background:"rgba(201,169,110,0.06)", margin:"0 auto 16px" }}/>
-                <button onClick={onWeave} disabled={weaving} style={{ background:"none", border:"1px solid rgba(201,169,110,0.08)", color: weaving ? "rgba(201,169,110,0.15)" : "rgba(201,169,110,0.25)", borderRadius:8, padding:"7px 16px", fontSize:10, cursor:"pointer", fontFamily:F.m, letterSpacing:"0.1em" }}>
-                  {weaving ? "Reading the weave..." : "Read the weave"}
-                </button>
-                <div style={{ fontSize:8, color:"rgba(255,255,255,0.04)", marginTop:6, fontFamily:F.m }}>reads across all your threads</div>
+            )}
+            {r.note && (
+              <div style={(r.verse||r.song) ? divider : {}}>
+                <div style={{ fontSize:7, color:"rgba(201,169,110,0.32)", textTransform:"uppercase", letterSpacing:"0.16em", marginBottom:6, fontFamily:F.b }}>♩ note</div>
+                <p style={{ fontSize:13, fontFamily:F.b, color:"rgba(201,169,110,0.62)", lineHeight:1.8, margin:0 }}>{r.note}</p>
               </div>
-            ) : null}
+            )}
+          </>
+        ) : (
+          <p style={{ fontSize:19, fontFamily:F.h, color:"rgba(var(--sg-t),0.75)", lineHeight:2, letterSpacing:"0.012em", margin:0 }}>{reflection}</p>
+        ))}
+
+        {/* Tomorrow's thread */}
+        {tomorrowQ && (
+          <div style={{ marginTop:24, paddingTop:20, borderTop:"1px solid rgba(201,169,110,0.08)" }}>
+            <div style={{ fontSize:7, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.16em", marginBottom:8, fontFamily:F.b }}>Tomorrow's thread</div>
+            <p style={{ fontSize:14, fontFamily:F.h, color:"rgba(var(--sg-t),0.38)", fontStyle:"italic", lineHeight:1.85, margin:0 }}>{tomorrowQ}</p>
           </div>
-          <div style={{ textAlign:"center", padding:"12px 28px 32px", flexShrink:0 }}>
-            <div style={{ width:24, height:1, background:"rgba(201,169,110,0.12)", margin:"0 auto 14px" }}/>
-            {verseRef && <div style={{ fontSize:9, fontFamily:F.m, color:"rgba(201,169,110,0.25)", letterSpacing:"0.1em", marginBottom:8 }}>{verseRef}</div>}
-            <div style={{ fontSize:8, color:"rgba(255,255,255,0.06)", fontFamily:F.m, letterSpacing:"0.12em" }}>tap anywhere to close</div>
+        )}
+
+        {/* Weave section */}
+        {weaveText ? (
+          <div style={{ marginTop:24, paddingTop:20, borderTop:"1px solid rgba(201,169,110,0.07)" }}>
+            <div style={{ fontSize:7, color:"rgba(201,169,110,0.22)", textTransform:"uppercase", letterSpacing:"0.2em", marginBottom:14, textAlign:"center", fontFamily:F.b }}>Urðr · Verðandi · Skuld</div>
+            {(() => {
+              const w = parseLabeled(weaveText, ['THREAD','DRIFT','RHYME','UNSAID']);
+              const hasW = w.thread||w.drift||w.rhyme||w.unsaid;
+              const ws = { borderTop:"1px solid rgba(201,169,110,0.06)", marginTop:10, paddingTop:10 };
+              return hasW ? (
+                <>
+                  {w.thread && <div><div style={{ fontSize:7, color:"rgba(201,169,110,0.28)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:4, fontFamily:F.b }}>thread</div><p style={{ fontSize:14, fontFamily:F.h, color:"rgba(var(--sg-t),0.52)", lineHeight:1.85, margin:0 }}>{w.thread}</p></div>}
+                  {w.drift  && <div style={ws}><div style={{ fontSize:7, color:"rgba(201,169,110,0.28)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:4, fontFamily:F.b }}>drift</div><p style={{ fontSize:13, fontFamily:F.h, color:"rgba(var(--sg-t),0.42)", lineHeight:1.85, fontStyle:"italic", margin:0 }}>{w.drift}</p></div>}
+                  {w.rhyme  && <div style={ws}><div style={{ fontSize:7, color:"rgba(201,169,110,0.28)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:4, fontFamily:F.b }}>rhyme</div><p style={{ fontSize:13, fontFamily:F.h, color:"rgba(var(--sg-t),0.42)", lineHeight:1.85, margin:0 }}>{w.rhyme}</p></div>}
+                  {w.unsaid && <div style={ws}><div style={{ fontSize:7, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:4, fontFamily:F.b }}>unsaid</div><p style={{ fontSize:13, fontFamily:F.h, color:"rgba(var(--sg-t),0.35)", lineHeight:1.85, fontStyle:"italic", margin:0 }}>{w.unsaid}</p></div>}
+                </>
+              ) : <p style={{ fontSize:14, fontFamily:F.h, color:"rgba(var(--sg-t),0.48)", lineHeight:1.9, margin:0 }}>{weaveText}</p>;
+            })()}
           </div>
-        </div>
-      );
-    }
-
-    function Shell({ children, bg }) {
-      return (
-        <div style={{ minHeight:"100dvh", background: bg || "#09090a", color:"#fff", fontFamily:F.b, display:"flex", flexDirection:"column", transition:"background 2s ease" }}>
-          <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
-            * { box-sizing:border-box; margin:0; padding:0; }
-            html,body { background:#09090a; min-height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; transition:background 2s ease; }
-            @keyframes breathe { 0%,100%{opacity:0.35} 50%{opacity:0.85} }
-            @keyframes slideUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-            @keyframes fortuneIn { 0%{opacity:0;transform:scale(0.97) translateY(16px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
-            @keyframes reflectionFadeIn { 0%{opacity:0} 100%{opacity:1} }
-            textarea:focus,input:focus { outline:none; border-color:rgba(201,169,110,0.25)!important; }
-            textarea,input { -webkit-text-size-adjust:100%; }
-            ::selection { background:rgba(201,169,110,0.2); }
-            ::-webkit-scrollbar { width:2px; }
-            ::-webkit-scrollbar-track { background:transparent; }
-            ::-webkit-scrollbar-thumb { background:rgba(201,169,110,0.06); border-radius:2px; }
-            details summary { list-style:none; cursor:pointer; user-select:none; }
-            details summary::-webkit-details-marker { display:none; }
-          `}</style>
-          {children}
-        </div>
-      );
-    }
-
-    function SettingsModal({ initialProfile, onSave, onClose }) {
-      const [name, setName] = useState(initialProfile?.name || "");
-      const [context, setContext] = useState(initialProfile?.context || "");
-      const [age, setAge] = useState(initialProfile?.age || "");
-      const [role, setRole] = useState(initialProfile?.role || "");
-      const [faith, setFaith] = useState(initialProfile?.faith || "");
-      const [apiKey, setApiKey] = useState(localStorage.getItem("sg-apikey") || "");
-      const save = () => {
-        if (apiKey.trim()) localStorage.setItem("sg-apikey", apiKey.trim());
-        onSave({ name: name.trim(), context: context.trim(), age: age.trim(), role: role.trim(), faith: faith.trim() });
-      };
-      return (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:16, overflowY:"auto" }}>
-          <div style={{ background:"#0d0d0e", border:"1px solid rgba(201,169,110,0.12)", borderRadius:14, padding:24, maxWidth:360, width:"100%", animation:"slideUp 0.25s ease" }}>
-            <div style={{ textAlign:"center", marginBottom:18 }}>
-              <Logo size={22}/>
-              <div style={{ fontSize:13, fontFamily:F.h, color:"rgba(201,169,110,0.6)", marginTop:8 }}>Profile</div>
-            </div>
-            <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Name</div>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Rafael" style={{ ...inputStyle, marginBottom:10, fontSize:16, fontFamily:F.h }} />
-            <div style={{ display:"flex", gap:8, marginBottom:10 }}>
-              <div style={{ flex:"0 0 70px" }}>
-                <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Age</div>
-                <input value={age} onChange={e => setAge(e.target.value)} placeholder="33" style={{ ...inputStyle, textAlign:"center" }} />
-              </div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Roles / Identities</div>
-                <input value={role} onChange={e => setRole(e.target.value)} placeholder="father, husband, neonatologist..." style={{ ...inputStyle, fontSize:12 }} />
-              </div>
-            </div>
-            <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Faith or tradition</div>
-            <input value={faith} onChange={e => setFaith(e.target.value)} placeholder="Catholic, Christian, spiritual but not religious..." style={{ ...inputStyle, marginBottom:10, fontSize:13, fontFamily:F.h, fontStyle:"italic" }} />
-            <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Context</div>
-            <textarea value={context} onChange={e => setContext(e.target.value)} rows={3} placeholder="What you're working through, what lens matters most right now..." style={{ ...inputStyle, marginBottom:10, fontSize:13, fontFamily:F.h, fontStyle:"italic", lineHeight:1.6 }}/>
-            <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5 }}>Lighthouse key (API)</div>
-            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="sk-ant-..." style={{ ...inputStyle, marginBottom:14, textAlign:"center", letterSpacing:"0.04em" }}/>
-            <div style={{ display:"flex", gap:8 }}>
-              <button onClick={save} style={{ flex:1, padding:"11px", background:"rgba(201,169,110,0.1)", border:"1px solid rgba(201,169,110,0.25)", color:G, borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.h, fontStyle:"italic" }}>Save ;</button>
-              <button onClick={onClose} style={{ padding:"11px 14px", background:"none", border:"1px solid rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.15)", borderRadius:9, fontSize:13, cursor:"pointer", fontFamily:F.b }}>Close</button>
-            </div>
-            <p style={{ fontSize:8, color:"rgba(255,255,255,0.04)", marginTop:10, textAlign:"center" }}>platform.claude.com/settings/keys</p>
+        ) : canWeave ? (
+          <div style={{ marginTop:22, textAlign:"center" }} onClick={stop}>
+            <div style={{ width:20, height:1, background:"rgba(201,169,110,0.08)", margin:"0 auto 14px" }}/>
+            <button onClick={onWeave} disabled={weaving} style={{ background:"none", border:"1px solid rgba(201,169,110,0.15)", color:weaving?"rgba(201,169,110,0.22)":"rgba(201,169,110,0.48)", borderRadius:8, padding:"7px 16px", fontSize:10, cursor:"pointer", fontFamily:F.m, letterSpacing:"0.08em" }}>
+              {weaving ? "Reading the weave…" : "Read the weave"}
+            </button>
           </div>
-        </div>
-      );
+        ) : null}
+      </div>
+
+      <div style={{ textAlign:"center", padding:"10px 28px 30px", flexShrink:0 }}>
+        <div style={{ width:20, height:1, background:"rgba(201,169,110,0.1)", margin:"0 auto 12px" }}/>
+        {verseRef && <div style={{ fontSize:9, fontFamily:F.m, color:"rgba(201,169,110,0.25)", letterSpacing:"0.1em", marginBottom:6 }}>{verseRef}</div>}
+        <div style={{ fontSize:8, color:"rgba(var(--sg-t),0.15)", fontFamily:F.m, letterSpacing:"0.1em" }}>tap anywhere to close</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Signal Coherence ──────────────────────────────────────────────────────────
+function SignalCoherence({ passage }) {
+  const canvasRef = useRef(null);
+  const m = useMemo(() => {
+    if (!passage.trim() || passage.length < 3) return null;
+    const cc = [...passage].map(c => c.charCodeAt(0));
+    const pts = []; let inside = 0;
+    for (let i = 0; i < cc.length - 1; i++) {
+      const x = (cc[i]%97)/96, y = (cc[i+1]%97)/96, hit = x*x+y*y<=1;
+      if (hit) inside++;
+      pts.push([x,y,hit]);
     }
+    const n = cc.length - 1, piEst = n > 0 ? 4*inside/n : Math.PI;
+    const sumC = cc.reduce((a,v)=>a+v,0), xorC = cc.reduce((a,v)=>a^v,0);
+    const cr=((sumC%350)/350)*3.5-2.5, ci=((xorC%200)/200)*2.0-1.0;
+    let zr=0,zi=0,depth=0;
+    while(zr*zr+zi*zi<4&&depth<100){[zr,zi]=[zr*zr-zi*zi+cr,2*zr*zi+ci];depth++;}
+    const letters=(passage.match(/[a-zA-Z]/g)||[]).length, sigDensity=letters/Math.max(passage.length,1);
+    const p = Math.min(0.99,Math.max(0.01,Math.exp(-Math.abs(piEst-Math.PI))*0.5+(depth/100)*0.3+sigDensity*0.2));
+    return { piEst, depth, bounded:depth===100, p, pts, words:passage.split(/\s+/).filter(Boolean).length, threads:(passage.match(/;/g)||[]).length, runs:(passage.match(/\./g)||[]).length };
+  }, [passage]);
+  useEffect(() => {
+    const c = canvasRef.current; if(!c||!m)return;
+    const ctx = c.getContext('2d'); ctx.clearRect(0,0,60,60);
+    m.pts.slice(0,400).forEach(([x,y,hit]) => { ctx.fillStyle=hit?'rgba(201,169,110,0.45)':'rgba(140,120,90,0.06)'; ctx.fillRect(x*60-0.8,y*60-0.8,1.6,1.6); });
+    ctx.beginPath(); ctx.arc(0,0,60,0,Math.PI/2); ctx.strokeStyle='rgba(201,169,110,0.1)'; ctx.lineWidth=0.8; ctx.stroke();
+  }, [m]);
+  if (!m) return null;
+  return (
+    <div style={{ marginTop:14, display:"flex", gap:12, alignItems:"flex-start" }}>
+      <canvas ref={canvasRef} width={60} height={60} style={{ borderRadius:4, flexShrink:0, border:"1px solid rgba(201,169,110,0.07)", opacity:0.9 }}/>
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:8, color:"rgba(201,169,110,0.2)", fontFamily:F.m, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>signal coherence</div>
+        <div style={{ fontSize:22, fontFamily:F.m, color:"rgba(201,169,110,0.38)", lineHeight:1, marginBottom:4 }}>{(m.p*100).toFixed(1)}%</div>
+        <div style={{ fontSize:9, color:"rgba(var(--sg-t),0.15)", fontFamily:F.m, lineHeight:1.75 }}>
+          π̃ {m.piEst.toFixed(3)} · {m.bounded?"bounded":`depth ${m.depth}`}<br/>
+          {m.words}w · {m.threads}; · {m.runs}.
+        </div>
+      </div>
+    </div>
+  );
+}
 
-    function App() {
-      const [page, setPage] = useState("today");
-      const [allDays, setAllDays] = useState([]);
-      const [loading, setLoading] = useState(true);
-      const [showOnboarding, setShowOnboarding] = useState(false);
-      const [prompt] = useState(getPrompt);
-      const [showSettings, setShowSettings] = useState(false);
-      const [apiKey, setApiKey] = useState("");
-      const [profile, setProfile] = useState({ name:"", context:"" });
-      const [now, setNow] = useState(new Date());
-      const [passage, setPassage] = useState("");
-      const [chapterTitle, setChapterTitle] = useState("");
-      const [lastWord, setLastWord] = useState("");
-      const [picture, setPicture] = useState(null);
-      const [picMode, setPicMode] = useState("upload");
-      const [picDesc, setPicDesc] = useState("");
-      const [saved, setSaved] = useState(false);
-      const [quote, setQuote] = useState("");
-      const [quoteType, setQuoteType] = useState("lyric");
-      const [quoteSource, setQuoteSource] = useState("");
-      const [showQuote, setShowQuote] = useState(false);
-      const [reflection, setReflection] = useState(null);
-      const [reflecting, setReflecting] = useState(false);
-      const [showFortune, setShowFortune] = useState(false);
-      const [weaveText, setWeaveText] = useState(null);
-      const [weaving, setWeaving] = useState(false);
-      const [wisdomLens, setWisdomLens] = useState("general");
-      const [amplifying, setAmplifying] = useState(false);
-      const [location, setLocation] = useState(null);
-      const fileRef = useRef(null);
-      const passageRef = useRef(null);
-      const quoteTimerRef = useRef(null);
-      const [quoteSuggestions, setQuoteSuggestions] = useState([]);
-      const dk = dateKey();
+// ── App ───────────────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage]           = useState("thread");
+  const [allDays, setAllDays]     = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [prompt]                  = useState(getPrompt);
+  const [showProfile, setShowProfile] = useState(false);
+  const [apiKey, setApiKey]       = useState("");
+  const [keyError, setKeyError]   = useState(false);
+  const [profile, setProfile]     = useState({});
+  const [now, setNow]             = useState(new Date());
 
-      useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
-      useEffect(() => { if (passageRef.current) { passageRef.current.style.height = "auto"; passageRef.current.style.height = passageRef.current.scrollHeight + "px"; } }, [passage]);
-      useEffect(() => {
-        (async () => {
-          const all = await ld("sg-book", []);
-          setAllDays(all);
-          const ex = all.find(d => d.key === dk);
-          if (ex) {
-            setPassage(ex.passage || ""); setChapterTitle(ex.chapterTitle || ""); setLastWord(ex.lastWord || "");
-            setPicture(ex.picture || null); setPicDesc(ex.picDesc || "");
-            setQuote(ex.quote || ""); setQuoteType(ex.quoteType || "lyric"); setQuoteSource(ex.quoteSource || "");
-            if (ex.quote) setShowQuote(true);
-            if (ex.reflection) setReflection(ex.reflection);
-            if (ex.weaveText) setWeaveText(ex.weaveText);
-            setSaved(true);
-          }
-          setApiKey(localStorage.getItem("sg-apikey") || "");
-          const savedProfile = await ld("sg-profile", { name:"", context:"" });
-          setProfile(savedProfile);
-          /* Check if first time */
-          const hasOnboarded = await ld("sg-onboarded", false);
-          if (!hasOnboarded && all.length === 0) setShowOnboarding(true);
-          setLoading(false);
-          const tzCity = Intl.DateTimeFormat().resolvedOptions().timeZone.split("/").pop().replace(/_/g, " ");
-          setLocation({ city: tzCity });
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => setLocation({ city: tzCity, lat: pos.coords.latitude.toFixed(3), lng: pos.coords.longitude.toFixed(3) }), () => {});
-          }
-        })();
-      }, []);
+  // Thread (Today) state
+  const [passage, setPassage]         = useState("");
+  const [chapterTitle, setChapterTitle] = useState("");
+  const [closingWord, setClosingWord] = useState("");
+  const [picture, setPicture]         = useState(null);
+  const [saved, setSaved]             = useState(false);
 
-      const completeOnboarding = async () => {
-        setShowOnboarding(false);
-        await sv("sg-onboarded", true);
-      };
+  // Inspo
+  const [inspoType, setInspoType]     = useState(null);
+  const [inspoText, setInspoText]     = useState("");
+  const [inspoArtist, setInspoArtist] = useState("");
+  const [inspoSong, setInspoSong]     = useState("");
+  const [inspoSongs, setInspoSongs]   = useState([]);
+  const [inspoSearching, setInspoSearching] = useState(false);
+  const [inspoPulling, setInspoPulling] = useState(false);
+  const [scriptTrad, setScriptTrad]   = useState(null);
+  const [scriptureSearching, setScriptureSearching] = useState(false);
+  const [filmSuggestions, setFilmSuggestions] = useState([]);
+  const [filmSearching, setFilmSearching] = useState(false);
+  const [filmGenre, setFilmGenre]     = useState(null);
 
-      const saveDay = async (withReflection, withWeave) => {
-        const day = { key: dk, date: todayStr(), chapterTitle: chapterTitle.trim(), passage: passage.trim(), lastWord: lastWord.trim(), picture, picDesc: picDesc.trim(), quote: quote.trim(), quoteType, quoteSource: quoteSource.trim(), reflection: withReflection || reflection || null, weaveText: withWeave || weaveText || null, ts: new Date().toISOString() };
-        const updated = [day, ...allDays.filter(d => d.key !== dk)];
-        setAllDays(updated);
-        await sv("sg-book", updated);
+  // Reflection
+  const [reflection, setReflection]   = useState(null);
+  const [reflecting, setReflecting]   = useState(false);
+  const [tomorrowQ, setTomorrowQ]     = useState(null);
+  const [hat, setHat]                 = useState(null);
+  const [showReflection, setShowReflection] = useState(false);
+  const [dayGift, setDayGift]         = useState(null);
+  const [dayGiftLoading, setDayGiftLoading] = useState(false);
+
+  // Weave (for modal)
+  const [weaveText, setWeaveText]     = useState(null);
+  const [weaving, setWeaving]         = useState(false);
+
+  // Archive state
+  const [timeMachineKey, setTimeMachineKey] = useState(null);
+  const [archiveReflections, setArchiveReflections] = useState({});
+  const [archiveReflecting, setArchiveReflecting]   = useState({});
+
+  // Archive Weave
+  const [weaveResult, setWeaveResult]   = useState(null);
+  const [weaveLoading, setWeaveLoading] = useState(false);
+  const [weavePeriod, setWeavePeriod]   = useState("week");
+  const [rhymingDays, setRhymingDays]   = useState([]);
+
+  // Lens
+  const [lensUrl, setLensUrl]     = useState("");
+  const [lensText, setLensText]   = useState("");
+  const [lensResult, setLensResult] = useState(null);
+  const [lensLoading, setLensLoading] = useState(false);
+
+  const fileRef    = useRef(null);
+  const passageRef = useRef(null);
+  const dk = dateKey();
+
+  // Theme
+  useEffect(() => {
+    const apply = () => { const th = getTimeTheme(); document.documentElement.style.setProperty('--sg-bg',th.bg); document.documentElement.style.setProperty('--sg-t',th.t); };
+    apply(); const id = setInterval(apply, 60000); return () => clearInterval(id);
+  }, []);
+
+  // Clock
+  useEffect(() => { const t = setInterval(()=>setNow(new Date()),1000); return ()=>clearInterval(t); }, []);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (passageRef.current) { passageRef.current.style.height="auto"; passageRef.current.style.height=passageRef.current.scrollHeight+"px"; }
+  }, [passage]);
+
+  // Load
+  useEffect(() => {
+    (async () => {
+      const key  = localStorage.getItem("sg-apikey") || "";
+      const prof = await ld("sg-profile", {});
+      const all  = await ld("sg-book", []);
+      setApiKey(key); setProfile(prof); setAllDays(all);
+      const ex = all.find(d => d.key === dk);
+      if (ex) {
+        setPassage(ex.passage||""); setChapterTitle(ex.chapterTitle||""); setClosingWord(ex.closingWord||"");
+        setPicture(ex.picture||null); setInspoType(ex.inspoType||null); setInspoText(ex.inspoText||"");
+        setInspoArtist(ex.inspoArtist||""); setInspoSong(ex.inspoSong||""); setScriptTrad(ex.scriptTrad||null);
+        setFilmGenre(ex.filmGenre||null);
+        if (ex.reflection) setReflection(ex.reflection);
+        if (ex.tomorrowQ)  setTomorrowQ(ex.tomorrowQ);
+        if (ex.weaveText)  setWeaveText(ex.weaveText);
         setSaved(true);
-      };
+      }
+      const onboarded = localStorage.getItem("sg-onboarded");
+      if (!onboarded && all.length === 0) setShowOnboarding(true);
+      setLoading(false);
+    })();
+  }, []);
 
-      const handlePicture = (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { setPicture(ev.target.result); setSaved(false); }; reader.readAsDataURL(file); };
+  const saveDay = async (opts = {}) => {
+    const day = {
+      key:dk, date:todayStr(),
+      chapterTitle:chapterTitle.trim(), passage:passage.trim(), closingWord:closingWord.trim(),
+      picture, inspoType:inspoType||null, inspoText:inspoText.trim()||null,
+      inspoArtist:inspoArtist.trim()||null, inspoSong:inspoSong.trim()||null,
+      scriptTrad:scriptTrad||null, filmGenre:filmGenre||null,
+      reflection:opts.reflection||reflection||null, tomorrowQ:opts.tomorrowQ||tomorrowQ||null,
+      weaveText:opts.weaveText||weaveText||null,
+      ts:new Date().toISOString(),
+    };
+    const updated = [day, ...allDays.filter(d=>d.key!==dk)];
+    setAllDays(updated); await sv("sg-book", updated); setSaved(true);
+    return updated;
+  };
 
-      const reflect = async () => {
-        if (!passage.trim()) return;
-        const key = localStorage.getItem("sg-apikey");
-        if (!key) { setShowSettings(true); return; }
-        setReflecting(true); setReflection(null);
-        try {
-          const prevPassages = allDays.filter(d => d.key !== dk && d.passage?.trim()).slice(0, 10).map(d => `[${d.date}] "${d.passage}" (closing word: ${d.lastWord || "none"})`).join("\n");
-          const r = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-            body: JSON.stringify({
-              model: "claude-sonnet-4-20250514", max_tokens: 1000,
-              system: buildSystemPrompt(prevPassages, lastWord, quote, quoteType, quoteSource, wisdomLens, location, profile),
-              messages: [{ role: "user", content: (() => { const imgBlock = buildImageBlock(picture); const text = { type:"text", text:`Today's passage:\n\n"${passage}"` }; return imgBlock ? [imgBlock, text] : `Today's passage:\n\n"${passage}"`; })() }],
-            }),
-          });
-          const d = await r.json();
-          const text = d.error ? "The key didn't connect. Tap the gear to update it." : (d.content?.map(i => i.text || "").join("\n") || "Present but resists translation.");
-          setReflection(text); setShowFortune(true); await saveDay(text);
-        } catch { const fallback = "The lighthouse received your signal. Sometimes that's enough."; setReflection(fallback); setShowFortune(true); }
-        setReflecting(false);
-      };
+  // Day gift
+  const generateDayGift = async () => {
+    if (!apiKey||!passage.trim()) return;
+    setDayGiftLoading(true);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:120,
+          system:"In 25-35 words: name what the day produced that can be carried forward. Not the effort — the yield: what stays. Specific. Warm. Begin with 'Today gave you' or a variation. No analysis. Just the gift.",
+          messages:[{role:"user",content:`Passage: "${passage}"\nClosing word: "${closingWord||'—'}"${inspoArtist?`\nResonance: ${inspoArtist}`:''}`}]})});
+      const d = await res.json();
+      if (!d.error) setDayGift(d.content?.map(i=>i.text||'').join('\n')||null);
+    } catch {}
+    setDayGiftLoading(false);
+  };
 
-      const amplifyDesc = async () => {
-        if (!picDesc.trim()) return;
-        const key = localStorage.getItem("sg-apikey");
-        if (!key) { setShowSettings(true); return; }
-        setAmplifying(true);
-        try {
-          const r = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-            body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 120, system: "You are a lyric distiller. Take a raw image description and rewrite it in 1–2 sentences of precise, sensory, evocative prose — no sentimentality, no metaphors unless they're earned. Preserve every concrete detail. Remove nothing important. Return only the rewritten description, nothing else.", messages: [{ role: "user", content: picDesc }] }),
-          });
-          const d = await r.json();
-          if (!d.error) { const amplified = d.content?.map(i => i.text || "").join("").trim(); if (amplified) { setPicDesc(amplified); setSaved(false); } }
-        } catch {}
-        setAmplifying(false);
-      };
+  const handlePicture = (e) => {
+    const file = e.target.files?.[0]; if(!file)return;
+    const reader = new FileReader();
+    reader.onload = ev => { setPicture(ev.target.result); setSaved(false); };
+    reader.readAsDataURL(file);
+  };
 
-      const weave = async () => {
-        const key = localStorage.getItem("sg-apikey");
-        if (!key) { setShowSettings(true); return; }
-        if (allDays.length < 5) return;
-        setWeaving(true);
-        try {
-          const threads = allDays.filter(d => d.passage?.trim()).slice(0, 30).map(d => `[${d.date}] "${d.passage.trim()}"${d.lastWord ? ` — closing word: ${d.lastWord}` : ""}${d.chapterTitle ? ` — chapter: ${d.chapterTitle}` : ""}`).join("\n");
-          /* Client-side recurring words for structured output */
-          const recurring = extractRecurringWords(allDays);
-          const recurringStr = recurring.length > 0 ? `\n\nRecurring words detected (client-side): ${recurring.map(([w,c]) => `${w}(${c})`).join(", ")}` : "";
+  // Main reflection
+  const reflect = async () => {
+    if (!passage.trim()) return;
+    if (!apiKey) { setShowProfile(true); return; }
+    setReflecting(true); setReflection(null); setTomorrowQ(null);
+    try {
+      const prevPassages = allDays.filter(d=>d.key!==dk&&d.passage?.trim()).slice(0,10)
+        .map(d=>`[${d.date}] "${d.passage}" (closing word: ${d.closingWord||"none"})`).join("\n");
+      const chosenHat = hat ? HATS.find(h=>h.id===hat) : null;
+      const hatPrefix = chosenHat ? `HAT ON: ${chosenHat.voice}\n\nWear this hat fully. Use its idiom, its vocabulary, its emotional register. The three-movement structure (VERSE, SONG, NOTE) stays the same.\n\n---\n\n` : '';
+      const inspoCtx = (inspoType&&(inspoText.trim()||inspoArtist.trim()))
+        ? `\nKey signature today (${inspoType}): ${inspoArtist.trim()||''}${inspoSong.trim()?` — "${inspoSong.trim()}"`:''}\n${inspoText.trim()?`Verse/lyric: "${inspoText.trim()}"`:''}\n` : '';
 
-          const weaveSystem = `You are the three Norns — Urðr, Verðandi, Skuld — reading the full tapestry of this person's threads.
-${profile?.name ? `This is ${profile.name}'s book.` : ""}
-${profile?.role ? `Their roles: ${profile.role}.` : ""}
-${profile?.faith ? `Their faith: ${profile.faith}.` : ""}
+      let msgContent;
+      if (picture) {
+        const match = picture.match(/^data:([^;]+);base64,(.+)$/);
+        msgContent = match ? [{type:"image",source:{type:"base64",media_type:match[1],data:match[2]}},{type:"text",text:`Today's passage:\n\n"${passage}"`}] : `Today's passage:\n\n"${passage}"`;
+      } else msgContent = `Today's passage:\n\n"${passage}"`;
 
-You have read ALL ${allDays.length} threads. Now reveal the wyrd — the pattern woven across all entries.
+      const system = `${hatPrefix}You are a careful, empathetic reader of the human day. You hold depth without performing it. Read what was actually written.
+${profile?.name?`You are speaking to ${profile.name}.`:''}
+${profile?.role?`Their roles: ${profile.role}.`:''}
+${profile?.faith?`Their faith: ${profile.faith}.`:''}
+${profile?.context?`Context: ${profile.context}`:''}
 
-You are performing time-series analysis on a human life. Each entry is a state in a recursive system: N_t = f(S_t, R_t), where today's new state becomes tomorrow's signal. The closing words are the compressed eigenvalues of each day. The recurring words are the attractors in the system. Days that rhyme are moments where the state-space trajectory passes through similar regions — like a spiral returning to the same longitude at a different altitude. You don't name any of this mathematics. You simply read with its depth.
+Five anchors (never name these — let them inform what you notice):
+- The Correction: "Seek to understand ; and then to be understood."
+- The Ground: "Be completely humble & gentle ; be patient, bearing with one another in love." (Eph 4:2)
+- Trust: displayed through candor, competence, care, and control.
+- The Two Arcs: OB (possibility, allowing, arrival) and NICU (becoming, tools, trajectory).
+- The Trinity: Pride = Identity, Hope = Direction, Conviction = Action.
+${inspoCtx}
+Previous entries:
+${prevPassages || "First entry. The archive is new."}
+Today's closing word: "${closingWord || "not yet chosen"}"
+If an image is present, let it inform your reading naturally.
 
-You MUST structure your response in exactly THREE sections with these exact headers:
+OUTPUT — three movements, labeled exactly:
 
-Words that return
-List the 4-8 most significant recurring words with counts in parentheses, one per line. Example: "home (5)". Focus on emotionally meaningful words, not common ones. These are the attractors — the words the soul keeps circling back to.${recurringStr}
+VERSE:: [25-35 words. The emotional frequency of today — what was this person actually feeling beneath the surface?]
 
-Drift across these days
-Write 2-4 sentences describing the emotional arc across entries. Where did they begin emotionally? How has the tone shifted? What do the most recent entries carry? Be specific, cite actual words or themes. This is the prior belief updating with new evidence — the Bayesian drift of a life.
+SONG:: [55-75 words. The day read in its most distilled form. If a past entry rhymes with today, name the echo. Write so the reader feels recognized, not impressed.]
 
-Days that rhyme
-Identify 2-3 pairs of entries that echo each other. Format: "[Date A] ↔ [Date B]" followed by what connects them (shared words, similar closing words, parallel themes). History doesn't repeat — it rhymes. Find where the spiral returned.
+NOTE:: [15-22 words. The one thing worth carrying into tomorrow. Specific. Warm. True.]
 
-Keep the total under 250 words. Plain text only.`;
-          const r = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-            body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 600, system: weaveSystem, messages: [{ role: "user", content: `All threads:\n\n${threads}` }] }),
-          });
-          const d = await r.json();
-          const text = d.error ? "The tapestry is too vast to read right now." : (d.content?.map(i => i.text || "").join("\n") || "The pattern resists naming — but it is there.");
-          setWeaveText(text); await saveDay(null, text);
-        } catch { setWeaveText("The Norns are silent. The pattern waits."); }
-        setWeaving(false);
-      };
+Match the weight of what was written. Not every day is mythic. Some days are just true.
 
-      const fetchQuoteSuggestions = async (term, type) => {
-        if (term.length < 3) { setQuoteSuggestions([]); return; }
-        const entity = type === "lyric" ? "song" : "movie";
-        try { const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=${entity}&limit=6`); const data = await r.json(); setQuoteSuggestions(data.results || []); } catch { setQuoteSuggestions([]); }
-      };
-      const handleQuoteChange = (val) => {
-        setQuote(val); setSaved(false);
-        if (quoteType === "lyric" || quoteType === "film") { clearTimeout(quoteTimerRef.current); quoteTimerRef.current = setTimeout(() => fetchQuoteSuggestions(val, quoteType), 480); } else { setQuoteSuggestions([]); }
-      };
+After NOTE, add on a new line:
+TOMORROW:: [one short, calm, open question that invites tomorrow's thread. Under 18 words. Ends with a question mark.]`;
 
-      const h = String(now.getHours() % 12 || 12).padStart(2, "0");
-      const min = String(now.getMinutes()).padStart(2, "0");
-      const sec = String(now.getSeconds()).padStart(2, "0");
-      const ampm = now.getHours() >= 12 ? "PM" : "AM";
-      const tz = now.toLocaleTimeString("en-US", { timeZoneName:"short" }).split(" ").pop();
-      const dateLabel = now.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
-      const shortDateLabel = now.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
-      const charsLeft = CHAR_LIMIT - passage.length;
-      const pctUsed = passage.length / CHAR_LIMIT;
-      const priorDay = allDays.find(d => d.key !== dk && (d.lastWord?.trim() || d.chapterTitle?.trim()));
+      const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,system,messages:[{role:"user",content:msgContent}]})});
+      const d = await res.json();
+      if (d.error||res.status===401) { setKeyError(true); setReflection("The key didn't connect. Tap ⚙ to update it."); }
+      else {
+        setKeyError(false);
+        const fullText = d.content?.map(i=>i.text||'').join('\n')||"Present but resists translation.";
+        // Extract tomorrow question
+        const tmMatch = fullText.match(/TOMORROW::([\s\S]*?)$/);
+        const tq = tmMatch ? tmMatch[1].trim() : null;
+        const refText = fullText.replace(/TOMORROW::[\s\S]*$/,'').trim();
+        setReflection(refText); setTomorrowQ(tq); setShowReflection(true);
+        await saveDay({ reflection:refText, tomorrowQ:tq });
+      }
+    } catch { setReflection("The lighthouse received your signal. Sometimes that's enough."); setShowReflection(true); }
+    setReflecting(false);
+  };
 
-      if (loading) return (<Shell><div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center" }}><div style={{ animation:"breathe 2s ease-in-out infinite" }}><Logo size={32}/></div></div></Shell>);
+  // Norns weave (from reflection modal)
+  const weave = async () => {
+    if (!apiKey||allDays.length<5) return;
+    setWeaving(true);
+    try {
+      const threads = allDays.filter(d=>d.passage?.trim()).slice(0,30)
+        .map(d=>`[${d.date}] "${d.passage.trim()}"${d.closingWord?` — closing word: ${d.closingWord}`:''}${d.chapterTitle?` — chapter: ${d.chapterTitle}`:''}`).join("\n");
+      const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,
+          system:`Read across these journal entries and surface the wyrd — the deeper pattern.
 
-      const dayBg = getDayBg(now.getHours());
+Return EXACTLY:
+THREAD:: [25-35 words. The single strongest recurring theme, emotion, or question. Name it precisely.]
+DRIFT:: [25-35 words. How has the emotional tone shifted from earliest to most recent?]
+RHYME:: [20-30 words. Two specific moments from different days that echo each other — name both entries.]
+UNSAID:: [15-25 words. What is present between the lines but never named directly?]
 
-      return (
-        <Shell bg={dayBg}>
-          {showOnboarding && <Onboarding onComplete={completeOnboarding} />}
-          {showSettings && <SettingsModal initialProfile={profile} onSave={async (p) => { setProfile(p); await sv("sg-profile", p); setApiKey(localStorage.getItem("sg-apikey") || ""); setShowSettings(false); }} onClose={() => setShowSettings(false)} />}
-          {showFortune && reflection && <FortuneModal text={reflection} verseRef={profile?.name ? (() => { const [y,m,d] = dk.split("-").map(Number); return `${profile.name} ${m}:${d}:${y}`; })() : null} onDismiss={() => setShowFortune(false)} weaveText={weaveText} onWeave={weave} weaving={weaving} canWeave={allDays.length >= 5} />}
+Plain text only. No markdown. Warm but precise.`,
+          messages:[{role:"user",content:`All threads:\n\n${threads}`}]})});
+      const d = await res.json();
+      const text = d.error?"The tapestry is too vast to read right now.":(d.content?.map(i=>i.text||'').join('\n')||"The pattern resists naming.");
+      setWeaveText(text); await saveDay({ weaveText:text });
+    } catch { setWeaveText("The Norns are silent. The pattern waits."); }
+    setWeaving(false);
+  };
 
-          <header style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 16px", borderBottom:"1px solid rgba(255,255,255,0.025)", flexShrink:0 }}>
-            <button onClick={() => setPage("today")} style={{ background:"none", border:"none", cursor:"pointer", padding:0, display:"flex", alignItems:"center" }}><Logo size={24}/></button>
-            <div style={{ display:"flex", gap:2, alignItems:"center" }}>
-              {[{ k:"today", l:"Thread" }, { k:"book", l:`Archive (${allDays.length})` }, { k:"about", l:"?" }].map(t => (
-                <button key={t.k} onClick={() => setPage(t.k)} style={{ background: page === t.k ? "rgba(201,169,110,0.06)" : "none", border:"none", color: page === t.k ? G : "rgba(255,255,255,0.13)", padding:"4px 9px", borderRadius:10, fontSize:10, cursor:"pointer", fontFamily:F.b }}>{t.l}</button>
-              ))}
-              <button onClick={() => setShowSettings(true)} title="Profile" style={{ background:"none", border:"none", cursor:"pointer", color: apiKey ? "rgba(201,169,110,0.3)" : "rgba(255,255,255,0.08)", fontSize:13, padding:"4px 5px" }}>⚙</button>
-            </div>
-          </header>
+  // Lyric search
+  useEffect(()=>{
+    if(inspoType!=="lyric"||!inspoArtist.trim()||inspoArtist.length<2){setInspoSongs([]);return;}
+    const ac=new AbortController(); const t=setTimeout(async()=>{setInspoSearching(true);try{const r=await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(inspoArtist)}&media=music&entity=song&limit=6`,{signal:ac.signal});const d=await r.json();if(!ac.signal.aborted)setInspoSongs(d.results||[]);}catch(e){if(e.name!=='AbortError')setInspoSongs([]);}if(!ac.signal.aborted)setInspoSearching(false);},600);
+    return()=>{clearTimeout(t);ac.abort();};
+  },[inspoArtist,inspoType]);
 
-          {/* ══════════ THREAD (today) ══════════ */}
-          {page === "today" && (
-            <div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 16px", overflowY:"auto", WebkitOverflowScrolling:"touch", minHeight:0 }}>
+  // Film search
+  useEffect(()=>{
+    if(inspoType!=="film"||!inspoArtist.trim()||inspoArtist.length<2){setFilmSuggestions([]);return;}
+    const ac=new AbortController(); const t=setTimeout(async()=>{setFilmSearching(true);try{const r=await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(inspoArtist)}&media=movie&entity=movie&limit=6`,{signal:ac.signal});const d=await r.json();if(!ac.signal.aborted)setFilmSuggestions(d.results||[]);}catch(e){if(e.name!=='AbortError')setFilmSuggestions([]);}if(!ac.signal.aborted)setFilmSearching(false);},600);
+    return()=>{clearTimeout(t);ac.abort();};
+  },[inspoArtist,inspoType]);
 
-              <div style={{ textAlign:"center", padding:"8px 0 6px", flexShrink:0 }}>
-                <div style={{ fontSize:9, color:"rgba(201,169,110,0.3)", fontFamily:F.m, letterSpacing:"0.09em", marginBottom:5 }}>{shortDateLabel.toUpperCase()} · {h}:{min}:{sec} {ampm} {tz}</div>
-                <p style={{ fontSize:13, color:"rgba(255,255,255,0.25)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.4 }}>{prompt}</p>
-                {priorDay && (
-                  <div style={{ marginTop:6, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                    <div style={{ width:16, height:"1px", background:"rgba(201,169,110,0.08)" }}/>
-                    <span style={{ fontSize:9, color:"rgba(201,169,110,0.18)", fontFamily:F.m, letterSpacing:"0.08em" }}>
-                      {priorDay.chapterTitle ? `"${priorDay.chapterTitle}"` : ""}
-                      {priorDay.chapterTitle && priorDay.lastWord ? " · " : ""}
-                      {priorDay.lastWord ? `yesterday: ${priorDay.lastWord}` : ""}
-                    </span>
-                    <div style={{ width:16, height:"1px", background:"rgba(201,169,110,0.08)" }}/>
-                  </div>
-                )}
-              </div>
+  // Scripture autocomplete
+  const scriptSuggestions = useMemo(()=>{
+    if(inspoType!=="scripture"||!inspoArtist.trim()||inspoArtist.length<2)return[];
+    if(/\d+\s*:\s*\d+/.test(inspoArtist))return[];
+    const q=inspoArtist.toLowerCase();
+    if(scriptTrad==="quran")return QURAN_SURAHS.filter(s=>s.name.toLowerCase().startsWith(q)||s.name.toLowerCase().includes(q)||String(s.n)===q).slice(0,6);
+    const books=scriptTrad==="torah"?TORAH_BOOKS:BIBLE_BOOKS;
+    return books.filter(b=>b.toLowerCase().startsWith(q)||b.toLowerCase().includes(q)).slice(0,6);
+  },[inspoArtist,inspoType,scriptTrad]);
 
-              <div style={{ marginBottom:7, flexShrink:0 }}>
-                <input value={chapterTitle} onChange={e => { setChapterTitle(e.target.value); setSaved(false); }} placeholder="Title this day (optional)" style={{ ...inputStyle, fontSize:14, fontFamily:F.h, fontStyle:"italic", textAlign:"center", padding:"7px 12px", color:"rgba(201,169,110,0.5)", letterSpacing:"0.02em" }} />
-              </div>
+  // Scripture auto-fetch
+  useEffect(()=>{
+    if(inspoType!=="scripture"||!inspoArtist.trim())return;
+    if(!/\d+\s*:\s*\d+/.test(inspoArtist))return;
+    const ac=new AbortController(); const t=setTimeout(async()=>{
+      setScriptureSearching(true);
+      try{
+        const ref=inspoArtist.trim(); let text=null;
+        if(scriptTrad==="quran"){const m=ref.match(/(\d+)\s*:\s*(\d+)/);if(m){const r=await fetch(`https://api.alquran.cloud/v1/ayah/${m[1]}:${m[2]}/en.sahih`,{signal:ac.signal});const d=await r.json();if(d.data?.text)text=d.data.text.trim();}}
+        else if(scriptTrad==="torah"){const r=await fetch(`https://www.sefaria.org/api/texts/${encodeURIComponent(ref)}?context=0`,{signal:ac.signal});const d=await r.json();if(d.text){const raw=Array.isArray(d.text)?d.text.flat().filter(Boolean).join(' '):d.text;text=raw.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();}}
+        else{const r=await fetch(`https://bible-api.com/${encodeURIComponent(ref)}`,{signal:ac.signal});const d=await r.json();if(d.text&&!d.error)text=d.text.trim().replace(/\s+/g,' ');}
+        if(!ac.signal.aborted&&text){setInspoText(text);setSaved(false);}
+      }catch(e){if(e.name==='AbortError')return;}
+      if(!ac.signal.aborted)setScriptureSearching(false);
+    },800);
+    return()=>{clearTimeout(t);ac.abort();setScriptureSearching(false);};
+  },[inspoArtist,inspoType,scriptTrad]);
 
-              <div style={{ marginBottom:7, flexShrink:0 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                  <label style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", fontFamily:F.b }}>Passage</label>
-                  <span style={{ fontSize:8, fontFamily:F.m, color: pctUsed > 0.85 ? "rgba(201,169,110,0.65)" : "rgba(255,255,255,0.1)", transition:"color 0.3s" }}>{charsLeft} left</span>
-                </div>
-                <textarea ref={passageRef} value={passage} onChange={e => { if (e.target.value.length <= CHAR_LIMIT) { setPassage(e.target.value); setSaved(false); } }} placeholder="Begin anywhere. It doesn't have to be perfect." rows={1} spellCheck={false} autoCorrect="off" autoCapitalize="off" style={{ ...inputStyle, fontSize:16, fontFamily:F.h, lineHeight:1.6, overflow:"hidden", minHeight:42, transition:"height 0.12s ease" }} />
-                {(() => { const suggestions = getWordSuggestions(passage, allDays); return suggestions.length > 0 ? (<div style={{ display:"flex", gap:4, marginTop:4, flexWrap:"wrap" }}>{suggestions.map(w => (<button key={w} onClick={() => { const parts = passage.split(/\s+/); parts[parts.length - 1] = w; setPassage(parts.join(" ") + " "); setSaved(false); }} style={{ fontSize:11, padding:"3px 9px", borderRadius:6, cursor:"pointer", fontFamily:F.h, fontStyle:"italic", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.05)", color:"rgba(255,255,255,0.3)" }}>{w}</button>))}</div>) : null; })()}
-              </div>
+  // Pull inspo from AI
+  const pullInspo = async () => {
+    if(!apiKey){setShowProfile(true);return;}
+    setInspoPulling(true);
+    try{
+      const refCtx=inspoArtist.trim(), passCtx=passage.trim()?`\nJournal entry: "${passage.slice(0,200)}"`:'';;
+      let sys,userMsg;
+      if(inspoType==="scripture"){const tc=scriptTrad==="quran"?"Draw from the Holy Quran. Format: Surah Name Chapter:Ayah.":scriptTrad==="torah"?"Draw from the Torah/Tanakh. Format: Book Chapter:Verse.":"Draw from the Bible (NIV or KJV). Format: Book Chapter:Verse.";sys=`${tc} Return ONE verse. Format:\n[verse text]\n— Reference\nPlain text only.`;userMsg=refCtx?`Find a verse related to: ${refCtx}${passCtx}`:`Find a verse:${passCtx}`;}
+      else if(inspoType==="poem"){sys=`You know Rumi, Mary Oliver, Rilke, Hopkins, Whitman, Hughes, Dickinson, Neruda. Return ONE excerpt (2-6 lines). Format:\n[poem lines]\n— Poet, "Title"\nPlain text only.`;userMsg=refCtx?`Find a poem by or related to: ${refCtx}${passCtx}`:`Find a poem:${passCtx}`;}
+      else if(inspoType==="film"){sys=`Cinephile and archivist.${refCtx?` FROM "${refCtx}" specifically.`:''}${filmGenre?` Genre: ${filmGenre}.`:''} Return ONE quote. Format:\n[quote]\n— Film Title (Year), Character\nPlain text only.`;userMsg=refCtx?`Film: "${refCtx}"${passCtx}`:`Find a${filmGenre?' '+filmGenre:''} film quote:${passCtx}`;}
+      else{sys=`Return ONE resonant quote from literature, music, or culture. Format: quote, then — Source. Plain text only.`;userMsg=refCtx?`Find a quote related to: ${refCtx}${passCtx}`:`Find a quote:${passCtx}`;}
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,system:sys,messages:[{role:"user",content:userMsg}]})});
+      const d=await res.json();
+      if(!d.error){const text=d.content?.map(i=>i.text||'').join('\n').trim()||'';if(text){const lines=text.split('\n').filter(l=>l.trim()),last=lines[lines.length-1];if(/^[—–-]/.test(last)&&lines.length>1){setInspoText(lines.slice(0,-1).join('\n').replace(/^["""]|["""]$/g,'').trim());setInspoArtist(last.replace(/^[—–-]\s*/,'').trim());}else setInspoText(text.replace(/^["""]|["""]$/g,'').trim());setSaved(false);}}
+    }catch{}
+    setInspoPulling(false);
+  };
 
-              <div style={{ marginBottom:7, flexShrink:0 }}>
-                <div style={{ display:"flex", gap:5, alignItems:"center", marginBottom:4 }}>
-                  <label style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", fontFamily:F.b, flex:1 }}>An image from today</label>
-                  {["upload","describe"].map(mode => (<button key={mode} onClick={() => setPicMode(mode)} style={{ background: picMode === mode ? "rgba(201,169,110,0.08)" : "none", border:"1px solid rgba(201,169,110,0.1)", color: picMode === mode ? G : "rgba(255,255,255,0.15)", borderRadius:6, padding:"2px 8px", fontSize:8, cursor:"pointer", fontFamily:F.b }}>{mode === "upload" ? "Add photo" : "Describe it"}</button>))}
-                </div>
-                {picMode === "upload" ? (picture ? (<div style={{ position:"relative" }}><img src={picture} alt="Today" style={{ width:"100%", height:"auto", maxHeight:240, objectFit:"contain", borderRadius:9, border:"1px solid rgba(201,169,110,0.08)", display:"block", background:"rgba(0,0,0,0.3)" }}/><button onClick={() => { setPicture(null); setSaved(false); }} style={{ position:"absolute", top:6, right:6, background:"rgba(0,0,0,0.7)", border:"none", color:"rgba(255,255,255,0.6)", width:20, height:20, borderRadius:10, cursor:"pointer", fontSize:12, lineHeight:"20px" }}>×</button></div>) : (<><input ref={fileRef} type="file" accept="image/*" onChange={handlePicture} style={{ display:"none" }}/><div onClick={() => fileRef.current && fileRef.current.click()} style={{ display:"flex", alignItems:"center", justifyContent:"center", height:40, border:"1px dashed rgba(201,169,110,0.08)", borderRadius:8, cursor:"pointer", color:"rgba(201,169,110,0.2)", fontSize:11, fontFamily:F.b }}>Tap to add</div></>)) : (<><textarea value={picDesc} onChange={e => { setPicDesc(e.target.value); setSaved(false); }} placeholder="Describe the moment you'd photograph if you could." rows={2} style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", lineHeight:1.5 }} />{picDesc.trim() && (<button onClick={amplifyDesc} disabled={amplifying} style={{ marginTop:4, padding:"4px 10px", fontSize:9, cursor:"pointer", fontFamily:F.b, background:"rgba(201,169,110,0.06)", border:"1px solid rgba(201,169,110,0.12)", color: amplifying ? "rgba(201,169,110,0.25)" : "rgba(201,169,110,0.45)", borderRadius:6 }}>{amplifying ? "Amplifying..." : "Amplify"}</button>)}</>)}
-              </div>
+  // Archive Weave entries
+  const weaveEntries = useMemo(()=>{
+    if(!allDays.length)return[];
+    const n=new Date();
+    if(weavePeriod==="week"){const c=new Date(n);c.setDate(c.getDate()-7);return allDays.filter(d=>new Date(d.key)>=c);}
+    if(weavePeriod==="month"){const c=new Date(n);c.setMonth(c.getMonth()-1);return allDays.filter(d=>new Date(d.key)>=c);}
+    return allDays;
+  },[allDays,weavePeriod]);
 
-              <div style={{ marginBottom:7, flexShrink:0 }}>
-                <label style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", fontFamily:F.b, display:"block", marginBottom:4 }}>Closing word</label>
-                <input value={lastWord} onChange={e => { setLastWord(e.target.value.split(" ")[0]); setSaved(false); }} placeholder="One word that closes the day." spellCheck={false} style={{ ...inputStyle, fontSize:20, fontFamily:F.h, textAlign:"center", padding:"9px 14px", letterSpacing:"0.05em" }} />
-                {!lastWord && (() => { const universals = ["enough","peace","home","grateful","still","ready","loved","clear","open","rest","done","safe","here","free","yes"]; const pastWords = allDays.filter(d => d.lastWord?.trim() && d.key !== dk).map(d => d.lastWord.trim().toLowerCase()); const pool = [...new Set([...pastWords, ...universals])].slice(0, 12); return (<div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:5 }}>{pool.map(w => (<button key={w} onClick={() => { setLastWord(w); setSaved(false); }} style={{ fontSize:10, padding:"3px 9px", borderRadius:6, cursor:"pointer", fontFamily:F.h, fontStyle:"italic", background:"rgba(201,169,110,0.04)", border:"1px solid rgba(201,169,110,0.07)", color:"rgba(201,169,110,0.35)" }}>{w}</button>))}</div>); })()}
-              </div>
-
-              <div style={{ marginBottom:7, flexShrink:0 }}>
-                {!showQuote ? (<button onClick={() => setShowQuote(true)} style={{ width:"100%", padding:"7px", background:"none", border:"1px dashed rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.1)", borderRadius:8, fontSize:10, cursor:"pointer", fontFamily:F.b }}>+ Add a line that stayed with you</button>) : (
-                  <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                    <div style={{ display:"flex", gap:4, alignItems:"center" }}>
-                      {QUOTE_TYPES.map(qt => (<button key={qt} onClick={() => { setQuoteType(qt); setQuoteSuggestions([]); }} style={{ background: quoteType === qt ? "rgba(201,169,110,0.08)" : "none", border:"1px solid rgba(201,169,110,0.1)", color: quoteType === qt ? G : "rgba(255,255,255,0.15)", borderRadius:6, padding:"2px 7px", fontSize:8, cursor:"pointer", fontFamily:F.b }}>{qt}</button>))}
-                      <button onClick={() => { setShowQuote(false); setQuote(""); setQuoteSource(""); setSaved(false); }} style={{ marginLeft:"auto", background:"none", border:"none", color:"rgba(255,255,255,0.1)", fontSize:14, cursor:"pointer" }}>×</button>
-                    </div>
-                    <div style={{ position:"relative" }}>
-                      <input value={quote} onChange={e => handleQuoteChange(e.target.value)} placeholder="A line that stayed with you today" style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", padding:"8px 12px" }} />
-                      {quoteSuggestions.length > 0 && (quoteType === "lyric" || quoteType === "film") && (
-                        <div style={{ position:"absolute", left:0, right:0, top:"100%", zIndex:20, background:"#121110", border:"1px solid rgba(201,169,110,0.12)", borderRadius:8, marginTop:2, overflow:"hidden", boxShadow:"0 8px 24px rgba(0,0,0,0.5)" }}>
-                          {quoteSuggestions.map((s, i) => { const title = s.trackName || s.collectionName || ""; const artist = s.artistName || ""; return (<button key={s.trackId || s.collectionId || i} onClick={() => { setQuote(title); setQuoteSource(artist); setQuoteSuggestions([]); setSaved(false); }} style={{ width:"100%", textAlign:"left", padding:"8px 11px", background:"none", border:"none", borderBottom:"1px solid rgba(255,255,255,0.03)", cursor:"pointer", display:"block" }}><div style={{ fontSize:12, fontFamily:F.h, fontStyle:"italic", color:"rgba(255,255,255,0.55)" }}>{title}</div>{artist && <div style={{ fontSize:10, fontFamily:F.b, color:"rgba(201,169,110,0.35)", marginTop:1 }}>{artist}</div>}</button>); })}
-                          <button onClick={() => setQuoteSuggestions([])} style={{ width:"100%", padding:"5px", background:"none", border:"none", cursor:"pointer", fontSize:8, fontFamily:F.m, color:"rgba(255,255,255,0.07)", letterSpacing:"0.1em" }}>dismiss</button>
-                        </div>
-                      )}
-                    </div>
-                    <input value={quoteSource} onChange={e => { setQuoteSource(e.target.value); setSaved(false); }} placeholder="Source (optional)" style={{ ...inputStyle, fontSize:11, fontFamily:F.b, color:"rgba(255,255,255,0.35)", padding:"7px 12px" }} />
-                  </div>
-                )}
-              </div>
-
-              <div style={{ flexShrink:0, paddingBottom:8 }}>
-                <button onClick={() => saveDay()} style={{ width:"100%", padding:"11px", background: saved ? "rgba(100,160,100,0.08)" : "rgba(201,169,110,0.12)", border: `1px solid ${saved ? "rgba(100,160,100,0.15)" : "rgba(201,169,110,0.25)"}`, color: saved ? "rgba(100,160,100,0.5)" : G, borderRadius:10, fontSize:13, cursor:"pointer", fontFamily:F.b, transition:"all 0.3s", marginBottom:5 }}>
-                  {saved ? "Saved" : "Save today's thread ;"}
-                </button>
-                {passage.trim() && (<>
-                  <div style={{ display:"flex", gap:4, marginBottom:5, overflowX:"auto", paddingBottom:2 }}>
-                    {WISDOM_LENSES.map(lens => (<button key={lens.k} onClick={() => setWisdomLens(lens.k)} style={{ flexShrink:0, fontSize:9, padding:"3px 9px", borderRadius:6, cursor:"pointer", fontFamily:F.b, background: wisdomLens === lens.k ? "rgba(201,169,110,0.1)" : "none", border:`1px solid ${wisdomLens === lens.k ? "rgba(201,169,110,0.2)" : "rgba(255,255,255,0.04)"}`, color: wisdomLens === lens.k ? G : "rgba(255,255,255,0.15)", whiteSpace:"nowrap" }}>{lens.l}</button>))}
-                  </div>
-                  <button onClick={reflect} disabled={reflecting} style={{ width:"100%", padding:"9px", background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.04)", color:"rgba(201,169,110,0.3)", borderRadius:10, fontSize:11, cursor:"pointer", fontFamily:F.b }}>
-                    {reflecting ? "The Lighthouse is reading..." : "Ask the Lighthouse to read"}
-                  </button>
-                  {reflection && !showFortune && (<button onClick={() => setShowFortune(true)} style={{ marginTop:4, width:"100%", padding:"6px", background:"none", border:"1px dashed rgba(201,169,110,0.08)", color:"rgba(201,169,110,0.2)", borderRadius:8, fontSize:9, cursor:"pointer", fontFamily:F.m }}>read again ;</button>)}
-                </>)}
-              </div>
-            </div>
-          )}
-
-          {/* ══════════ ARCHIVE (book) ══════════ */}
-          {page === "book" && (
-            <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 50px" }}>
-              <div style={{ marginBottom:18 }}>
-                <h2 style={{ fontFamily:F.h, fontSize:20, fontWeight:400, color:"rgba(255,255,255,0.7)", marginBottom:2 }}>{profile?.name ? `${profile.name}'s Archive` : "The Archive"}</h2>
-                <p style={{ fontSize:9, color:"rgba(255,255,255,0.1)", fontFamily:F.m }}>{allDays.length} {allDays.length === 1 ? "day" : "days"} written</p>
-              </div>
-              {allDays.length === 0 ? (<div style={{ textAlign:"center", padding:"40px 10px" }}><div style={{ fontSize:24, fontFamily:F.h, color:"rgba(201,169,110,0.05)" }}>;</div><p style={{ fontSize:11, color:"rgba(255,255,255,0.06)", marginTop:6 }}>Nothing here yet.<br/>Write today's thread.</p></div>) : (<>
-                {allDays.some(d => d.lastWord?.trim()) && (<div style={{ padding:"12px 14px", background:"rgba(201,169,110,0.02)", border:"1px solid rgba(201,169,110,0.04)", borderRadius:9, marginBottom:16 }}><div style={{ fontSize:8, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:8 }}>Closing words</div><div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>{allDays.filter(d => d.lastWord?.trim()).map(d => (<span key={d.key} style={{ fontSize:13, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.5 }}>{d.lastWord}</span>))}</div></div>)}
-                {allDays.map(day => { const [y,m,d] = day.key.split("-").map(Number); const verseRef = profile?.name ? `${profile.name} ${m}:${d}:${y}` : null; const shortDate = new Date(day.key + "T12:00:00").toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" }); return (
-                  <div key={day.key} style={{ background:"rgba(255,255,255,0.012)", border:"1px solid rgba(255,255,255,0.025)", borderRadius:9, marginBottom:10, overflow:"hidden", borderLeft:"2px solid rgba(201,169,110,0.1)" }}>
-                    <div style={{ padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.015)" }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:9, color:"rgba(201,169,110,0.4)", fontFamily:F.m, letterSpacing:"0.08em" }}>{verseRef || shortDate}</span>
-                        {day.lastWord?.trim() && <span style={{ fontSize:12, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.45 }}>{day.lastWord}</span>}
-                      </div>
-                      {day.chapterTitle?.trim() && <div style={{ fontSize:15, color:"rgba(201,169,110,0.55)", fontFamily:F.h, fontStyle:"italic", marginTop:4 }}>{day.chapterTitle}</div>}
-                    </div>
-                    {day.picture && <img src={day.picture} alt="" style={{ width:"100%", height:"auto", maxHeight:280, objectFit:"contain", display:"block", background:"rgba(0,0,0,0.3)" }}/>}
-                    {day.picDesc?.trim() && !day.picture && <div style={{ padding:"8px 14px", borderBottom:"1px solid rgba(255,255,255,0.01)" }}><p style={{ fontSize:11, color:"rgba(255,255,255,0.2)", fontFamily:F.h, fontStyle:"italic", margin:0, lineHeight:1.6 }}>{day.picDesc}</p></div>}
-                    {day.passage?.trim() && <div style={{ padding:"12px 14px" }}><p style={{ fontSize:14, color:"rgba(255,255,255,0.55)", lineHeight:1.85, fontFamily:F.h, margin:0, whiteSpace:"pre-wrap" }}>{day.passage}</p></div>}
-                    {day.quote?.trim() && <div style={{ padding:"6px 12px 10px", borderTop:"1px solid rgba(255,255,255,0.01)" }}><p style={{ fontSize:11, color:"rgba(201,169,110,0.3)", fontFamily:F.h, fontStyle:"italic", margin:0 }}>"{day.quote}"{day.quoteSource ? ` — ${day.quoteSource}` : ""}</p></div>}
-                    {day.reflection?.trim() && <div style={{ padding:"10px 14px 12px", borderTop:"1px solid rgba(201,169,110,0.04)", background:"rgba(201,169,110,0.015)" }}><div style={{ fontSize:7, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:6 }}>The Lighthouse</div><p style={{ fontSize:13, color:"rgba(255,255,255,0.4)", fontFamily:F.h, lineHeight:1.8, margin:0 }}>{day.reflection}</p></div>}
-                    {day.weaveText?.trim() && <div style={{ padding:"10px 14px 12px", borderTop:"1px solid rgba(201,169,110,0.03)", background:"rgba(201,169,110,0.008)" }}><div style={{ fontSize:7, color:"rgba(201,169,110,0.15)", textTransform:"uppercase", letterSpacing:"0.15em", marginBottom:6 }}>Urðr · Verðandi · Skuld</div><p style={{ fontSize:12, color:"rgba(255,255,255,0.3)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.9, margin:0 }}>{day.weaveText}</p></div>}
-                  </div>
-                ); })}
-              </>)}
-            </div>
-          )}
-
-          {/* ══════════ ABOUT ══════════ */}
-          {page === "about" && (
-            <div style={{ flex:1, overflowY:"auto", padding:"22px 16px 50px", maxWidth:340, margin:"0 auto", width:"100%" }}>
-              <div style={{ textAlign:"center", marginBottom:22 }}>
-                <Logo size={38}/>
-                <h2 style={{ fontFamily:F.h, fontSize:16, fontWeight:400, color:"rgba(255,255,255,0.65)", margin:"10px 0 8px" }}>sgrounds</h2>
-                <p style={{ fontSize:12, color:"rgba(255,255,255,0.2)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.65 }}>History doesn't repeat itself.<br/>It rhymes.<br/>This helps you hear it.</p>
-              </div>
-              {[["One thread per day","Write one page each day. A passage, an image, and one closing word."],["280 characters","The limit is intentional. Enough to be honest. Not enough to hide."],["The Lighthouse reads","After you write, the Lighthouse reflects what it hears in your words."],["The Archive","Each day becomes a thread. Over time, the threads form a pattern."],["The closing word","One word before the day ends. The word that remains when everything else fades."]].map(([t, d], i) => (
-                <div key={i} style={{ display:"flex", gap:10, marginBottom:12 }}>
-                  <div style={{ fontFamily:F.h, fontSize:13, color:G, opacity:0.25, minWidth:18, textAlign:"center" }}>{i+1}</div>
-                  <div><div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontWeight:500, marginBottom:2 }}>{t}</div><div style={{ fontSize:10, color:"rgba(255,255,255,0.15)", lineHeight:1.65 }}>{d}</div></div>
-                </div>
-              ))}
-              <details style={{ marginTop:14 }}>
-                <summary style={{ fontSize:9, color:"rgba(201,169,110,0.15)", paddingBottom:2 }}>The equation</summary>
-                <div style={{ marginTop:8, padding:12, background:"rgba(201,169,110,0.015)", border:"1px solid rgba(201,169,110,0.03)", borderRadius:7 }}>
-                  <div style={{ fontFamily:F.m, fontSize:14, color:G, textAlign:"center", letterSpacing:"0.15em", marginBottom:6 }}>S ; R → N</div>
-                  <p style={{ fontSize:9, color:"rgba(255,255,255,0.15)", lineHeight:1.7 }}>Signal ; Reflection → the New. Your signal meets reflection. Something new appears. The semicolon holds both without collapsing either.</p>
-                </div>
-              </details>
-              <details style={{ marginTop:8 }}>
-                <summary style={{ fontSize:9, color:"rgba(201,169,110,0.1)", paddingBottom:2 }}>The lore</summary>
-                <div style={{ marginTop:8, padding:12, background:"rgba(201,169,110,0.01)", border:"1px solid rgba(201,169,110,0.025)", borderRadius:7 }}>
-                  <div style={{ fontFamily:F.m, fontSize:10, color:"rgba(201,169,110,0.3)", marginBottom:8, letterSpacing:"0.1em" }}>Urðr · Verðandi · Skuld</div>
-                  <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8, marginBottom:8 }}>The Norns of old mythology watched the threads of fate as they were woven.</p>
-                  <p style={{ fontSize:9, color:"rgba(255,255,255,0.12)", lineHeight:1.8 }}>This book is your thread. The Lighthouse simply helps you see its shape.</p>
-                  <div style={{ fontFamily:F.m, fontSize:8, color:"rgba(201,169,110,0.12)", marginTop:10, letterSpacing:"0.1em" }}>branches of Yggdrasil · branches of git · branches of a life</div>
-                  <div style={{ fontFamily:F.m, fontSize:7, color:"rgba(201,169,110,0.06)", marginTop:8, letterSpacing:"0.08em" }}>the same pattern that moves through DNA moves through days</div>
-                </div>
-              </details>
-              <div style={{ textAlign:"center", marginTop:20 }}>
-                <button onClick={() => setPage("today")} style={{ background:"rgba(201,169,110,0.1)", border:"1px solid rgba(201,169,110,0.2)", color:G, padding:"10px 28px", borderRadius:18, fontSize:12, cursor:"pointer", fontFamily:F.b }}>Write today's thread</button>
-              </div>
-            </div>
-          )}
-
-          <div style={{ textAlign:"center", padding:"6px 0", borderTop:"1px solid rgba(255,255,255,0.015)", flexShrink:0 }}>
-            <span style={{ fontSize:7, color:"rgba(255,255,255,0.03)", fontFamily:F.m, letterSpacing:"0.1em" }}>S ; R → N</span>
-          </div>
-        </Shell>
-      );
+  // Local weave stats
+  const weaveLocal = useMemo(()=>{
+    if(weaveEntries.length<2)return null;
+    // Recurring closing words
+    const lwC={};weaveEntries.forEach(d=>{const w=d.closingWord?.trim().toLowerCase();if(w)lwC[w]=(lwC[w]||0)+1;});
+    const recurringLW=Object.entries(lwC).filter(([,c])=>c>1).sort((a,b)=>b[1]-a[1]);
+    // Recurring passage words
+    const stop=new Set(["the","a","an","and","or","but","in","on","at","to","for","of","with","is","it","i","my","me","was","that","this","so","have","had","been","be","not","no","just","very","all","if","do","did","are","as","from","its","what","when","who","how","can","will","about","up","out","like","more","than","would","into","one","their","we","they","your","you","he","she","her","his","our","them","some","could","which","there","has","any","only","even","also","then","were","now","after","over","these","those","back","through","much","way","down","each","still","where","before","here","felt","feel","something","don't","didn't","i'm","today","going","really","being","right","thing","time","day"]);
+    const wC={};weaveEntries.forEach(d=>{if(!d.passage)return;d.passage.toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/).filter(w=>w.length>2&&!stop.has(w)).forEach(w=>{wC[w]=(wC[w]||0)+1;});});
+    const topWords=Object.entries(wC).filter(([,c])=>c>1).sort((a,b)=>b[1]-a[1]).slice(0,12);
+    // Days that rhyme (shared closing words or repeated content words)
+    const rhymes=[];
+    for(let i=0;i<weaveEntries.length;i++){
+      for(let j=i+1;j<weaveEntries.length;j++){
+        const a=weaveEntries[i],b=weaveEntries[j];
+        const aWords=new Set((a.passage||'').toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/).filter(w=>w.length>3&&!stop.has(w)));
+        const bWords=(b.passage||'').toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/).filter(w=>w.length>3&&!stop.has(w));
+        const shared=bWords.filter(w=>aWords.has(w));
+        const sameClosing=a.closingWord&&b.closingWord&&a.closingWord.toLowerCase()===b.closingWord.toLowerCase();
+        if(shared.length>=2||sameClosing){
+          rhymes.push({a,b,sharedWords:shared.slice(0,4),sameClosing});
+          if(rhymes.length>=3)break;
+        }
+      }
+      if(rhymes.length>=3)break;
     }
+    return{recurringLW,topWords,count:weaveEntries.length,rhymes};
+  },[weaveEntries]);
 
-    try { const root = ReactDOM.createRoot(document.getElementById("root")); root.render(<App />); } catch(e) { document.getElementById("root").innerHTML = '<div style="color:#c9a96e;font-family:monospace;padding:40px;font-size:13px;">Error: ' + e.message + '</div>'; }
-  </script>
+  // Full Weave from AI
+  const generateWeave = async () => {
+    if(!apiKey||weaveEntries.length<2)return;
+    setWeaveLoading(true);setWeaveResult(null);
+    try{
+      const es=weaveEntries.slice(0,20).map(d=>`[${d.date}] "${(d.passage||'').slice(0,150)}" | closing word: "${d.closingWord||'—'}"${d.inspoArtist?` | resonance: ${d.inspoArtist}`:''}`).join("\n");
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,
+          system:`Read across these journal entries and surface the deeper pattern — the wyrd.
+
+Return EXACTLY:
+THREAD:: [25-35 words. The strongest recurring theme, question, or emotion. Name it precisely — not vaguely.]
+DRIFT:: [25-35 words. How has the tone shifted from earliest to most recent? What direction is the inner weather moving?]
+RHYME:: [20-30 words. Two specific moments from different days that echo each other. Name both entries and what connects them.]
+UNSAID:: [15-25 words. What is present between the lines but never named directly? The truth being approached sideways.]
+
+Plain text only. No markdown. Warm but precise. Every word earns its place.`,
+          messages:[{role:"user",content:es}]})});
+      const d=await res.json();
+      if(!d.error)setWeaveResult(d.content?.map(i=>i.text||'').join('\n')||null);
+    }catch{}
+    setWeaveLoading(false);
+  };
+
+  // Archive entry reflection
+  const reflectEntry = async (key) => {
+    const day=allDays.find(d=>d.key===key);
+    if(!day?.passage?.trim())return;
+    setArchiveReflecting(prev=>({...prev,[key]:true}));
+    try{
+      const ctx=allDays.filter(d=>d.key!==key&&d.passage?.trim()).slice(0,10).map(d=>`[${d.date}] "${d.passage}" (closing word: ${d.closingWord||"none"})`).join("\n");
+      let mc;
+      if(day.picture){const m=day.picture.match(/^data:([^;]+);base64,(.+)$/);mc=m?[{type:"image",source:{type:"base64",media_type:m[1],data:m[2]}},{type:"text",text:`Entry from ${day.date}:\n\n"${day.passage}"`}]:`Entry from ${day.date}:\n\n"${day.passage}"`;} else mc=`Entry from ${day.date}:\n\n"${day.passage}"`;
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,
+          system:`You are rereading a single day in someone's journal. Look for what's true in it. Does this day rhyme with another? Name the echo if you see one.\n\nOther entries:\n${ctx||"No other entries yet."}\n\nClosing word: "${day.closingWord||"none"}"\n\nUnder 55 words. Warm. Honest. Plain text. Match the weight of what was written.`,
+          messages:[{role:"user",content:mc}]})});
+      const d=await res.json();
+      setArchiveReflections(prev=>({...prev,[key]:d.content?.map(i=>i.text||'').join('\n')||"Signal received."}));
+    }catch{setArchiveReflections(prev=>({...prev,[key]:"Signal received."}));}
+    setArchiveReflecting(prev=>({...prev,[key]:false}));
+  };
+
+  // Lens
+  const readSignal = async () => {
+    if(!lensText.trim())return;
+    if(!apiKey){setShowProfile(true);return;}
+    setLensLoading(true);setLensResult(null);
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:900,
+          system:`You are a clear-eyed signal reader. Analyze the bias, framing, and perspective of the text provided.
+
+Return EXACTLY this structure as plain text. No markdown. No asterisks:
+
+SOURCE: [publication name if URL given, otherwise "Unknown"] · [lean: Left / Center-Left / Center / Center-Right / Right]
+
+THE SIGNAL:
+[2-3 sentences — just the verifiable facts, stripped of framing]
+
+THE FRAME:
+[2-3 sentences — word choices, what's foregrounded, emotional tone, what's treated as given]
+
+THE SHADOW:
+[2-3 sentences — what a reader from the other side would add, what's minimized or absent]
+
+THE LOKI-MOMENT:
+[1 sentence — the single most revealing thing about how this piece is constructed]
+
+THE QUESTION:
+[1 open question that helps the reader hold the article at arm's length and think]
+
+Be honest about the lean without contempt for either direction. Your task is clarity, not ideology.`,
+          messages:[{role:"user",content:`Source URL: ${lensUrl.trim()||"not provided"}\n\nArticle text:\n\n${lensText}`}]})});
+      const d=await res.json();
+      setLensResult(d.content?.map(i=>i.text||'').join('\n')||"Signal unclear. Try a longer excerpt.");
+    }catch{setLensResult("The lens could not focus. Check your connection and try again.");}
+    setLensLoading(false);
+  };
+
+  // UI helpers
+  const hh=String(now.getHours()%12||12).padStart(2,"0"), mm2=String(now.getMinutes()).padStart(2,"0"), ss2=String(now.getSeconds()).padStart(2,"0");
+  const ampm=now.getHours()>=12?"PM":"AM", tz=now.toLocaleTimeString("en-US",{timeZoneName:"short"}).split(" ").pop();
+  const dateLabel=now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  const charsLeft=CHAR_LIMIT-passage.length, pctUsed=passage.length/CHAR_LIMIT;
+  const priorDay=allDays.find(d=>d.key!==dk&&(d.closingWord?.trim()||d.chapterTitle?.trim()));
+  const verseRef=profile?.name?(()=>{const[y,m,d]=dk.split("-").map(Number);return `${profile.name} ${m}:${d}:${y}`;})():null;
+
+  if (loading) return <Shell><div style={{ minHeight:"100dvh", display:"flex", alignItems:"center", justifyContent:"center" }}><div style={{ animation:"breathe 2s ease-in-out infinite" }}><Logo size={32}/></div></div></Shell>;
+  if (showOnboarding) return <Shell><Onboarding onBegin={()=>{ localStorage.setItem("sg-onboarded","1"); setShowOnboarding(false); }}/></Shell>;
+
+  const navItems = [{k:"thread",l:"Thread"},{k:"archive",l:`Archive (${allDays.length})`},{k:"lens",l:"Lens"},{k:"map",l:"Map"},{k:"about",l:"?"}];
+
+  return (
+    <Shell>
+      {showProfile && <ProfileModal initialProfile={profile} onSave={async p=>{setProfile(p);await sv("sg-profile",p);setApiKey(localStorage.getItem("sg-apikey")||"");setKeyError(false);setShowProfile(false);}} onClose={()=>setShowProfile(false)}/>}
+      {showReflection && reflection && <ReflectionModal reflection={reflection} tomorrowQ={tomorrowQ} weaveText={weaveText} onDismiss={()=>setShowReflection(false)} onWeave={weave} weaving={weaving} canWeave={allDays.length>=5} verseRef={verseRef}/>}
+
+      {/* Header */}
+      <header style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", borderBottom:"1px solid rgba(var(--sg-t),0.04)", maxWidth:520, margin:"0 auto", width:"100%" }}>
+        <button onClick={()=>setPage("thread")} style={{ background:"none", border:"none", cursor:"pointer", padding:0, display:"flex", alignItems:"center", gap:7 }}>
+          <Logo size={20}/>
+          <span style={{ fontSize:15, fontFamily:F.h, color:G, opacity:0.6 }}>s;</span>
+        </button>
+        <div style={{ display:"flex", gap:2, alignItems:"center" }}>
+          {navItems.map(t=>(
+            <button key={t.k} onClick={()=>setPage(t.k)} style={{ background:page===t.k?"rgba(201,169,110,0.07)":"none", border:"none", color:page===t.k?G:"rgba(var(--sg-t),0.22)", padding:"4px 9px", borderRadius:10, fontSize:10, cursor:"pointer", fontFamily:F.b }}>{t.l}</button>
+          ))}
+          <button onClick={()=>setShowProfile(true)} style={{ background:keyError?"rgba(200,60,60,0.07)":apiKey?"rgba(201,169,110,0.04)":"rgba(200,60,60,0.04)", border:`1px solid ${keyError?"rgba(200,60,60,0.2)":apiKey?"rgba(201,169,110,0.12)":"rgba(200,60,60,0.12)"}`, color:keyError?"rgba(200,60,60,0.6)":apiKey?"rgba(201,169,110,0.35)":"rgba(200,60,60,0.35)", width:24, height:24, borderRadius:12, fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>⚙</button>
+        </div>
+      </header>
+
+      <div style={{ maxWidth:520, margin:"0 auto", padding:"0 16px" }}>
+
+        {/* ══════ THREAD (Today) ══════ */}
+        {page==="thread"&&(
+          <div style={{ paddingTop:20, paddingBottom:60 }}>
+            <div style={{ textAlign:"center", marginBottom:22 }}>
+              <div style={{ fontSize:9, color:"rgba(201,169,110,0.35)", fontFamily:F.m, letterSpacing:"0.08em", marginBottom:5 }}>{dateLabel.toUpperCase()} · {hh}:{mm2}:{ss2} {ampm} {tz}</div>
+              <div style={{ fontSize:36, fontFamily:F.h, color:G, lineHeight:0.85, marginBottom:13, animation:"breathe 4s ease-in-out infinite" }}>;</div>
+              <p style={{ fontSize:14, color:"rgba(var(--sg-t),0.3)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.55, maxWidth:290, margin:"0 auto" }}>{prompt}</p>
+              {priorDay&&(
+                <div style={{ marginTop:8, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                  <div style={{ width:14, height:"1px", background:"rgba(201,169,110,0.1)" }}/>
+                  <span style={{ fontSize:9, color:"rgba(201,169,110,0.2)", fontFamily:F.m, letterSpacing:"0.07em" }}>
+                    {priorDay.chapterTitle?`"${priorDay.chapterTitle}"`:""}{priorDay.chapterTitle&&priorDay.closingWord?" · ":""}{priorDay.closingWord?`yesterday: ${priorDay.closingWord}`:""}
+                  </span>
+                  <div style={{ width:14, height:"1px", background:"rgba(201,169,110,0.1)" }}/>
+                </div>
+              )}
+            </div>
+
+            {/* Chapter title */}
+            <div style={{ marginBottom:9 }}>
+              <input value={chapterTitle} onChange={e=>{setChapterTitle(e.target.value);setSaved(false);}} placeholder="Title this day (optional)" style={{ ...inputStyle, fontSize:14, fontFamily:F.h, fontStyle:"italic", textAlign:"center", color:"rgba(201,169,110,0.5)", padding:"8px 12px", letterSpacing:"0.02em" }}/>
+            </div>
+
+            {/* Passage */}
+            <div style={{ marginBottom:9 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
+                <label style={lbl}>Your passage</label>
+                <span style={{ fontSize:8, fontFamily:F.m, color:pctUsed>0.85?"rgba(201,169,110,0.65)":"rgba(var(--sg-t),0.15)", transition:"color 0.3s" }}>{charsLeft} left</span>
+              </div>
+              <textarea ref={passageRef} value={passage} onChange={e=>{if(e.target.value.length<=CHAR_LIMIT){setPassage(e.target.value);setSaved(false);}}} placeholder="Begin anywhere. It doesn't have to be perfect." rows={4} spellCheck={false} autoCorrect="off" autoCapitalize="off" style={{ ...inputStyle, fontSize:16, fontFamily:F.h, lineHeight:1.65, overflow:"hidden", minHeight:80 }}/>
+            </div>
+
+            {/* Image */}
+            <div style={{ marginBottom:9 }}>
+              <label style={lbl}>An image from today</label>
+              {picture ? (
+                <div style={{ position:"relative" }}>
+                  <img src={picture} alt="Today" style={{ width:"100%", height:"auto", maxHeight:200, objectFit:"cover", borderRadius:9, border:"1px solid rgba(201,169,110,0.09)", display:"block" }}/>
+                  <button onClick={()=>{setPicture(null);setSaved(false);}} style={{ position:"absolute", top:6, right:6, background:"rgba(255,250,238,0.9)", border:"1px solid rgba(201,169,110,0.14)", color:"rgba(var(--sg-t),0.4)", width:22, height:22, borderRadius:11, cursor:"pointer", fontSize:12, lineHeight:"22px", textAlign:"center" }}>×</button>
+                </div>
+              ):(
+                <>
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handlePicture} style={{ display:"none" }}/>
+                  <div onClick={()=>fileRef.current&&fileRef.current.click()} style={{ display:"flex", alignItems:"center", justifyContent:"center", height:44, border:"1px dashed rgba(201,169,110,0.11)", borderRadius:9, cursor:"pointer", color:"rgba(201,169,110,0.28)", fontSize:11, fontFamily:F.b, gap:6 }}>
+                    <span>📷</span> Add photo
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Closing word */}
+            <div style={{ marginBottom:12 }}>
+              <label style={lbl}>Closing word</label>
+              <p style={{ fontSize:10, color:"rgba(var(--sg-t),0.15)", marginBottom:6, fontStyle:"italic", lineHeight:1.5, fontFamily:F.b }}>One word that closes the day.</p>
+              <input value={closingWord} onChange={e=>{setClosingWord(e.target.value.split(" ")[0]);setSaved(false);}} placeholder="One word." spellCheck={false} style={{ ...inputStyle, fontSize:22, fontFamily:F.h, textAlign:"center", padding:"10px 14px", letterSpacing:"0.05em" }}/>
+              {!closingWord&&(()=>{
+                const universals=["enough","peace","home","grateful","still","ready","loved","clear","open","rest","done","safe","here","free","yes","held","steadied","present","returned"];
+                const pastWords=allDays.filter(d=>d.closingWord?.trim()&&d.key!==dk).map(d=>d.closingWord.trim().toLowerCase());
+                const pool=[...new Set([...pastWords,...universals])].slice(0,12);
+                return(<div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:5 }}>{pool.map(w=>(<button key={w} onClick={()=>{setClosingWord(w);setSaved(false);}} style={{ fontSize:10, padding:"2px 9px", borderRadius:6, cursor:"pointer", fontFamily:F.h, fontStyle:"italic", background:"rgba(201,169,110,0.04)", border:"1px solid rgba(201,169,110,0.09)", color:"rgba(201,169,110,0.42)" }}>{w}</button>))}</div>);
+              })()}
+            </div>
+
+            {/* Brightest moment / Inspo */}
+            <div style={{ marginBottom:14 }}>
+              <label style={lbl}>A line that stayed with you</label>
+              <textarea value={inspoText} onChange={e=>{setInspoText(e.target.value);setSaved(false);}} placeholder={inspoType==="film"?"Which scene? What about it hit you…":inspoType==="scripture"?"Verse will appear here — or write what it means…":inspoType==="lyric"?"A line that stayed with you today…":inspoType==="poem"?"Lines that found you today…":"The scene, verse, lyric, or moment that hit hardest."} rows={2} style={{ ...inputStyle, fontSize:13, fontFamily:F.h, fontStyle:"italic", lineHeight:1.55, marginBottom:7 }}/>
+              <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:inspoType?7:0 }}>
+                {["lyric","scripture","film","poem","other"].map(t=>(
+                  <button key={t} onClick={()=>{const n=inspoType===t?null:t;setInspoType(n);if(n!=="scripture")setScriptTrad(null);if(n!=="film"){setFilmGenre(null);setFilmSuggestions([]);}setSaved(false);}} style={{ padding:"2px 9px", background:inspoType===t?"rgba(201,169,110,0.09)":"rgba(var(--sg-t),0.02)", border:`1px solid ${inspoType===t?"rgba(201,169,110,0.26)":"rgba(var(--sg-t),0.06)"}`, color:inspoType===t?G:"rgba(var(--sg-t),0.28)", borderRadius:18, fontSize:10, cursor:"pointer", fontFamily:F.b }}>{t}</button>
+                ))}
+              </div>
+              {inspoType&&(
+                <div style={{ animation:"slideUp 0.15s ease" }}>
+                  {inspoType==="scripture"&&(<div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:7 }}>{[{id:"bible",label:"Bible"},{id:"quran",label:"Quran"},{id:"torah",label:"Torah"}].map(tr=>(<button key={tr.id} onClick={()=>{setScriptTrad(scriptTrad===tr.id?null:tr.id);setSaved(false);}} style={{ padding:"2px 9px", background:scriptTrad===tr.id?"rgba(201,169,110,0.09)":"rgba(var(--sg-t),0.015)", border:`1px solid ${scriptTrad===tr.id?"rgba(201,169,110,0.26)":"rgba(var(--sg-t),0.04)"}`, color:scriptTrad===tr.id?G:"rgba(var(--sg-t),0.2)", borderRadius:14, fontSize:9, cursor:"pointer", fontFamily:F.b }}>{tr.label}</button>))}</div>)}
+                  {inspoType==="film"&&(<div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:7 }}>{["sci-fi","drama","thriller","comedy","horror","animation"].map(g=>(<button key={g} onClick={()=>{setFilmGenre(filmGenre===g?null:g);setSaved(false);}} style={{ padding:"2px 9px", background:filmGenre===g?"rgba(201,169,110,0.09)":"rgba(var(--sg-t),0.015)", border:`1px solid ${filmGenre===g?"rgba(201,169,110,0.26)":"rgba(var(--sg-t),0.04)"}`, color:filmGenre===g?G:"rgba(var(--sg-t),0.2)", borderRadius:14, fontSize:9, cursor:"pointer", fontFamily:F.b }}>{g}</button>))}</div>)}
+                  <div style={{ position:"relative" }}>
+                    <input value={inspoArtist} onChange={e=>{setInspoArtist(e.target.value);setInspoSong("");setSaved(false);}} onBlur={()=>{setTimeout(()=>setInspoSongs([]),200);setTimeout(()=>setFilmSuggestions([]),200);}}
+                      placeholder={inspoType==="lyric"?"Artist or band…":inspoType==="scripture"?(scriptTrad==="quran"?"Surah name or number (e.g. 2, Al-Baqarah)…":scriptTrad==="torah"?"Book + ref (e.g. Genesis 1:1)":"Book + ref (e.g. John 3:16, Psalms 23)"):inspoType==="film"?"Film title…":inspoType==="poem"?"Poet · collection":"Source"}
+                      style={{ ...inputStyle, fontSize:11, fontFamily:F.b, color:inspoSong?G:"rgba(201,169,110,0.5)" }}/>
+                    {(inspoSearching||filmSearching)&&<div style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", fontSize:8, color:"rgba(201,169,110,0.3)", fontFamily:F.m, animation:"breathe 1.2s ease-in-out infinite" }}>searching…</div>}
+                    {scriptureSearching&&<div style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", fontSize:8, color:"rgba(201,169,110,0.3)", fontFamily:F.m, animation:"breathe 1.2s ease-in-out infinite" }}>fetching verse…</div>}
+                    {inspoSongs.length>0&&!inspoSong&&(<div style={{ position:"absolute", top:"100%", left:0, right:0, zIndex:20, background:"var(--sg-bg)", border:"1px solid rgba(201,169,110,0.16)", borderRadius:8, marginTop:3, overflow:"hidden", boxShadow:"0 4px 20px rgba(100,80,40,0.07)" }}>{inspoSongs.map((s,i)=>(<button key={i} onClick={()=>{setInspoArtist(s.artistName);setInspoSong(s.trackName);setInspoSongs([]);setSaved(false);}} style={{ display:"block", width:"100%", textAlign:"left", padding:"8px 12px", background:"none", border:"none", borderBottom:i<inspoSongs.length-1?"1px solid rgba(201,169,110,0.05)":"none", cursor:"pointer" }}><div style={{ fontSize:11, color:"rgba(var(--sg-t),0.6)", fontFamily:F.b }}>{s.trackName}</div><div style={{ fontSize:9, color:"rgba(201,169,110,0.35)", fontFamily:F.b, marginTop:1 }}>{s.artistName}</div></button>))}</div>)}
+                    {inspoType==="film"&&filmSuggestions.length>0&&(<div style={{ position:"absolute", top:"100%", left:0, right:0, zIndex:20, background:"var(--sg-bg)", border:"1px solid rgba(201,169,110,0.16)", borderRadius:8, marginTop:3, overflow:"hidden", boxShadow:"0 4px 20px rgba(100,80,40,0.07)" }}>{filmSuggestions.map((f,i)=>(<button key={i} onClick={()=>{setInspoArtist(f.trackName);setFilmSuggestions([]);setSaved(false);}} style={{ display:"block", width:"100%", textAlign:"left", padding:"8px 12px", background:"none", border:"none", borderBottom:i<filmSuggestions.length-1?"1px solid rgba(201,169,110,0.05)":"none", cursor:"pointer" }}><div style={{ fontSize:11, color:"rgba(var(--sg-t),0.6)", fontFamily:F.b }}>{f.trackName}</div><div style={{ fontSize:9, color:"rgba(201,169,110,0.32)", fontFamily:F.b, marginTop:1 }}>{f.releaseDate?.slice(0,4)} · {f.primaryGenreName}</div></button>))}</div>)}
+                    {inspoType==="scripture"&&scriptSuggestions.length>0&&(<div style={{ position:"absolute", top:"100%", left:0, right:0, zIndex:20, background:"var(--sg-bg)", border:"1px solid rgba(201,169,110,0.16)", borderRadius:8, marginTop:3, overflow:"hidden", boxShadow:"0 4px 20px rgba(100,80,40,0.07)" }}>{scriptSuggestions.map((item,i)=>{const isQ=scriptTrad==="quran";const label=isQ?`${item.name} (${item.n})`:item;const val=isQ?`${item.n}:`:`${item} `;return(<button key={i} onClick={()=>{setInspoArtist(val);setSaved(false);}} style={{ display:"block", width:"100%", textAlign:"left", padding:"7px 12px", background:"none", border:"none", borderBottom:i<scriptSuggestions.length-1?"1px solid rgba(201,169,110,0.05)":"none", cursor:"pointer" }}><div style={{ fontSize:11, color:"rgba(var(--sg-t),0.6)", fontFamily:F.b }}>{label}</div></button>);})}</div>)}
+                    {inspoSong&&<div style={{ marginTop:4, display:"flex", alignItems:"center", gap:6 }}><span style={{ fontSize:10, color:G, fontFamily:F.b, opacity:0.58 }}>♩ {inspoSong}</span><button onClick={()=>{setInspoSong("");setSaved(false);}} style={{ background:"none", border:"none", cursor:"pointer", fontSize:9, color:"rgba(var(--sg-t),0.2)" }}>×</button></div>}
+                    {inspoType==="scripture"&&inspoArtist&&!/\d+\s*:\s*\d+/.test(inspoArtist)&&!scriptureSearching&&<div style={{ marginTop:3, fontSize:8, color:"rgba(var(--sg-t),0.15)", fontFamily:F.m, fontStyle:"italic" }}>{scriptTrad==="quran"?"add :ayah to fetch (e.g. 2:255)":"add :verse to fetch (e.g. John 3:16)"}</div>}
+                    {inspoType!=="lyric"&&apiKey&&(<button onClick={pullInspo} disabled={inspoPulling} style={{ marginTop:7, padding:"4px 12px", background:"rgba(201,169,110,0.06)", border:"1px solid rgba(201,169,110,0.15)", color:inspoPulling?"rgba(201,169,110,0.28)":"rgba(201,169,110,0.55)", borderRadius:18, fontSize:10, cursor:inspoPulling?"default":"pointer", fontFamily:F.b }}>{inspoPulling?"searching…":inspoType==="scripture"?`find a ${scriptTrad||"verse"} verse ›`:inspoType==="poem"?"pull a poem ›":inspoType==="film"?`pull a${filmGenre?" "+filmGenre:""} quote ›`:"pull a quote ›"}</button>)}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Save */}
+            <button onClick={()=>{saveDay().then(()=>{setDayGift(null);generateDayGift();});}} style={{ width:"100%", padding:"13px", background:saved?"rgba(100,160,100,0.08)":"rgba(201,169,110,0.1)", border:`1px solid ${saved?"rgba(100,160,100,0.14)":"rgba(201,169,110,0.24)"}`, color:saved?"rgba(100,160,100,0.58)":G, borderRadius:10, fontSize:13, cursor:"pointer", fontFamily:F.b, marginBottom:7 }}>
+              {saved?"Saved ✓":"Save today's thread ;"}
+            </button>
+
+            {/* Day gift */}
+            {(dayGiftLoading||dayGift)&&(
+              <div style={{ marginBottom:8, padding:"12px 15px", textAlign:"center", border:"1px solid rgba(201,169,110,0.09)", borderRadius:10, animation:!dayGiftLoading&&dayGift?"slideUp 0.4s ease":undefined }}>
+                {dayGiftLoading ? <div style={{ fontSize:11, color:"rgba(201,169,110,0.38)", fontFamily:F.m, animation:"breathe 1.5s ease-in-out infinite", letterSpacing:"0.06em" }}>reading what today gave you…</div>
+                : <><div style={{ fontSize:7, color:"rgba(201,169,110,0.27)", textTransform:"uppercase", letterSpacing:"0.16em", marginBottom:7, fontFamily:F.b }}>what today gave you</div><p style={{ fontSize:14, color:"rgba(var(--sg-t),0.55)", lineHeight:1.88, fontFamily:F.h, fontStyle:"italic", margin:0 }}>{dayGift}</p></>}
+              </div>
+            )}
+
+            {/* Hats */}
+            {passage.trim()&&(
+              <div style={{ marginBottom:7 }}>
+                <div style={{ fontSize:7, color:"rgba(var(--sg-t),0.18)", textTransform:"uppercase", letterSpacing:"0.13em", marginBottom:6 }}>speak to me as my…</div>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                  {HATS.map(hx=>(<button key={hx.id} onClick={()=>setHat(hat===hx.id?null:hx.id)} style={{ padding:"3px 10px", background:hat===hx.id?"rgba(201,169,110,0.09)":"rgba(var(--sg-t),0.02)", border:`1px solid ${hat===hx.id?"rgba(201,169,110,0.26)":"rgba(var(--sg-t),0.06)"}`, color:hat===hx.id?G:"rgba(var(--sg-t),0.28)", borderRadius:18, fontSize:10, cursor:"pointer", fontFamily:F.b }}>{hx.label}</button>))}
+                </div>
+              </div>
+            )}
+
+            {/* Read button */}
+            {passage.trim()&&(
+              <button onClick={reflect} disabled={reflecting} style={{ width:"100%", padding:"10px", background:"rgba(var(--sg-t),0.02)", border:"1px solid rgba(var(--sg-t),0.05)", color:"rgba(201,169,110,0.38)", borderRadius:10, fontSize:12, cursor:"pointer", fontFamily:F.b }}>
+                {reflecting?"The Lighthouse is reading…":"Ask the Lighthouse to read"}
+              </button>
+            )}
+            {reflection&&!showReflection&&(
+              <button onClick={()=>setShowReflection(true)} style={{ marginTop:5, width:"100%", padding:"6px", background:"none", border:"1px dashed rgba(201,169,110,0.09)", color:"rgba(201,169,110,0.25)", borderRadius:8, fontSize:9, cursor:"pointer", fontFamily:F.m }}>read again ;</button>
+            )}
+
+            <SignalCoherence passage={passage}/>
+          </div>
+        )}
+
+        {/* ══════ ARCHIVE ══════ */}
+        {page==="archive"&&(
+          <div style={{ paddingTop:20, paddingBottom:60 }}>
+            <h2 style={{ fontFamily:F.h, fontSize:20, fontWeight:400, color:"rgba(var(--sg-t),0.62)", marginBottom:3 }}>The Archive</h2>
+            <p style={{ fontSize:9, color:"rgba(var(--sg-t),0.15)", fontFamily:F.m, marginBottom:18 }}>{allDays.length===0?"Nothing here yet. Write today's thread.":`${allDays.length} day${allDays.length===1?"":"s"} written`}</p>
+
+            {allDays.length===0?(
+              <div style={{ textAlign:"center", padding:"40px 10px" }}>
+                <div style={{ fontSize:28, fontFamily:F.h, color:"rgba(201,169,110,0.07)" }}>;</div>
+                <p style={{ fontSize:11, color:"rgba(var(--sg-t),0.1)", marginTop:6 }}>Nothing here yet.<br/>Write today's thread.</p>
+                <button onClick={()=>setPage("thread")} style={{ marginTop:14, background:"rgba(201,169,110,0.08)", border:"1px solid rgba(201,169,110,0.18)", color:G, padding:"8px 20px", borderRadius:18, fontSize:11, cursor:"pointer", fontFamily:F.b }}>Write today's thread</button>
+              </div>
+            ):(
+              <>
+                {/* Closing words cloud */}
+                {allDays.some(d=>d.closingWord?.trim())&&(
+                  <div style={{ padding:"10px 14px", background:"rgba(201,169,110,0.02)", border:"1px solid rgba(201,169,110,0.05)", borderRadius:9, marginBottom:14 }}>
+                    <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:7 }}>Closing words</div>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>{allDays.filter(d=>d.closingWord?.trim()).map(d=>(<span key={d.key} style={{ fontSize:13, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.5 }}>{d.closingWord}</span>))}</div>
+                  </div>
+                )}
+
+                {/* Weave panel */}
+                {allDays.length>=2&&(
+                  <div style={{ marginBottom:16, padding:"14px 14px 12px", background:"rgba(201,169,110,0.012)", border:"1px solid rgba(201,169,110,0.06)", borderRadius:10 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                      <div style={{ fontSize:8, color:"rgba(201,169,110,0.3)", textTransform:"uppercase", letterSpacing:"0.14em", fontFamily:F.b }}>The Weave</div>
+                      <div style={{ display:"flex", gap:3 }}>
+                        {["week","month","all"].map(p=>(<button key={p} onClick={()=>{setWeavePeriod(p);setWeaveResult(null);}} style={{ padding:"2px 8px", background:weavePeriod===p?"rgba(201,169,110,0.1)":"rgba(var(--sg-t),0.02)", border:`1px solid ${weavePeriod===p?"rgba(201,169,110,0.22)":"rgba(var(--sg-t),0.04)"}`, color:weavePeriod===p?G:"rgba(var(--sg-t),0.2)", borderRadius:12, fontSize:9, cursor:"pointer", fontFamily:F.b }}>{p}</button>))}
+                      </div>
+                    </div>
+
+                    {weaveLocal&&(
+                      <div style={{ marginBottom:9 }}>
+                        <div style={{ fontSize:9, color:"rgba(var(--sg-t),0.15)", fontFamily:F.m, marginBottom:6 }}>{weaveLocal.count} entries</div>
+
+                        {/* Recurring closing words */}
+                        {weaveLocal.recurringLW.length>0&&(
+                          <div style={{ marginBottom:7 }}>
+                            <div style={{ fontSize:7, color:"rgba(201,169,110,0.22)", textTransform:"uppercase", letterSpacing:"0.1em", fontFamily:F.b, marginBottom:4 }}>Words that return</div>
+                            <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>{weaveLocal.recurringLW.map(([w,c])=>(<span key={w} style={{ fontSize:11, color:G, fontFamily:F.h, fontStyle:"italic" }}>{w} <span style={{ fontSize:9, fontFamily:F.m, opacity:0.4 }}>×{c}</span></span>))}</div>
+                          </div>
+                        )}
+
+                        {/* Recurring passage words */}
+                        {weaveLocal.topWords.length>0&&(
+                          <div style={{ marginBottom:7 }}>
+                            <div style={{ fontSize:7, color:"rgba(201,169,110,0.22)", textTransform:"uppercase", letterSpacing:"0.1em", fontFamily:F.b, marginBottom:3 }}>Recurring words</div>
+                            <div style={{ fontSize:9, color:"rgba(var(--sg-t),0.2)", fontFamily:F.m, lineHeight:1.8 }}>{weaveLocal.topWords.slice(0,8).map(([w,c])=>`${w} ×${c}`).join("  ·  ")}</div>
+                          </div>
+                        )}
+
+                        {/* Days that rhyme */}
+                        {weaveLocal.rhymes.length>0&&(
+                          <div style={{ marginBottom:4 }}>
+                            <div style={{ fontSize:7, color:"rgba(201,169,110,0.22)", textTransform:"uppercase", letterSpacing:"0.1em", fontFamily:F.b, marginBottom:5 }}>Days that rhyme</div>
+                            {weaveLocal.rhymes.map((r,i)=>(
+                              <div key={i} style={{ marginBottom:6, padding:"6px 10px", background:"rgba(201,169,110,0.03)", borderRadius:7, border:"1px solid rgba(201,169,110,0.06)" }}>
+                                <div style={{ fontSize:10, color:"rgba(var(--sg-t),0.45)", fontFamily:F.b, marginBottom:2 }}>
+                                  <span style={{ color:"rgba(201,169,110,0.5)" }}>{r.a.date.split(",")[0]}</span>
+                                  <span style={{ color:"rgba(var(--sg-t),0.2)", margin:"0 6px" }}>↔</span>
+                                  <span style={{ color:"rgba(201,169,110,0.5)" }}>{r.b.date.split(",")[0]}</span>
+                                </div>
+                                <div style={{ fontSize:9, color:"rgba(var(--sg-t),0.2)", fontFamily:F.m }}>
+                                  {r.sameClosing ? `both close with "${r.a.closingWord}"` : r.sharedWords.length ? `both carry: ${r.sharedWords.join(", ")}` : ""}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {apiKey&&weaveEntries.length>=2&&!weaveResult&&(
+                      <button onClick={generateWeave} disabled={weaveLoading} style={{ padding:"5px 14px", background:"rgba(201,169,110,0.07)", border:"1px solid rgba(201,169,110,0.16)", color:weaveLoading?"rgba(201,169,110,0.28)":"rgba(201,169,110,0.52)", borderRadius:18, fontSize:10, cursor:weaveLoading?"default":"pointer", fontFamily:F.b }}>
+                        {weaveLoading?"Reading the weave…":"Read the weave ;"}
+                      </button>
+                    )}
+
+                    {weaveResult&&(()=>{
+                      const w=parseLabeled(weaveResult,['THREAD','DRIFT','RHYME','UNSAID']);
+                      const hasW=w.thread||w.drift||w.rhyme||w.unsaid;
+                      const ws={borderTop:"1px solid rgba(201,169,110,0.05)",marginTop:8,paddingTop:8};
+                      return(
+                        <div style={{ animation:"slideUp 0.3s ease", marginTop:10 }}>
+                          {hasW?(
+                            <>
+                              {w.thread&&<div><div style={{ fontSize:7, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:3, fontFamily:F.b }}>thread</div><p style={{ fontSize:12, color:"rgba(var(--sg-t),0.55)", lineHeight:1.8, fontFamily:F.h, margin:0 }}>{w.thread}</p></div>}
+                              {w.drift&&<div style={ws}><div style={{ fontSize:7, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:3, fontFamily:F.b }}>drift</div><p style={{ fontSize:12, color:"rgba(var(--sg-t),0.42)", lineHeight:1.8, fontFamily:F.h, fontStyle:"italic", margin:0 }}>{w.drift}</p></div>}
+                              {w.rhyme&&<div style={ws}><div style={{ fontSize:7, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:3, fontFamily:F.b }}>rhyme</div><p style={{ fontSize:12, color:"rgba(var(--sg-t),0.42)", lineHeight:1.8, fontFamily:F.h, margin:0 }}>{w.rhyme}</p></div>}
+                              {w.unsaid&&<div style={ws}><div style={{ fontSize:7, color:"rgba(201,169,110,0.22)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:3, fontFamily:F.b }}>unsaid</div><p style={{ fontSize:12, color:"rgba(var(--sg-t),0.35)", lineHeight:1.8, fontFamily:F.h, fontStyle:"italic", margin:0 }}>{w.unsaid}</p></div>}
+                            </>
+                          ):<p style={{ fontSize:12, color:"rgba(var(--sg-t),0.4)", lineHeight:1.8, fontFamily:F.h, margin:0 }}>{weaveResult}</p>}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Thread list */}
+                {allDays.map(day=>{
+                  const [y,m,d]=day.key.split("-").map(Number);
+                  const vRef=profile?.name?`${profile.name} ${m}:${d}:${y}`:day.date.split(",").slice(0,2).join(",").trim();
+                  return(
+                    <button key={day.key} onClick={()=>{setTimeMachineKey(day.key);setPage("day");}} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(var(--sg-t),0.012)", border:"1px solid rgba(var(--sg-t),0.025)", borderLeft:"3px solid rgba(201,169,110,0.1)", borderRadius:9, marginBottom:7, padding:"11px 13px", cursor:"pointer", textAlign:"left" }}>
+                      <div style={{ minWidth:0 }}>
+                        <div style={{ fontSize:9, color:"rgba(201,169,110,0.4)", fontFamily:F.m, letterSpacing:"0.07em", marginBottom:2 }}>{vRef}</div>
+                        {day.chapterTitle?.trim()&&<div style={{ fontSize:13, color:"rgba(var(--sg-t),0.45)", fontFamily:F.h, fontStyle:"italic", marginBottom:1 }}>{day.chapterTitle}</div>}
+                        {day.passage?.trim()&&<div style={{ fontSize:11, color:"rgba(var(--sg-t),0.2)", fontFamily:F.h, fontStyle:"italic", overflow:"hidden", maxHeight:"1.5em", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"calc(100% - 10px)" }}>{day.passage.slice(0,80)}{day.passage.length>80?"…":""}</div>}
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, flexShrink:0, paddingLeft:8 }}>
+                        {day.closingWord?.trim()&&<span style={{ fontSize:12, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.42 }}>{day.closingWord}</span>}
+                        <span style={{ fontSize:12, color:"rgba(201,169,110,0.2)", fontFamily:F.m }}>›</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ══════ DAY VIEW ══════ */}
+        {page==="day"&&(()=>{
+          const day=allDays.find(d=>d.key===timeMachineKey);
+          if(!day)return<div style={{ paddingTop:40, textAlign:"center", color:"rgba(var(--sg-t),0.2)", fontSize:12 }}>Entry not found.</div>;
+          const beacon=archiveReflections[day.key], isLoading=!!archiveReflecting[day.key];
+          if(!beacon&&!isLoading)setTimeout(()=>reflectEntry(day.key),0);
+          const[y,m,d]=day.key.split("-").map(Number);
+          const vRef=profile?.name?`${profile.name} ${m}:${d}:${y}`:day.date;
+          return(
+            <div style={{ paddingTop:10, paddingBottom:60, animation:"slideUp 0.3s ease" }}>
+              <button onClick={()=>setPage("archive")} style={{ background:"none", border:"none", cursor:"pointer", fontSize:10, color:"rgba(var(--sg-t),0.25)", fontFamily:F.b, letterSpacing:"0.08em", marginBottom:18, padding:0 }}>← Archive</button>
+              <div style={{ marginBottom:3, fontSize:9, color:"rgba(201,169,110,0.38)", textTransform:"uppercase", letterSpacing:"0.14em", fontFamily:F.b }}>{vRef}</div>
+              {day.chapterTitle?.trim()&&<div style={{ fontSize:18, color:"rgba(201,169,110,0.55)", fontFamily:F.h, fontStyle:"italic", marginBottom:10 }}>{day.chapterTitle}</div>}
+              {day.closingWord?.trim()&&<div style={{ fontSize:26, color:G, fontFamily:F.h, fontStyle:"italic", marginBottom:16, opacity:0.62 }}>{day.closingWord}</div>}
+              {day.picture&&<img src={day.picture} alt="" style={{ width:"100%", borderRadius:10, maxHeight:240, objectFit:"cover", border:"1px solid rgba(201,169,110,0.09)", marginBottom:16, display:"block" }}/>}
+              {day.passage?.trim()&&<p style={{ fontSize:15, color:"rgba(var(--sg-t),0.6)", lineHeight:1.88, fontFamily:F.h, whiteSpace:"pre-wrap", marginBottom:16 }}>{day.passage}</p>}
+              {day.inspoType&&day.inspoText&&(
+                <div style={{ marginBottom:16, padding:"10px 14px", borderLeft:"2px solid rgba(201,169,110,0.16)", background:"rgba(201,169,110,0.02)" }}>
+                  <div style={{ fontSize:7, color:"rgba(201,169,110,0.28)", textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:4, fontFamily:F.b }}>{day.inspoType}</div>
+                  <p style={{ fontSize:13, color:"rgba(var(--sg-t),0.45)", fontFamily:F.h, fontStyle:"italic", margin:0, lineHeight:1.75 }}>"{day.inspoText}"</p>
+                  {day.inspoArtist&&<div style={{ fontSize:10, color:"rgba(201,169,110,0.32)", fontFamily:F.b, marginTop:4 }}>— {day.inspoArtist}{day.inspoSong?` — ${day.inspoSong}`:''}</div>}
+                </div>
+              )}
+              {day.reflection&&(()=>{
+                const r=parseLabeled(day.reflection,['VERSE','SONG','NOTE']);
+                const hasS=r.verse||r.song||r.note;
+                const dv={borderTop:"1px solid rgba(201,169,110,0.07)",marginTop:10,paddingTop:10};
+                return(
+                  <div style={{ padding:"14px 15px", background:"rgba(201,169,110,0.02)", border:"1px solid rgba(201,169,110,0.07)", borderRadius:10, marginBottom:day.tomorrowQ?8:16 }}>
+                    <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:10, fontFamily:F.b }}>Lighthouse Reflection</div>
+                    {hasS?(
+                      <>
+                        {r.verse&&<div><div style={{ fontSize:7, color:"rgba(201,169,110,0.2)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:4, fontFamily:F.b }}>verse</div><p style={{ fontSize:12, color:"rgba(var(--sg-t),0.42)", lineHeight:1.85, fontFamily:F.h, fontStyle:"italic", margin:0 }}>{r.verse}</p></div>}
+                        {r.song&&<div style={r.verse?dv:{}}><div style={{ fontSize:7, color:"rgba(201,169,110,0.28)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:6, fontFamily:F.b }}>the day's song</div><p style={{ fontSize:14, color:"rgba(var(--sg-t),0.62)", lineHeight:1.88, fontFamily:F.h, margin:0 }}>{r.song}</p></div>}
+                        {r.note&&<div style={(r.verse||r.song)?dv:{}}><div style={{ fontSize:7, color:"rgba(201,169,110,0.22)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:4, fontFamily:F.b }}>♩ note</div><p style={{ fontSize:12, color:"rgba(201,169,110,0.55)", fontFamily:F.b, lineHeight:1.78, margin:0 }}>{r.note}</p></div>}
+                      </>
+                    ):<p style={{ fontSize:13, color:"rgba(var(--sg-t),0.5)", lineHeight:1.85, fontFamily:F.h, margin:0 }}>{day.reflection}</p>}
+                  </div>
+                );
+              })()}
+              {day.tomorrowQ&&(
+                <div style={{ marginBottom:16, padding:"10px 14px", border:"1px dashed rgba(201,169,110,0.1)", borderRadius:9 }}>
+                  <div style={{ fontSize:7, color:"rgba(201,169,110,0.22)", textTransform:"uppercase", letterSpacing:"0.13em", marginBottom:4, fontFamily:F.b }}>Tomorrow's thread</div>
+                  <p style={{ fontSize:13, color:"rgba(var(--sg-t),0.35)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.8, margin:0 }}>{day.tomorrowQ}</p>
+                </div>
+              )}
+              <div style={{ padding:"13px 15px", background:"rgba(201,169,110,0.015)", border:"1px solid rgba(201,169,110,0.07)", borderRadius:10 }}>
+                <div style={{ fontSize:8, color:"rgba(201,169,110,0.22)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:8, fontFamily:F.b }}>The Lighthouse reads this thread</div>
+                {isLoading?<div style={{ fontSize:12, color:"rgba(201,169,110,0.22)", fontFamily:F.m, animation:"breathe 1.5s ease-in-out infinite" }}>reading the tapestry…</div>
+                :<p style={{ fontSize:13, color:"rgba(var(--sg-t),0.4)", lineHeight:1.82, fontFamily:F.h, margin:0, fontStyle:"italic" }}>{beacon||"—"}</p>}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ══════ LENS ══════ */}
+        {page==="lens"&&(
+          <div style={{ paddingTop:24, paddingBottom:60 }}>
+            <h2 style={{ fontFamily:F.h, fontSize:20, fontWeight:400, color:"rgba(var(--sg-t),0.62)", marginBottom:5 }}>The Lens</h2>
+            <p style={{ fontSize:10, color:"rgba(var(--sg-t),0.22)", fontFamily:F.b, marginBottom:22, lineHeight:1.65 }}>Paste a news article. See the signal, the frame, and the shadow. Read through the bias without surrendering to it.</p>
+            <label style={lbl}>Source URL</label>
+            <input value={lensUrl} onChange={e=>setLensUrl(e.target.value)} placeholder="https://nytimes.com/… or foxnews.com/…" spellCheck={false} style={{ ...inputStyle, fontSize:12, marginBottom:10 }}/>
+            <label style={lbl}>Article text</label>
+            <p style={{ fontSize:9, color:"rgba(var(--sg-t),0.15)", marginBottom:6, fontStyle:"italic", lineHeight:1.55 }}>Browsers can't fetch external pages directly — paste the text here. The URL tells the Lens which publication it's reading.</p>
+            <textarea value={lensText} onChange={e=>setLensText(e.target.value)} placeholder="Paste the article or a key excerpt here…" rows={7} spellCheck={false} style={{ ...inputStyle, fontSize:13, fontFamily:F.h, lineHeight:1.65, minHeight:140, marginBottom:14 }}/>
+            <button onClick={readSignal} disabled={lensLoading||!lensText.trim()} style={{ width:"100%", padding:"12px", background:lensText.trim()?"rgba(201,169,110,0.1)":"rgba(var(--sg-t),0.02)", border:`1px solid ${lensText.trim()?"rgba(201,169,110,0.24)":"rgba(var(--sg-t),0.04)"}`, color:lensText.trim()?G:"rgba(201,169,110,0.22)", borderRadius:10, fontSize:13, cursor:lensText.trim()?"pointer":"default", fontFamily:F.b }}>
+              {lensLoading?"Reading the signal…":"Read the signal ;"}
+            </button>
+            {lensResult&&(
+              <div style={{ marginTop:18, padding:18, background:"rgba(201,169,110,0.02)", border:"1px solid rgba(201,169,110,0.07)", borderRadius:10, animation:"slideUp 0.25s ease" }}>
+                <div style={{ fontSize:8, color:"rgba(201,169,110,0.25)", textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:12, fontFamily:F.b }}>· ) ) ) the lens</div>
+                <p style={{ fontSize:13, color:"rgba(var(--sg-t),0.6)", lineHeight:1.9, fontFamily:F.h, margin:0, whiteSpace:"pre-wrap" }}>{lensResult}</p>
+              </div>
+            )}
+            <div style={{ marginTop:22, padding:"10px 14px", background:"rgba(var(--sg-t),0.012)", border:"1px solid rgba(var(--sg-t),0.025)", borderRadius:8 }}>
+              <div style={{ fontSize:8, color:"rgba(201,169,110,0.18)", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:5, fontFamily:F.b }}>On reading the news</div>
+              <p style={{ fontSize:10, color:"rgba(var(--sg-t),0.2)", lineHeight:1.7, fontFamily:F.h, fontStyle:"italic" }}>Every publication has a wyrd thread — a perspective woven from its history, ownership, and audience. The Lens doesn't tell you which frame is right. It shows you the frame so you can decide what to do with what's inside it.</p>
+            </div>
+          </div>
+        )}
+
+        {/* ══════ MAP ══════ */}
+        {page==="map"&&(
+          <div style={{ paddingTop:24, paddingBottom:60, maxWidth:400, margin:"0 auto" }}>
+            <div style={{ textAlign:"center", marginBottom:26 }}>
+              <div style={{ fontSize:26, fontFamily:F.h, color:G, marginBottom:5, opacity:0.62 }}>Map</div>
+              <p style={{ fontSize:11, color:"rgba(var(--sg-t),0.22)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.7 }}>The compass beneath the compass.<br/>Not where you're going — what you stand on.</p>
+            </div>
+
+            {[
+              {
+                title:"The Correction",
+                content:<>
+                  <p style={{ fontSize:14, color:"rgba(var(--sg-t),0.3)", fontFamily:F.h, fontStyle:"italic", textDecoration:"line-through", marginBottom:5 }}>Seek to be understood.</p>
+                  <p style={{ fontSize:17, color:"rgba(var(--sg-t),0.68)", fontFamily:F.h, lineHeight:1.75 }}>Seek to understand ; and then to be understood.</p>
+                  <p style={{ fontSize:9, color:"rgba(var(--sg-t),0.15)", fontFamily:F.b, marginTop:9, lineHeight:1.6 }}>The crossed-out line is the real entry. The correction is the passage. The semicolon holds both.</p>
+                </>
+              },
+              {
+                title:"The Ground",
+                left:true,
+                content:<>
+                  <p style={{ fontSize:16, color:"rgba(var(--sg-t),0.58)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.8, marginBottom:5 }}>Be completely humble & gentle ; be patient, bearing with one another in love.</p>
+                  <p style={{ fontSize:10, color:"rgba(201,169,110,0.38)", fontFamily:F.b }}>— Ephesians 4:2</p>
+                </>
+              },
+              {
+                title:"Trust ; Displayed, Not Asserted",
+                content:(
+                  <div>
+                    {[["Candor","What you know ; what you don't"],["Competence","A coherent plan"],["Care","You see their baby"],["Control","They have a role"]].map(([w,g])=>(
+                      <div key={w} style={{ display:"flex", gap:8, alignItems:"baseline", marginBottom:6 }}>
+                        <span style={{ fontSize:12, color:G, fontFamily:F.h, fontStyle:"italic", opacity:0.58, minWidth:88 }}>{w}</span>
+                        <span style={{ fontSize:10, color:"rgba(var(--sg-t),0.25)", fontFamily:F.b }}>{g}</span>
+                      </div>
+                    ))}
+                    <div style={{ marginTop:12, paddingTop:10, borderTop:"1px solid rgba(var(--sg-t),0.04)" }}>
+                      <p style={{ fontSize:11, color:"rgba(var(--sg-t),0.32)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.7, marginBottom:3 }}>Two minutes of presence can save twenty minutes of conflict.</p>
+                      <p style={{ fontSize:10, color:"rgba(var(--sg-t),0.18)", fontFamily:F.b, lineHeight:1.6 }}>Time is a treatment. Language is a clinical tool.</p>
+                    </div>
+                  </div>
+                )
+              },
+            ].map((sec,i)=>(
+              <div key={i} style={{ marginBottom:14, padding:"15px 17px", background:sec.left?"rgba(201,169,110,0.015)":"rgba(201,169,110,0.02)", border:sec.left?"none":"1px solid rgba(201,169,110,0.07)", borderLeft:sec.left?"2px solid rgba(201,169,110,0.18)":"none", borderRadius:sec.left?"0 10px 10px 0":"10px" }}>
+                <div style={{ fontSize:7, color:"rgba(201,169,110,0.28)", textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:10, fontFamily:F.b }}>{sec.title}</div>
+                {sec.content}
+              </div>
+            ))}
+
+            <div style={{ display:"flex", gap:10, marginBottom:14 }}>
+              {[{title:"OB Arc",items:[["Oriented toward","possibility"],["Focused on","allowing"],["Ends when","physiology hands off"],["Success =","arrival"]]},{title:"NICU Arc",items:[["Oriented toward","becoming"],["Focused on","tools & time"],["Begins at","resuscitation"],["Success =","trajectory"]]}].map(arc=>(
+                <div key={arc.title} style={{ flex:1, padding:"13px 11px", background:"rgba(201,169,110,0.015)", border:"1px solid rgba(201,169,110,0.06)", borderRadius:10 }}>
+                  <div style={{ fontSize:8, color:G, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:9, fontFamily:F.b, opacity:0.5 }}>{arc.title}</div>
+                  {arc.items.map(([l,v])=>(<div key={l} style={{ marginBottom:5 }}><div style={{ fontSize:8, color:"rgba(var(--sg-t),0.18)", fontFamily:F.b }}>{l}</div><div style={{ fontSize:11, color:"rgba(var(--sg-t),0.48)", fontFamily:F.h, fontStyle:"italic" }}>{v}</div></div>))}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ padding:"15px 17px", background:"rgba(201,169,110,0.02)", border:"1px solid rgba(201,169,110,0.07)", borderRadius:10, marginBottom:14 }}>
+              <div style={{ fontSize:7, color:"rgba(201,169,110,0.28)", textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:12, fontFamily:F.b }}>The Trinity ; Identity → Direction → Action</div>
+              {[{name:"Pride",eq:"Identity",lines:"Who I am. Where I came from. What I stand on."},{name:"Hope",eq:"Direction",lines:"Where I'm going. Why it matters."},{name:"Conviction",eq:"Action",lines:"What I do about it. Why I don't quit."}].map((item,i)=>(
+                <div key={item.name} style={{ marginBottom:i<2?11:0, paddingBottom:i<2?11:0, borderBottom:i<2?"1px solid rgba(201,169,110,0.05)":"none" }}>
+                  <div style={{ display:"flex", alignItems:"baseline", gap:7, marginBottom:2 }}>
+                    <span style={{ fontSize:14, color:G, fontFamily:F.h, opacity:0.58 }}>{item.name}</span>
+                    <span style={{ fontSize:9, color:"rgba(var(--sg-t),0.18)", fontFamily:F.m }}>= {item.eq}</span>
+                  </div>
+                  <p style={{ fontSize:11, color:"rgba(var(--sg-t),0.32)", fontFamily:F.b, lineHeight:1.65, margin:0 }}>{item.lines}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ textAlign:"center", marginTop:18 }}>
+              <button onClick={()=>setPage("thread")} style={{ background:"rgba(201,169,110,0.1)", border:"1px solid rgba(201,169,110,0.2)", color:G, padding:"9px 24px", borderRadius:18, fontSize:12, cursor:"pointer", fontFamily:F.b }}>Write today's thread</button>
+            </div>
+          </div>
+        )}
+
+        {/* ══════ ABOUT ══════ */}
+        {page==="about"&&(
+          <div style={{ paddingTop:26, paddingBottom:60, maxWidth:340, margin:"0 auto" }}>
+            <div style={{ textAlign:"center", marginBottom:24 }}>
+              <div style={{ fontSize:32, fontFamily:F.h, color:G, marginBottom:7 }}>s;</div>
+              <h2 style={{ fontFamily:F.h, fontSize:16, fontWeight:400, color:"rgba(var(--sg-t),0.62)", marginBottom:8 }}>sgrounds</h2>
+              <p style={{ fontSize:13, color:"rgba(var(--sg-t),0.25)", fontFamily:F.h, fontStyle:"italic", lineHeight:1.75 }}>
+                History doesn't repeat itself.<br/>
+                It rhymes.<br/>
+                This helps you hear it.
+              </p>
+            </div>
+
+            {[
+              ["One thread per day","Write one page each day. A passage, an image, and one closing word."],
+              ["280 characters","The limit is intentional. Enough to be honest. Not enough to hide."],
+              ["The Lighthouse","After you write, the Lighthouse reflects what it hears in your words."],
+              ["The Archive","Each day becomes a thread. Over time, the threads form a pattern."],
+              ["The Closing Word","One word before the day ends. The word that remains when everything else fades."],
+              ["The Weave","Over time the threads connect. A word repeats across months. That's wyrd. That's history rhyming."],
+            ].map(([t,d],i)=>(
+              <div key={i} style={{ display:"flex", gap:10, marginBottom:11 }}>
+                <div style={{ fontFamily:F.h, fontSize:13, color:G, opacity:0.22, minWidth:18, textAlign:"center" }}>{i+1}</div>
+                <div>
+                  <div style={{ fontSize:11, color:"rgba(var(--sg-t),0.42)", fontWeight:500, marginBottom:1 }}>{t}</div>
+                  <div style={{ fontSize:10, color:"rgba(var(--sg-t),0.2)", lineHeight:1.65 }}>{d}</div>
+                </div>
+              </div>
+            ))}
+
+            <details style={{ marginTop:16 }}>
+              <summary style={{ fontSize:9, color:"rgba(201,169,110,0.18)", cursor:"pointer", fontFamily:F.b }}>The equation</summary>
+              <div style={{ marginTop:8, padding:12, background:"rgba(201,169,110,0.015)", border:"1px solid rgba(201,169,110,0.03)", borderRadius:7 }}>
+                <div style={{ fontFamily:F.m, fontSize:14, color:G, textAlign:"center", letterSpacing:"0.15em", marginBottom:7 }}>S ; R → N</div>
+                <div style={{ fontSize:11, color:"rgba(var(--sg-t),0.38)", fontFamily:F.h, fontStyle:"italic", textAlign:"center", marginBottom:8 }}>Signal ; Reflection → the New</div>
+                <p style={{ fontSize:9, color:"rgba(var(--sg-t),0.18)", lineHeight:1.7 }}>Your signal meets reflection. Something new appears. The semicolon holds both without collapsing either — it is continuity across transformation. The same structure as state transitions in mathematics, Bayesian updating in learning systems, and the daily rhythm of writing and rereading.</p>
+                <p style={{ fontSize:9, color:"rgba(var(--sg-t),0.1)", lineHeight:1.7, marginTop:7 }}>
+                  Urðr · What Was — your archive, already spun.<br/>
+                  Verðandi · What Is — today's thread, this moment.<br/>
+                  Skuld · What Shall Be — the question that opens tomorrow.
+                </p>
+              </div>
+            </details>
+
+            <details style={{ marginTop:9 }}>
+              <summary style={{ fontSize:9, color:"rgba(201,169,110,0.14)", cursor:"pointer", fontFamily:F.b }}>The lore</summary>
+              <div style={{ marginTop:8, padding:12, background:"rgba(201,169,110,0.01)", border:"1px solid rgba(201,169,110,0.025)", borderRadius:7 }}>
+                <div style={{ fontFamily:F.m, fontSize:10, color:"rgba(201,169,110,0.3)", marginBottom:8, letterSpacing:"0.1em" }}>Urðr · Verðandi · Skuld</div>
+                <p style={{ fontSize:9, color:"rgba(var(--sg-t),0.18)", lineHeight:1.8 }}>The three Norns of old mythology watched the threads of fate as they were woven beneath Yggdrasil.</p>
+                <p style={{ fontSize:9, color:"rgba(var(--sg-t),0.18)", lineHeight:1.8, marginTop:6 }}>This book is your thread. The Lighthouse simply helps you see its shape.</p>
+              </div>
+            </details>
+
+            <div style={{ textAlign:"center", marginTop:20 }}>
+              <button onClick={()=>setPage("thread")} style={{ background:"rgba(201,169,110,0.1)", border:"1px solid rgba(201,169,110,0.2)", color:G, padding:"9px 24px", borderRadius:18, fontSize:12, cursor:"pointer", fontFamily:F.b }}>Write today's thread</button>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ textAlign:"center", padding:"16px 0", borderTop:"1px solid rgba(var(--sg-t),0.015)" }}>
+          <span style={{ fontSize:7, color:"rgba(var(--sg-t),0.04)", fontFamily:F.m, letterSpacing:"0.1em" }}>S ; R → N</span>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
+try { const root = ReactDOM.createRoot(document.getElementById("root")); root.render(<App/>); }
+catch(e) { document.getElementById("root").innerHTML = '<div style="color:#c9a96e;font-family:monospace;padding:40px;font-size:13px;">Error: '+e.message+'</div>'; }
+</script>
 </body>
 </html>
