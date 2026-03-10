@@ -11,22 +11,20 @@ import { useState, useEffect, useRef, useMemo } from "react";
 */
 
 // ── Time-of-day theme ────────────────────────────────────────────────────────
-// bg: RGB triplet for page background
-// t:  RGB triplet for text (inverts with bg to maintain contrast)
 const THEME_NODES = [
-  { h: 0,    bg: [255,253,245], t: [50,40,20]  }, // night — white-yellow
-  { h: 6,    bg: [255,253,242], t: [50,40,20]  }, // pre-dawn — white-yellow
-  { h: 7,    bg: [255,254,245], t: [48,38,18]  }, // dawn — white-yellow
-  { h: 8,    bg: [255,255,248], t: [45,36,16]  }, // morning — white with warm hint
-  { h: 17,   bg: [255,255,248], t: [45,36,16]  }, // afternoon — white with warm hint
-  { h: 18.5, bg: [255,253,242], t: [50,40,18]  }, // golden hour — white-yellow
-  { h: 19.5, bg: [255,253,242], t: [50,40,18]  }, // sunset — white-yellow
-  { h: 21,   bg: [255,253,245], t: [50,40,20]  }, // dusk — white-yellow
-  { h: 22,   bg: [255,253,245], t: [50,40,20]  }, // night — white-yellow
+  { h: 0,    bg: [255,253,245], t: [50,40,20]  },
+  { h: 6,    bg: [255,253,242], t: [50,40,20]  },
+  { h: 7,    bg: [255,254,245], t: [48,38,18]  },
+  { h: 8,    bg: [255,255,248], t: [45,36,16]  },
+  { h: 17,   bg: [255,255,248], t: [45,36,16]  },
+  { h: 18.5, bg: [255,253,242], t: [50,40,18]  },
+  { h: 19.5, bg: [255,253,242], t: [50,40,18]  },
+  { h: 21,   bg: [255,253,245], t: [50,40,20]  },
+  { h: 22,   bg: [255,253,245], t: [50,40,20]  },
   { h: 24,   bg: [255,253,245], t: [50,40,20]  },
 ];
 const _lr = (a, b, p) => a.map((v, i) => Math.round(v + (b[i] - v) * p));
-const _ss = p => p * p * (3 - 2 * p); // smoothstep easing
+const _ss = p => p * p * (3 - 2 * p);
 const getTimeTheme = () => {
   const h = new Date().getHours() + new Date().getMinutes() / 60;
   let lo = THEME_NODES[0], hi = THEME_NODES[1];
@@ -37,9 +35,6 @@ const getTimeTheme = () => {
   const bg = _lr(lo.bg, hi.bg, p), tx = _lr(lo.t, hi.t, p);
   return { bg: `rgb(${bg})`, t: `${tx}` };
 };
-// Apply the correct theme synchronously at module load — before React's first
-// paint. Without this, the page starts from the dark :root defaults and the
-// CSS transition takes 2+ minutes to reach the correct time-of-day color.
 (function applyInitialTheme() {
   try {
     const th = getTimeTheme();
@@ -48,9 +43,6 @@ const getTimeTheme = () => {
   } catch (_) {}
 }());
 
-// Parse structured lighthouse response — three musical movements.
-// Labels: VERSE (opening note/frequency), SONG (the day's full narrative),
-// NOTE (the one element worth carrying forward). Falls back gracefully.
 const parseReflection = (text) => {
   const LABELS = ['VERSE','SONG','NOTE'];
   const get = (label) => {
@@ -68,7 +60,6 @@ const sv = async (k, d) => { try { await S.set(k, JSON.stringify(d)); } catch {}
 const G = "#c9a96e";
 const F = { h: "'Instrument Serif','Georgia',serif", b: "'DM Sans',sans-serif", m: "'DM Mono',monospace" };
 
-// ── Sacred text archives — local autocomplete data ────────────────────────────
 const BIBLE_BOOKS = ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'];
 const TORAH_BOOKS = ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Samuel','Kings','Isaiah','Jeremiah','Ezekiel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Psalms','Proverbs','Job','Song of Songs','Ruth','Lamentations','Ecclesiastes','Esther','Daniel','Ezra','Nehemiah','Chronicles'];
 const QURAN_SURAHS = [
@@ -97,8 +88,6 @@ const QURAN_SURAHS = [
   {n:111,name:'Al-Masad'},{n:112,name:'Al-Ikhlas'},{n:113,name:'Al-Falaq'},{n:114,name:'An-Nas'},
 ];
 
-// The hats — each one tunes the Lighthouse to a different idiom and common ground.
-// Characters = notes; the hat sets the key signature before the music plays.
 const HATS = [
   { id: "friend",   label: "friend",     voice: "Speak as a close trusted friend — casual, real, sitting-on-the-porch energy. No performance, just truth and care." },
   { id: "brother",  label: "brother",    voice: "Speak as a sibling who knows them deeply — warm but direct, calls things out with love, uses familiar shorthand, no filters but no cruelty." },
@@ -140,62 +129,53 @@ const SOUL_PROMPTS = [
 const getPrompt = () => SOUL_PROMPTS[Math.floor(Math.random() * SOUL_PROMPTS.length)];
 
 export default function App() {
-  const [page, setPage] = useState("today"); // today, book, about, day
+  const [page, setPage] = useState("today");
   const [todayData, setTodayData] = useState(null);
   const [allDays, setAllDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [prompt] = useState(getPrompt);
 
-  // API key — stored as sg-rune (the Rune ᚱ: a point in 2²⁵⁶-space, your unique conjunction with the Norns)
   const [apiKey, setApiKey] = useState("");
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [keyDraft, setKeyDraft] = useState("");
   const [keyError, setKeyError] = useState(false);
 
-  // Today's data
   const [passage, setPassage] = useState("");
   const [lastWord, setLastWord] = useState("");
-  const [picture, setPicture] = useState(null); // base64
+  const [picture, setPicture] = useState(null);
   const [saved, setSaved] = useState(false);
 
-  // Reflection (today)
   const [reflection, setReflection] = useState(null);
   const [reflecting, setReflecting] = useState(false);
-  const [hat, setHat] = useState(null); // selected persona hat
+  const [hat, setHat] = useState(null);
 
-  // Inspiration / resonance field (lyric, scripture, film, poem, other)
   const [inspoType, setInspoType] = useState(null);
   const [inspoText, setInspoText] = useState("");
   const [inspoArtist, setInspoArtist] = useState("");
-  const [inspoSong, setInspoSong] = useState(""); // selected song title from iTunes lookup
-  const [inspoSongs, setInspoSongs] = useState([]); // iTunes search results dropdown
+  const [inspoSong, setInspoSong] = useState("");
+  const [inspoSongs, setInspoSongs] = useState([]);
   const [inspoSearching, setInspoSearching] = useState(false);
-  const [inspoPulling, setInspoPulling] = useState(false); // AI pull for scripture/poem/film
-  const [scriptureSearching, setScriptureSearching] = useState(false); // bible-api auto-lookup
-  const [scriptTrad, setScriptTrad] = useState(null); // "bible" | "quran" | "torah" | null
-  const [filmGenre, setFilmGenre] = useState(null); // "sci-fi" | "drama" | "thriller" | "comedy" | "horror" | "animation" | null
-  const [filmSuggestions, setFilmSuggestions] = useState([]); // iTunes movie search results
+  const [inspoPulling, setInspoPulling] = useState(false);
+  const [scriptureSearching, setScriptureSearching] = useState(false);
+  const [scriptTrad, setScriptTrad] = useState(null);
+  const [filmGenre, setFilmGenre] = useState(null);
+  const [filmSuggestions, setFilmSuggestions] = useState([]);
   const [filmSearching, setFilmSearching] = useState(false);
 
-  // Time machine — drill into a specific book entry as a full-page view
   const [timeMachineKey, setTimeMachineKey] = useState(null);
   const [saveError, setSaveError] = useState(false);
 
-  // Post-save gift — "what today gave you"
   const [dayGift, setDayGift] = useState(null);
   const [dayGiftLoading, setDayGiftLoading] = useState(false);
 
-  // Book entry expansion + per-entry beacon
   const [expanded, setExpanded] = useState({});
   const [bookReflections, setBookReflections] = useState({});
   const [bookReflecting, setBookReflecting] = useState({});
 
-  // The Weave — weekly/monthly pattern summary
   const [weaveResult, setWeaveResult] = useState(null);
   const [weaveLoading, setWeaveLoading] = useState(false);
-  const [weavePeriod, setWeavePeriod] = useState("week"); // "week" | "month" | "all"
+  const [weavePeriod, setWeavePeriod] = useState("week");
 
-  // Lens — media bias / signal reader
   const [lensUrl, setLensUrl] = useState("");
   const [lensText, setLensText] = useState("");
   const [lensResult, setLensResult] = useState(null);
@@ -204,7 +184,6 @@ export default function App() {
   const passageRef = useRef(null);
   const dk = dateKey();
 
-  // Time-of-day theme — updates every minute, transitions via CSS
   const [, setThemeTick] = useState(0);
   useEffect(() => {
     const apply = () => {
@@ -314,19 +293,16 @@ export default function App() {
         .map(d => `[${d.date}] "${d.passage}" (last word: ${d.lastWord || "none"})`)
         .join("\n");
 
-      // Inspiration / resonance context — artist + song + lyric as key signature
       const artistLine = inspoArtist.trim() ? `${inspoArtist.trim()}${inspoSong.trim() ? ` — "${inspoSong.trim()}"` : ''}` : '';
       const inspoCtx = (inspoType && (inspoText.trim() || artistLine))
         ? `\nKey signature today (${inspoType}): ${artistLine ? `${artistLine}` : ''}${inspoText.trim() ? `\nLyric: "${inspoText.trim()}"` : ''}`
         : "";
 
-      // Hat persona prefix — tunes the idiom and common ground before the Norns speak
       const chosenHat = hat ? HATS.find(h => h.id === hat) : null;
       const hatPrefix = chosenHat
         ? `HAT ON: ${chosenHat.voice}\n\nYou are wearing this hat fully. Use its idiom, its vocabulary, its emotional register — the way a friend speaks differently than a drill sergeant, who speaks differently than a pastor. The hat changes HOW you speak and what metaphors you reach for. The three-movement structure (SIGNAL, STORY, AMPLIFY) stays the same.\n\n---\n\n`
         : '';
 
-      // Build message content — include today's picture as visual thread if present
       let msgContent;
       if (picture) {
         const match = picture.match(/^data:([^;]+);base64,(.+)$/);
@@ -396,7 +372,6 @@ Constraint: if the entry is simple, let the reflection be simple. Match the weig
     setReflecting(false);
   };
 
-  // iTunes song search — debounced 600ms, fires when artist field changes under lyric tab
   useEffect(() => {
     if (inspoType !== "lyric" || !inspoArtist.trim() || inspoArtist.length < 2) {
       setInspoSongs([]); return;
@@ -414,7 +389,6 @@ Constraint: if the entry is simple, let the reflection be simple. Match the weig
     return () => { clearTimeout(t); ac.abort(); };
   }, [inspoArtist, inspoType]);
 
-  // iTunes movie search — debounced 600ms, fires when film title field changes
   useEffect(() => {
     if (inspoType !== "film" || !inspoArtist.trim() || inspoArtist.length < 2) {
       setFilmSuggestions([]); return;
@@ -432,10 +406,9 @@ Constraint: if the entry is simple, let the reflection be simple. Match the weig
     return () => { clearTimeout(t); ac.abort(); };
   }, [inspoArtist, inspoType]);
 
-  // Scripture book/surah autocomplete — local fuzzy match, no API needed
   const scriptSuggestions = useMemo(() => {
     if (inspoType !== "scripture" || !inspoArtist.trim() || inspoArtist.length < 2) return [];
-    if (/\d+\s*:\s*\d+/.test(inspoArtist)) return []; // already has a reference, no suggestions needed
+    if (/\d+\s*:\s*\d+/.test(inspoArtist)) return [];
     const q = inspoArtist.toLowerCase();
     if (scriptTrad === "quran") {
       return QURAN_SURAHS
@@ -448,8 +421,6 @@ Constraint: if the entry is simple, let the reflection be simple. Match the weig
       .slice(0, 6);
   }, [inspoArtist, inspoType, scriptTrad]);
 
-  // Scripture auto-fetch — routes to correct sacred text API based on tradition
-  // Bible → bible-api.com, Quran → alquran.cloud, Torah/Tanakh → sefaria.org
   useEffect(() => {
     if (inspoType !== "scripture" || !inspoArtist.trim()) return;
     if (!/\d+\s*:\s*\d+/.test(inspoArtist)) return;
@@ -486,7 +457,6 @@ Constraint: if the entry is simple, let the reflection be simple. Match the weig
     return () => { clearTimeout(t); ac.abort(); setScriptureSearching(false); };
   }, [inspoArtist, inspoType, scriptTrad]);
 
-  // AI pull — scripture verse, poem excerpt, or film quote based on passage/keyword
   const pullInspo = async () => {
     if (!apiKey) return;
     setInspoPulling(true);
@@ -558,7 +528,6 @@ Constraint: if the entry is simple, let the reflection be simple. Match the weig
         .map(d => `[${d.date}] "${d.passage}" (last word: ${d.lastWord || "none"})`)
         .join("\n");
 
-      // Include the entry's picture as visual context if present
       let msgContent;
       if (day.picture) {
         const match = day.picture.match(/^data:([^;]+);base64,(.+)$/);
@@ -602,7 +571,6 @@ Under 55 words. Warm. Honest. Plain text. No formatting. Match the weight of wha
     setBookReflecting(prev => ({ ...prev, [key]: false }));
   };
 
-  // ── The Weave — cross-entry pattern summary ────────────────────────────────
   const weaveEntries = useMemo(() => {
     if (!allDays.length) return [];
     const now = new Date();
@@ -619,14 +587,12 @@ Under 55 words. Warm. Honest. Plain text. No formatting. Match the weight of wha
 
   const weaveLocal = useMemo(() => {
     if (weaveEntries.length < 2) return null;
-    // Recurring last words
     const lwCounts = {};
     weaveEntries.forEach(d => {
       const w = d.lastWord?.trim().toLowerCase();
       if (w) lwCounts[w] = (lwCounts[w] || 0) + 1;
     });
     const recurringLW = Object.entries(lwCounts).filter(([,c]) => c > 1).sort((a,b) => b[1] - a[1]);
-    // Word frequency across passages (stop words removed)
     const stop = new Set(["the","a","an","and","or","but","in","on","at","to","for","of","with","is","it","i","my","me","was","that","this","so","have","had","been","be","not","no","just","very","all","if","do","did","are","as","from","its","what","when","who","how","can","will","about","up","out","like","more","than","would","into","one","their","we","they","your","you","he","she","her","his","our","them","some","could","which","there","been","has","any","only","even","also","then","were","now","after","over","these","those","back","through","much","way","down","each","still","where","before","here","between","both","own","same","because","off","most","well","too","got","am","get","go","going","went","come","came","want","make","know","see","say","said","think","take","really","right","being","thing","time","day","today","felt","feel","something","don't","didn't","i'm"]);
     const wordCounts = {};
     weaveEntries.forEach(d => {
@@ -635,12 +601,10 @@ Under 55 words. Warm. Honest. Plain text. No formatting. Match the weight of wha
         .forEach(w => { wordCounts[w] = (wordCounts[w] || 0) + 1; });
     });
     const topWords = Object.entries(wordCounts).filter(([,c]) => c > 1).sort((a,b) => b[1] - a[1]).slice(0, 12);
-    // Hat usage
     const hatCounts = {};
     weaveEntries.forEach(d => {
       if (d.hat) hatCounts[d.hat] = (hatCounts[d.hat] || 0) + 1;
     });
-    // Inspo types used
     const inspoCounts = {};
     weaveEntries.forEach(d => {
       if (d.inspoType) inspoCounts[d.inspoType] = (inspoCounts[d.inspoType] || 0) + 1;
@@ -734,7 +698,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
 
   if (loading) return (
     <Shell>
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ fontSize: 24, fontFamily: F.h, color: "rgba(201,169,110,0.12)", animation: "breathe 2s ease-in-out infinite" }}>s;</div>
       </div>
     </Shell>
@@ -767,7 +731,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                 cursor: "pointer", fontFamily: F.b,
               }}>{t.l}</button>
             ))}
-            {/* API key gear */}
             <button onClick={() => { setKeyDraft(apiKey); setShowKeyInput(v => !v); }} title="Set API key (the Rune ᚱ)" style={{
               background: keyError ? "rgba(180,60,60,0.12)" : apiKey ? "rgba(201,169,110,0.04)" : "rgba(180,60,60,0.08)",
               border: `1px solid ${keyError ? "rgba(180,60,60,0.25)" : apiKey ? "rgba(201,169,110,0.12)" : "rgba(180,60,60,0.18)"}`,
@@ -778,7 +741,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
           </div>
         </header>
 
-        {/* ── API KEY PANEL ── */}
         {showKeyInput && (
           <div style={{
             padding: "12px 14px", marginBottom: 8,
@@ -812,7 +774,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
         {/* ═══ TODAY ═══ */}
         {page === "today" && (
           <div style={{ paddingTop: 24, paddingBottom: 50 }}>
-            {/* Date */}
             <div style={{ textAlign: "center", marginBottom: 28 }}>
               <div style={{
                 fontSize: 11, color: "rgba(201,169,110,0.35)", fontFamily: F.m,
@@ -832,7 +793,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               </p>
             </div>
 
-            {/* ── PASSAGE ── */}
             <div style={{ marginBottom: 20 }}>
               <label style={{
                 fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
@@ -855,7 +815,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               />
             </div>
 
-            {/* ── PICTURE ── */}
             <div style={{ marginBottom: 20 }}>
               <label style={{
                 fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
@@ -886,7 +845,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               )}
             </div>
 
-            {/* ── LAST WORD ── */}
             <div style={{ marginBottom: 24 }}>
               <label style={{
                 fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
@@ -921,7 +879,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                 fontStyle: "italic", lineHeight: 1.5, fontFamily: F.b }}>
                 The scene, verse, line, or moment that hit hardest today.
               </p>
-              {/* ONE BOX — the moment itself, always first */}
               <textarea
                 value={inspoText}
                 onChange={e => { setInspoText(e.target.value); setSaved(false); }}
@@ -936,7 +893,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                 style={{ ...inputStyle, fontSize: 14, fontFamily: F.h, fontStyle: "italic",
                   resize: "none", marginBottom: 10 }}
               />
-              {/* Tag it — type chips as optional sourcing */}
               <div style={{ fontSize: 8, color: "rgba(var(--sg-t),0.13)", textTransform: "uppercase",
                 letterSpacing: "0.1em", fontFamily: F.b, marginBottom: 5 }}>tag it (optional)</div>
               <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: inspoType ? 8 : 0 }}>
@@ -960,7 +916,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               {/* Source details — shown only when a type is tagged */}
               {inspoType && (
                 <div style={{ animation: "slideUp 0.15s ease" }}>
-                  {/* Scripture tradition pills */}
                   {inspoType === "scripture" && (
                     <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
                       {[{ id: "bible", label: "Bible" }, { id: "quran", label: "Quran" }, { id: "torah", label: "Torah" }].map(tr => (
@@ -975,7 +930,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                       ))}
                     </div>
                   )}
-                  {/* Film genre pills */}
                   {inspoType === "film" && (
                     <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
                       {["sci-fi","drama","thriller","comedy","horror","animation"].map(g => (
@@ -990,7 +944,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                       ))}
                     </div>
                   )}
-                  {/* Source / title / reference search input */}
                   <div style={{ position: "relative" }}>
                     <input
                       value={inspoArtist}
@@ -1021,7 +974,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                         fontSize: 8, color: "rgba(201,169,110,0.3)", fontFamily: F.m,
                         animation: "breathe 1.2s ease-in-out infinite" }}>fetching verse…</div>
                     )}
-                    {/* Song results dropdown */}
                     {inspoSongs.length > 0 && !inspoSong && (
                       <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
                         background: "var(--sg-bg)", border: "1px solid rgba(201,169,110,0.18)",
@@ -1047,7 +999,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                         ))}
                       </div>
                     )}
-                    {/* Film suggestions dropdown */}
                     {inspoType === "film" && filmSuggestions.length > 0 && (
                       <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
                         background: "var(--sg-bg)", border: "1px solid rgba(201,169,110,0.18)",
@@ -1072,7 +1023,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                         ))}
                       </div>
                     )}
-                    {/* Scripture book/surah suggestions dropdown */}
                     {inspoType === "scripture" && scriptSuggestions.length > 0 && (
                       <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
                         background: "var(--sg-bg)", border: "1px solid rgba(201,169,110,0.18)",
@@ -1100,7 +1050,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                         })}
                       </div>
                     )}
-                    {/* Selected song badge */}
                     {inspoSong && (
                       <div style={{ marginTop: 5, display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontSize: 10, color: G, fontFamily: F.b, opacity: 0.6 }}>♩ {inspoSong}</span>
@@ -1110,13 +1059,11 @@ Be honest about the lean without contempt for either direction. Your task is cla
                         }}>×</button>
                       </div>
                     )}
-                    {/* Hint text for scripture reference format */}
                     {inspoType === "scripture" && inspoArtist && !/\d+\s*:\s*\d+/.test(inspoArtist) && !scriptureSearching && (
                       <div style={{ marginTop: 4, fontSize: 8, color: "rgba(var(--sg-t),0.12)", fontFamily: F.m, fontStyle: "italic" }}>
                         {scriptTrad === "quran" ? "add :ayah to fetch (e.g. 2:255)" : "add :verse to fetch (e.g. John 3:16)"}
                       </div>
                     )}
-                    {/* Pull button — scripture / poem / film / other */}
                     {inspoType !== "lyric" && apiKey && (
                       <button onClick={pullInspo} disabled={inspoPulling} style={{
                         marginTop: 8, padding: "5px 13px",
@@ -1138,7 +1085,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               )}
             </div>
 
-            {/* ── SAVE ── */}
             <button onClick={saveDay} style={{
               width: "100%", padding: "14px",
               background: saveError ? "rgba(180,60,60,0.1)" : saved ? "rgba(100,160,100,0.08)" : "rgba(201,169,110,0.12)",
@@ -1150,7 +1096,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               {saveError ? "Couldn't save — try again" : saved ? "Saved ✓" : "Save today's page ;"}
             </button>
 
-            {/* ── WHAT TODAY GAVE YOU ── */}
             {(dayGiftLoading || dayGift) && (
               <div style={{
                 marginTop: 10, padding: "14px 16px", textAlign: "center",
@@ -1173,7 +1118,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               </div>
             )}
 
-            {/* ── HAT SELECTOR ── */}
             {passage.trim() && (
               <div style={{ marginTop: 14 }}>
                 <div style={{ fontSize: 7, color: `rgba(var(--sg-t),0.2)`, textTransform: "uppercase",
@@ -1193,7 +1137,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               </div>
             )}
 
-            {/* ── REFLECT ── */}
             {passage.trim() && (
               <button onClick={reflect} disabled={reflecting} style={{
                 width: "100%", padding: "12px", marginTop: 8,
@@ -1206,7 +1149,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               </button>
             )}
 
-            {/* ── REFLECTION ── */}
             {reflection && (() => {
               const { verse, song, note } = parseReflection(reflection);
               const hasStructure = verse || song || note;
@@ -1214,7 +1156,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               return (
                 <div style={{ marginTop: 16, padding: "18px 18px 14px", background: "rgba(201,169,110,0.02)",
                   border: "1px solid rgba(201,169,110,0.06)", borderRadius: 10 }}>
-                  {/* Header: key signature */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <div style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
                       letterSpacing: "0.12em", fontFamily: F.b }}>The Lighthouse</div>
@@ -1260,7 +1201,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               );
             })()}
 
-            {/* Meaning probability engine */}
             <MeaningProbability passage={passage} />
           </div>
         )}
@@ -1289,7 +1229,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               </div>
             ) : (
               <>
-                {/* Last words ribbon */}
                 {allDays.some(d => d.lastWord?.trim()) && (
                   <div style={{
                     padding: "12px 14px", background: "rgba(201,169,110,0.02)",
@@ -1313,7 +1252,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                   </div>
                 )}
 
-                {/* ── The Weave ── */}
                 {allDays.length >= 2 && (
                   <div style={{
                     marginBottom: 20, padding: "16px 16px 14px",
@@ -1337,7 +1275,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                       </div>
                     </div>
 
-                    {/* Local pattern stats */}
                     {weaveLocal && (
                       <div style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 9, color: "rgba(var(--sg-t),0.15)", fontFamily: F.m, marginBottom: 6 }}>
@@ -1373,7 +1310,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                       </div>
                     )}
 
-                    {/* AI weave button + result */}
                     {apiKey && weaveEntries.length >= 2 && !weaveResult && (
                       <button onClick={generateWeave} disabled={weaveLoading} style={{
                         padding: "6px 16px",
@@ -1442,11 +1378,7 @@ Be honest about the lean without contempt for either direction. Your task is cla
                   </div>
                 )}
 
-                {/* Day entries */}
                 {allDays.map(day => {
-                  const isOpen = !!expanded[day.key];
-                  const beacon = bookReflections[day.key];
-                  const loading = !!bookReflecting[day.key];
                   return (
                     <button key={day.key} onClick={() => { setTimeMachineKey(day.key); setPage("day"); }} style={{
                       width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -1490,18 +1422,15 @@ Be honest about the lean without contempt for either direction. Your task is cla
           if (!day) return <div style={{ paddingTop: 40, textAlign: "center", color: "rgba(var(--sg-t),0.2)", fontFamily: F.b, fontSize: 12 }}>Entry not found.</div>;
           const beacon = bookReflections[day.key];
           const loading = !!bookReflecting[day.key];
-          // Trigger Norn beacon if not already read
           if (!beacon && !loading) setTimeout(() => reflectEntry(day.key), 0);
           return (
             <div style={{ paddingTop: 10, paddingBottom: 60, animation: "slideUp 0.3s ease" }}>
-              {/* Back */}
               <button onClick={() => setPage("book")} style={{
                 background: "none", border: "none", cursor: "pointer",
                 fontSize: 10, color: "rgba(var(--sg-t),0.25)", fontFamily: F.b,
                 letterSpacing: "0.08em", marginBottom: 20, padding: 0,
               }}>← back to book</button>
 
-              {/* Date */}
               <div style={{ marginBottom: 4, fontSize: 9, color: "rgba(201,169,110,0.3)",
                 textTransform: "uppercase", letterSpacing: "0.14em", fontFamily: F.b }}>{day.date}</div>
               {day.lastWord?.trim() && (
@@ -1509,7 +1438,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                   marginBottom: 20, opacity: 0.7 }}>{day.lastWord}</div>
               )}
 
-              {/* Picture */}
               {day.picture && (
                 <img src={day.picture} alt="" style={{
                   width: "100%", borderRadius: 10, maxHeight: 280, objectFit: "cover",
@@ -1517,13 +1445,11 @@ Be honest about the lean without contempt for either direction. Your task is cla
                 }} />
               )}
 
-              {/* Passage */}
               {day.passage?.trim() && (
                 <p style={{ fontSize: 15, color: "rgba(var(--sg-t),0.6)", lineHeight: 1.85,
                   fontFamily: F.h, whiteSpace: "pre-wrap", marginBottom: 20 }}>{day.passage}</p>
               )}
 
-              {/* Inspiration */}
               {day.inspoType && day.inspoText && (
                 <div style={{ marginBottom: 20, padding: "12px 14px",
                   borderLeft: "2px solid rgba(201,169,110,0.15)",
@@ -1539,7 +1465,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
                 </div>
               )}
 
-              {/* Beacon — Norns reading this thread */}
               <div style={{ padding: "14px 16px", background: "rgba(201,169,110,0.02)",
                 border: "1px solid rgba(201,169,110,0.07)", borderRadius: 10 }}>
                 <div style={{ fontSize: 8, color: "rgba(201,169,110,0.2)", textTransform: "uppercase",
@@ -1569,7 +1494,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               Paste a news article. See the signal, the frame, and the shadow. Read through the bias without surrendering to it.
             </p>
 
-            {/* URL */}
             <div style={{ marginBottom: 14 }}>
               <label style={{
                 fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
@@ -1584,7 +1508,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               />
             </div>
 
-            {/* Article text */}
             <div style={{ marginBottom: 18 }}>
               <label style={{
                 fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
@@ -1617,7 +1540,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               {lensLoading ? "Reading the signal…" : "Read the signal ;"}
             </button>
 
-            {/* Result */}
             {lensResult && (
               <div style={{
                 marginTop: 20, padding: 20,
@@ -1636,7 +1558,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               </div>
             )}
 
-            {/* Bias spectrum note */}
             <div style={{
               marginTop: 24, padding: "12px 14px",
               background: "rgba(var(--sg-t),0.015)",
@@ -1669,7 +1590,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               </p>
             </div>
 
-            {/* ── The Correction ── */}
             <div style={{
               marginBottom: 20, padding: "16px 18px",
               background: "rgba(201,169,110,0.02)",
@@ -1696,7 +1616,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               </p>
             </div>
 
-            {/* ── The Ground ── Ephesians 4:2 */}
             <div style={{
               marginBottom: 20, padding: "16px 18px",
               borderLeft: "2px solid rgba(201,169,110,0.15)",
@@ -1716,7 +1635,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               }}>— Ephesians 4:2</p>
             </div>
 
-            {/* ── The Trust Equation ── */}
             <div style={{
               marginBottom: 20, padding: "16px 18px",
               background: "rgba(var(--sg-t),0.015)",
@@ -1753,7 +1671,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               </div>
             </div>
 
-            {/* ── The Two Arcs ── */}
             <div style={{
               marginBottom: 20, display: "flex", gap: 10,
             }}>
@@ -1791,7 +1708,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               ))}
             </div>
 
-            {/* ── The Trinity ── Pride, Hope, Conviction */}
             <div style={{
               marginBottom: 20, padding: "16px 18px",
               background: "rgba(201,169,110,0.02)",
@@ -1820,7 +1736,6 @@ Be honest about the lean without contempt for either direction. Your task is cla
               ))}
             </div>
 
-            {/* ── Mapping to the Loom ── */}
             <details style={{ marginTop: 4, marginBottom: 20 }}>
               <summary style={{
                 fontSize: 9, color: "rgba(201,169,110,0.18)", cursor: "pointer",
@@ -2053,14 +1968,6 @@ const inputStyle = {
   resize: "vertical",
 };
 
-// ── SignalCoherence ───────────────────────────────────────────────────────────
-// A symbolic signal index — not literal probability, but a poetic computational
-// score reflecting the internal coherence of the passage.
-//
-// Three probes:
-//  1. Monte Carlo π̃ — character code pairs as (x,y) scatter; convergence to π.
-//  2. Mandelbrot depth — passage fingerprint mapped to complex plane; bounded = coherent.
-//  3. Signal density — ratio of semantic characters to total.
 function MeaningProbability({ passage }) {
   const canvasRef = useRef(null);
 
@@ -2068,8 +1975,6 @@ function MeaningProbability({ passage }) {
     if (!passage.trim() || passage.length < 3) return null;
     const cc = [...passage].map(c => c.charCodeAt(0));
 
-    // ── 1. Monte Carlo π estimation ──────────────────────────────────────────
-    // Adjacent character codes → (x,y) in [0,1]². Count those inside unit circle.
     const pts = [];
     let inside = 0;
     for (let i = 0; i < cc.length - 1; i++) {
@@ -2082,12 +1987,10 @@ function MeaningProbability({ passage }) {
     const n = cc.length - 1;
     const piEst = n > 0 ? (4 * inside / n) : Math.PI;
 
-    // ── 2. Mandelbrot depth ───────────────────────────────────────────────────
-    // Map passage fingerprint → complex number c in the interesting boundary region.
     const sumC = cc.reduce((a, v) => a + v, 0);
     const xorC = cc.reduce((a, v) => a ^ v, 0);
-    const cr = ((sumC % 350) / 350) * 3.5 - 2.5;   // real axis: [−2.5, 1.0]
-    const ci = ((xorC % 200) / 200) * 2.0 - 1.0;   // imag axis: [−1.0, 1.0]
+    const cr = ((sumC % 350) / 350) * 3.5 - 2.5;
+    const ci = ((xorC % 200) / 200) * 2.0 - 1.0;
     let zr = 0, zi = 0, depth = 0;
     while (zr * zr + zi * zi < 4 && depth < 100) {
       [zr, zi] = [zr * zr - zi * zi + cr, 2 * zr * zi + ci];
@@ -2095,12 +1998,9 @@ function MeaningProbability({ passage }) {
     }
     const bounded = depth === 100;
 
-    // ── 3. Signal density ─────────────────────────────────────────────────────
     const letters = (passage.match(/[a-zA-Z]/g) || []).length;
     const sigDensity = letters / Math.max(passage.length, 1);
 
-    // ── P(meaning) ────────────────────────────────────────────────────────────
-    // Exponential penalty for π divergence (Newton: action ↔ reaction fidelity)
     const piScore  = Math.exp(-Math.abs(piEst - Math.PI));
     const depthScore = depth / 100;
     const p = Math.min(0.99, Math.max(0.01,
@@ -2121,12 +2021,10 @@ function MeaningProbability({ passage }) {
     if (!ctx) return;
     const sz = 60;
     ctx.clearRect(0, 0, sz, sz);
-    // Scatter: gold = inside arc (signal), muted = outside (noise)
     m.pts.slice(0, 400).forEach(([x, y, hit]) => {
       ctx.fillStyle = hit ? 'rgba(201,169,110,0.55)' : 'rgba(150,140,130,0.1)';
       ctx.fillRect(x * sz - 0.8, y * sz - 0.8, 1.6, 1.6);
     });
-    // Quarter-circle arc — the geometric truth π is trying to reach
     ctx.beginPath();
     ctx.arc(0, 0, sz, 0, Math.PI / 2);
     ctx.strokeStyle = 'rgba(201,169,110,0.14)';
@@ -2138,7 +2036,6 @@ function MeaningProbability({ passage }) {
 
   return (
     <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "flex-start" }}>
-      {/* Monte Carlo canvas */}
       <canvas ref={canvasRef} width={60} height={60} style={{
         borderRadius: 4, flexShrink: 0,
         border: "1px solid rgba(201,169,110,0.06)",
@@ -2165,12 +2062,30 @@ function MeaningProbability({ passage }) {
 
 function Shell({ children }) {
   return (
-    <div style={{ minHeight: "100vh", background: "var(--sg-bg)", color: "rgba(var(--sg-t),0.85)", fontFamily: "'DM Sans',sans-serif", transition: "background 2s ease, color 2s ease" }}>
+    <div style={{
+      minHeight: "100dvh",
+      overflowY: "auto",
+      WebkitOverflowScrolling: "touch",
+      background: "var(--sg-bg)",
+      color: "rgba(var(--sg-t),0.85)",
+      fontFamily: "'DM Sans',sans-serif",
+      transition: "background 2s ease, color 2s ease",
+    }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
-        :root { --sg-bg: rgb(255,253,245); --sg-t: 50,40,20; }
+        :root {
+          --sg-bg: rgb(255,253,245);
+          --sg-t: 50,40,20;
+          color-scheme: light;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { background: var(--sg-bg); transition: background 2s ease; }
+        html, body {
+          background: var(--sg-bg);
+          transition: background 2s ease;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          color-scheme: light;
+        }
         textarea, input { transition: background-color 2s ease, border-color 2s ease, color 2s ease; }
         @keyframes breathe { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
