@@ -7,6 +7,7 @@ import Logo from './Logo'
 const NAV_ITEMS = [
   { href: '/thread', label: 'Thread' },
   { href: '/archive', label: 'Archive' },
+  { href: '/dream', label: '∞ Dream' },
   { href: '/lens', label: 'Lens' },
   { href: '/map', label: 'Map' },
 ]

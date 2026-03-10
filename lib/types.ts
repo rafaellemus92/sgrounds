@@ -40,4 +40,4 @@ export interface Coherence {
 export type InspoType = 'lyric' | 'scripture' | 'film' | 'poem' | 'news' | 'quote'
 export type NewsTag = 'world' | 'local' | 'personal'
 export type Archetype = 'spouse' | 'parent' | 'their child' | 'therapist' | 'mentor' | 'pastor' | 'future self' | 'inner critic'
-export type PageView = 'thread' | 'archive' | 'lens' | 'map'
+export type PageView = 'thread' | 'archive' | 'dream' | 'lens' | 'map'
