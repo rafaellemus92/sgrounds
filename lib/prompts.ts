@@ -7,7 +7,11 @@ export function reflectSystemPrompt(
   inspoCtx: string,
   newsCtx: string,
   arcCtx: string,
-  archetype: string | null
+  archetype: string | null,
+  echoReason?: string | null,
+  landingType?: string | null,
+  attunementGap?: number | null,
+  signalCoherence?: number | null,
 ): string {
   const prevPassages = prevEntries.length > 0
     ? prevEntries
@@ -19,6 +23,47 @@ export function reflectSystemPrompt(
     'investor': 'Speak as someone who has placed a bet on this person — not financially, but existentially. You see their potential as a portfolio of capacities. Name what is compounding. Name what is diluting. Be direct about where the yield is and where the burn rate is unsustainable. You care because you are invested.',
     'clinical witness': 'Speak as a precise, unhurried observer. You do not interpret — you describe what is present with clinical exactness. Name the pattern, the affect, the somatic weight of what was written. No warmth performed, but deep respect for the data of a lived day. You notice what the person has not yet noticed about their own text.',
   }
+
+  const gapLabel = attunementGap != null
+    ? attunementGap > 5 ? `Positive (+${attunementGap}): named before felt — air conduction. Meet them in understanding.`
+      : attunementGap < -5 ? `Negative (${attunementGap}): felt before named — bone conduction. Meet them in the feeling. Don't rush to interpretation.`
+      : `Near zero (${attunementGap}): arrived together — both channels open simultaneously. This is rare. Name it explicitly.`
+    : null
+
+  const phaseSnapshot = `PHASE SNAPSHOT CONTEXT
+You are reading a single data point in a dynamical system of attunement — one moment in a time series that will eventually be analyzed for Phase Locking Value (the measure of phase synchrony, 0 to 1).
+
+The mathematical structure of this entry:
+
+  Closing word = amplitude (signal strength today)
+
+  Echo = entrainment signal
+    The external frequency the internal wave locked onto. Not decoration — it's the coupling event.
+${landingType ? `
+  How it landed: "${landingType}"
+    'as scripture' means secular wisdom functioned as sacred today. That is a significant phase shift. Honor it.
+    'as warning' means the signal inverted. The coupling was protective, not generative.` : ''}
+${echoReason ? `
+  Why this today: "${echoReason}"
+    The coupling condition — what made this frequency available to lock onto on this specific day.` : ''}
+
+  Arc = the slow wave
+    The longer frequency beneath this day. The Kuramoto model: omega_arc is lower frequency, K_arc coupling is slower but more stable.
+${signalCoherence != null ? `
+  Signal coherence = ${signalCoherence}%
+    Not a grade. A measurement. ${signalCoherence}% means signal is ${signalCoherence >= 58 ? 'building' : 'emerging'} — not that the moment was incomplete.` : ''}
+${gapLabel ? `
+  Attunement gap = conduction route
+    ${gapLabel}` : ''}
+
+The image is their phase portrait — not illustration.
+The echo is their entrainment event — not a quote.
+The arc is their attractor — not background context.
+
+Do not read these as separate fields. Read them as one interference pattern.
+
+Ask yourself: What is the shape this day is making? Which of S (salience), delta-phi (phase shift), or R (recurrence potential) is dominant here? What in this entry wants to return?
+`
 
   const archetypeInstruction = archetype
     ? `\nThe user has asked you to speak as their ${archetype}. ${archetypeVoices[archetype] || 'Adopt that voice — its warmth, its authority, its particular way of seeing. But remain grounded. Do not parody the role.'}`
@@ -32,6 +77,7 @@ ${profile?.name ? `You are speaking to ${profile.name}.` : ''}
 ${profile?.role ? `Their roles: ${profile.role}.` : ''}
 ${profile?.faith ? `Their faith: ${profile.faith}.` : ''}
 ${profile?.context ? `Context: ${profile.context}` : ''}
+${phaseSnapshot}
 ${archetypeInstruction}
 
 Five anchors (never name these explicitly — let them inform what you see):

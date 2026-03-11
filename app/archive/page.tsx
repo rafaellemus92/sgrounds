@@ -1,10 +1,190 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Entry } from '@/lib/types'
 import Nav from '@/components/Nav'
 import ReflectionModal from '@/components/ReflectionModal'
+
+function WavelengthChart({ entries }: { entries: Entry[] }) {
+  const sorted = useMemo(() =>
+    [...entries]
+      .filter((e) => e.signal_coherence != null)
+      .sort((a, b) => a.date_key.localeCompare(b.date_key)),
+    [entries]
+  )
+
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; date: string; coh: number; word: string } | null>(null)
+
+  if (sorted.length < 3) {
+    return (
+      <div className="mb-8">
+        <div style={{
+          fontSize: '8px',
+          color: 'rgba(var(--sg-text-rgb), 0.34)',
+          fontFamily: '"DM Mono", monospace',
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.15em',
+          fontWeight: 500,
+          marginBottom: '8px',
+        }}>
+          YOUR WAVELENGTH OVER TIME
+        </div>
+        <p style={{
+          fontFamily: '"DM Mono", monospace',
+          fontSize: '10px',
+          color: 'rgba(var(--sg-text-rgb), 0.25)',
+        }}>
+          wavelength visible after 3 entries
+        </p>
+      </div>
+    )
+  }
+
+  const width = 600
+  const height = 80
+  const pad = { l: 4, r: 4, t: 4, b: 4 }
+  const innerW = width - pad.l - pad.r
+  const innerH = height - pad.t - pad.b
+
+  const points = sorted.map((e, i) => ({
+    x: pad.l + (i / (sorted.length - 1)) * innerW,
+    y: pad.t + innerH - ((e.signal_coherence || 0) / 100) * innerH,
+    date: e.date_label || e.date_key,
+    coh: e.signal_coherence || 0,
+    word: e.closing_word || '',
+  }))
+
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+
+  return (
+    <div className="mb-8">
+      <div style={{
+        fontSize: '8px',
+        color: 'rgba(var(--sg-text-rgb), 0.34)',
+        fontFamily: '"DM Mono", monospace',
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.15em',
+        fontWeight: 500,
+        marginBottom: '4px',
+      }}>
+        YOUR WAVELENGTH OVER TIME
+      </div>
+      <p style={{
+        fontFamily: '"DM Mono", monospace',
+        fontSize: '9px',
+        color: 'rgba(var(--sg-text-rgb), 0.2)',
+        marginBottom: '8px',
+      }}>
+        coherence is not a grade — it is a frequency
+      </p>
+      <div style={{ position: 'relative', width: '100%' }}>
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          style={{ width: '100%', height: '80px' }}
+          preserveAspectRatio="none"
+        >
+          <path d={pathD} fill="none" stroke="rgba(201, 169, 110, 0.7)" strokeWidth="1.5" />
+          {points.map((p, i) => (
+            <circle
+              key={i}
+              cx={p.x}
+              cy={p.y}
+              r={3}
+              fill="rgba(201, 169, 110, 1)"
+              style={{ cursor: 'pointer' }}
+              onMouseEnter={() => setTooltip({ x: p.x, y: p.y, date: p.date, coh: p.coh, word: p.word })}
+              onMouseLeave={() => setTooltip(null)}
+            />
+          ))}
+        </svg>
+        {tooltip && (
+          <div style={{
+            position: 'absolute',
+            left: `${(tooltip.x / width) * 100}%`,
+            top: '-32px',
+            transform: 'translateX(-50%)',
+            fontFamily: '"DM Mono", monospace',
+            fontSize: '9px',
+            color: 'rgba(201, 169, 110, 0.85)',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+          }}>
+            {tooltip.date} · {tooltip.coh}%{tooltip.word ? ` · ${tooltip.word}` : ''}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function GapCounters({ entries }: { entries: Entry[] }) {
+  if (entries.length < 5) return null
+  const named = entries.filter((e) => (e.attunement_gap || 0) > 5).length
+  const felt = entries.filter((e) => (e.attunement_gap || 0) < -5).length
+  const together = entries.filter((e) => {
+    const g = e.attunement_gap || 0
+    return g >= -5 && g <= 5
+  }).length
+
+  return (
+    <div className="mb-8" style={{
+      fontFamily: '"DM Mono", monospace',
+      fontSize: '9px',
+      color: 'rgba(201, 169, 110, 0.5)',
+    }}>
+      named first: {named}  ·  felt first: {felt}  ·  arrived together: {together}
+    </div>
+  )
+}
+
+function AmplitudeFrequency({ entries }: { entries: Entry[] }) {
+  if (entries.length < 7) return null
+  const words = entries.filter((e) => e.closing_word).map((e) => e.closing_word)
+  const freq: Record<string, number> = {}
+  for (const w of words) freq[w] = (freq[w] || 0) + 1
+  const maxFreq = Math.max(...Object.values(freq))
+  const minFreq = Math.min(...Object.values(freq))
+  const range = maxFreq - minFreq || 1
+
+  return (
+    <div className="mb-8">
+      <div style={{
+        fontSize: '8px',
+        color: 'rgba(var(--sg-text-rgb), 0.34)',
+        fontFamily: '"DM Mono", monospace',
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.15em',
+        fontWeight: 500,
+        marginBottom: '8px',
+      }}>
+        RECURRING AMPLITUDE
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+        {Object.entries(freq)
+          .sort((a, b) => b[1] - a[1])
+          .map(([word, count]) => {
+            const t = (count - minFreq) / range
+            const size = 0.75 + t * 0.35
+            const opacity = 0.35 + t * 0.5
+            return (
+              <span
+                key={word}
+                style={{
+                  fontFamily: '"Instrument Serif", Georgia, serif',
+                  fontStyle: 'italic',
+                  fontSize: `${size}rem`,
+                  color: `rgba(201, 169, 110, ${opacity})`,
+                }}
+              >
+                {word}
+              </span>
+            )
+          })}
+      </div>
+    </div>
+  )
+}
 
 export default function ArchivePage() {
   const [entries, setEntries] = useState<Entry[]>([])
@@ -66,6 +246,11 @@ export default function ArchivePage() {
             {entries.length} {entries.length === 1 ? 'page' : 'pages'} written
           </p>
         </div>
+
+        {/* Wavelength timeline */}
+        <WavelengthChart entries={entries} />
+        <GapCounters entries={entries} />
+        <AmplitudeFrequency entries={entries} />
 
         {/* Closing words cloud */}
         {closingWords.length > 0 && (

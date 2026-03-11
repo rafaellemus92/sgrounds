@@ -110,6 +110,15 @@ export function coherenceDescriptor(overall: number): string {
   return 'emerging'
 }
 
+// TODO Phase 3 (30+ entries):
+// PLV calculation across closing word cycles
+// CRQA nonlinear coupling detection
+// Composite MomentScore = S × Δφ × R
+// silence_score / receptivity / noise fields
+// Attractor clustering by closing word + echo type
+// Multi-scale coherence (day/week/month comparison)
+// Fractal/1f analysis across time series
+
 export function passageFontSize(len: number): number {
   if (len < 80) return 20
   if (len > 250) return 13

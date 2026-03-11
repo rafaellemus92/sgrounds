@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { InspoType, Archetype } from '@/lib/types'
+import { InspoType, Archetype, LandingType } from '@/lib/types'
 import { todayKey, todayLabel, currentTime, dailyPrompt, passageFontSize, computeCoherence } from '@/lib/utils'
 import { color, font, fontSize, radius, transition, inputStyle, eyebrowStyle, space } from '@/lib/theme'
 import SignalCoherence from './SignalCoherence'
@@ -16,6 +16,7 @@ import ImageFrame from './ui/ImageFrame'
 import RitualButton from './ui/RitualButton'
 import ReflectiveTextarea from './ui/ReflectiveTextarea'
 import Disclosure from './ui/Disclosure'
+import LissajousBackground from './LissajousBackground'
 
 const CLOSING_SUGGESTIONS = [
   'enduring', 'suspended', 'load-bearing', 'clarifying', 'faithful',
@@ -44,6 +45,8 @@ export default function ThreadPage() {
   const [inspoSong, setInspoSong] = useState('')
   const [inspoPreviewUrl, setInspoPreviewUrl] = useState<string | null>(null)
   const [newsTag, setNewsTag] = useState<string | null>(null)
+  const [echoReason, setEchoReason] = useState('')
+  const [landingType, setLandingType] = useState<LandingType>('')
 
   // Song state
   const [selectedSong, setSelectedSong] = useState<{
@@ -91,6 +94,8 @@ export default function ThreadPage() {
         setInspoSong(data.inspo_song || '')
         setInspoPreviewUrl(data.inspo_preview_url || null)
         setNewsTag(data.news_tag || null)
+        setEchoReason(data.echo_reason || '')
+        setLandingType((data.landing_type as LandingType) || '')
         setReflection(data.reflection || null)
         setDayGift(data.day_gift || null)
         if (data.inspo_song && data.inspo_artist) {
@@ -112,6 +117,14 @@ export default function ThreadPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSaving(false); return }
 
+    const coh = passage
+      ? computeCoherence({ passage, arcNote, picture: pictureUrl, inspoType, inspoText, closingWord })
+      : null
+    const gap = coh ? coh.momentClarity - coh.emotionalUnity : 0
+    const overall = coh
+      ? Math.round((coh.momentClarity + coh.arcContinuity + coh.imageResonance + coh.echoFit + coh.emotionalUnity) / 5)
+      : 0
+
     const entry = {
       user_id: user.id,
       date_key: dk,
@@ -126,6 +139,10 @@ export default function ThreadPage() {
       inspo_song: inspoSong,
       inspo_preview_url: inspoPreviewUrl,
       news_tag: newsTag,
+      attunement_gap: gap,
+      echo_reason: echoReason,
+      landing_type: landingType,
+      signal_coherence: overall,
       updated_at: new Date().toISOString(),
     }
 
@@ -151,7 +168,7 @@ export default function ThreadPage() {
         })
         .catch(() => {})
     }
-  }, [dk, dl, passage, arcNote, closingWord, pictureUrl, inspoType, inspoText, inspoArtist, inspoSong, inspoPreviewUrl, newsTag, dayGift])
+  }, [dk, dl, passage, arcNote, closingWord, pictureUrl, inspoType, inspoText, inspoArtist, inspoSong, inspoPreviewUrl, newsTag, echoReason, landingType, dayGift])
 
   async function handleReflect() {
     if (!passage) return
@@ -191,6 +208,10 @@ export default function ThreadPage() {
           echoType: inspoType || null,
           arcText: arcNote || null,
           imageUrl: pictureUrl || null,
+          echoReason: echoReason || null,
+          landingType: landingType || null,
+          attunementGap: coherence ? coherence.momentClarity - coherence.emotionalUnity : 0,
+          signalCoherence: coherence ? Math.round((coherence.momentClarity + coherence.arcContinuity + coherence.imageResonance + coherence.echoFit + coherence.emotionalUnity) / 5) : 0,
         }),
       })
       const data = await res.json()
@@ -253,6 +274,7 @@ export default function ThreadPage() {
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: `0 ${space[4]} ${space[16]}` }}
       className="sg-thread-page"
     >
+      {!saved && !passage && <LissajousBackground />}
       {/* ─── Header ─── */}
       <header style={{ textAlign: 'center', paddingTop: space[6], paddingBottom: space[10] }}>
         <div style={{ ...eyebrowStyle, marginBottom: space[4] }}>{dl.toUpperCase()}</div>
@@ -463,6 +485,46 @@ export default function ThreadPage() {
               </p>
             )}
           </section>
+
+          {/* D2. WHY THIS TODAY + LANDED AS */}
+          {inspoText && (
+            <section className="animate-slideUp">
+              <SectionLabel label="WHY THIS TODAY" />
+              <input
+                type="text"
+                value={echoReason}
+                onChange={(e) => { setEchoReason(e.target.value); setSaved(false) }}
+                maxLength={100}
+                placeholder="why this signal on this day"
+                aria-label="Why this today"
+                className="sg-textarea"
+                style={{
+                  ...inputStyle,
+                  width: '100%',
+                  borderRadius: radius.md,
+                  padding: '10px 13px',
+                  fontFamily: font.body,
+                  fontSize: fontSize.md,
+                  outline: 'none',
+                  transition: `all ${transition.normal}`,
+                }}
+              />
+
+              <div style={{ marginTop: space[4] }}>
+                <SectionLabel label="LANDED AS" />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: space[1] }}>
+                  {(['as written', 'as metaphor', 'as scripture', 'as warning'] as LandingType[]).map((t) => (
+                    <Pill
+                      key={t}
+                      label={t}
+                      selected={landingType === t}
+                      onClick={() => { setLandingType(landingType === t ? '' : t); setSaved(false) }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* E. THE AND */}
           <section>

@@ -22,6 +22,10 @@ export async function POST(req: NextRequest) {
     echoType,
     arcText,
     imageUrl,
+    echoReason,
+    landingType,
+    attunementGap,
+    signalCoherence,
   }: {
     passage: string
     closingWord: string
@@ -35,6 +39,10 @@ export async function POST(req: NextRequest) {
     echoType: string | null
     arcText: string | null
     imageUrl: string | null
+    echoReason: string | null
+    landingType: string | null
+    attunementGap: number | null
+    signalCoherence: number | null
   } = body
 
   const system = reflectSystemPrompt(
@@ -44,7 +52,11 @@ export async function POST(req: NextRequest) {
     inspoCtx || '',
     newsCtx || '',
     arcCtx || '',
-    archetype
+    archetype,
+    echoReason,
+    landingType,
+    attunementGap,
+    signalCoherence,
   )
 
   // Build richer user prompt with echo and arc context
