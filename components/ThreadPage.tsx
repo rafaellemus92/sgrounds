@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Entry, InspoType, Archetype, DreamState, LucidState, DreamQuality, ContinuityState } from '@/lib/types'
-import { todayKey, todayLabel, currentTime, dailyPrompt, passageFontSize, computeCoherence } from '@/lib/utils'
+import { todayKey, todayLabel, currentTime, passageFontSize, computeCoherence } from '@/lib/utils'
 import SignalCoherence from './SignalCoherence'
 import SongCard from './SongCard'
 import ReflectionModal from './ReflectionModal'
@@ -55,6 +55,34 @@ const CONTINUITY_STATES: { value: ContinuityState; label: string }[] = [
   { value: 'no', label: 'No' },
   { value: 'unclear', label: 'Unclear' },
 ]
+
+function getMoonPhase(date: Date): { emoji: string; label: string } {
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  // Conway's algorithm for approximate lunar phase
+  let r = year % 100
+  r %= 19
+  if (r > 9) r -= 19
+  r = ((r * 11) % 30) + month + day
+  if (month < 3) r += 2
+  r -= year < 2000 ? 4 : 8.3
+  r = Math.floor(r + 0.5) % 30
+  if (r < 0) r += 30
+
+  const phases: [string, string][] = [
+    ['\uD83C\uDF11', 'new moon'],
+    ['\uD83C\uDF12', 'waxing crescent'],
+    ['\uD83C\uDF13', 'first quarter'],
+    ['\uD83C\uDF14', 'waxing gibbous'],
+    ['\uD83C\uDF15', 'full moon'],
+    ['\uD83C\uDF16', 'waning gibbous'],
+    ['\uD83C\uDF17', 'last quarter'],
+    ['\uD83C\uDF18', 'waning crescent'],
+  ]
+  const idx = Math.floor((r / 30) * 8) % 8
+  return { emoji: phases[idx][0], label: phases[idx][1] }
+}
 
 export default function ThreadPage() {
   const dk = todayKey()
@@ -365,14 +393,18 @@ export default function ThreadPage() {
           <span className="font-mono text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
             {time}
           </span>
-          <span className="font-display text-[40px] sm:text-[46px] text-sg-gold animate-breathe leading-none">;</span>
-          <span className="font-display text-[18px] sm:text-[22px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.65)' }}>
-            {dailyPrompt()}
-          </span>
         </div>
-        <p className="font-display text-[12px] italic mt-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
-          and what did it continue?
-        </p>
+        {(() => {
+          const { emoji, label } = getMoonPhase(new Date())
+          return (
+            <div className="mt-3">
+              <div className="text-[28px] leading-none">{emoji}</div>
+              <div className="font-mono text-[9px] mt-1 tracking-wide" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                {label}
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* LAST NIGHT — Morning dream entry */}
