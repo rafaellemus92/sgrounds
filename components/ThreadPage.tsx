@@ -289,15 +289,27 @@ export default function ThreadPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `${user.id}/${dk}.${ext}`
+
     const { error } = await supabase.storage
-      .from('entry-images')
-      .upload(`dev-user/${dk}.jpg`, file, { upsert: true, contentType: file.type })
+      .from('moments')
+      .upload(path, file, { upsert: true, contentType: file.type })
 
     if (!error) {
       const { data: { publicUrl } } = supabase.storage
-        .from('entry-images')
-        .getPublicUrl(`dev-user/${dk}.jpg`)
+        .from('moments')
+        .getPublicUrl(path)
       setPictureUrl(publicUrl)
+      setSaved(false)
+
+      // Persist the image URL to the database immediately
+      await supabase
+        .from('entries')
+        .upsert(
+          { user_id: user.id, date_key: dk, date_label: dl, picture_url: publicUrl, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id,date_key' }
+        )
     }
   }
 
