@@ -18,6 +18,10 @@ export async function POST(req: NextRequest) {
     newsCtx,
     arcCtx,
     archetype,
+    echoText,
+    echoType,
+    arcText,
+    imageUrl,
   }: {
     passage: string
     closingWord: string
@@ -27,6 +31,10 @@ export async function POST(req: NextRequest) {
     newsCtx: string
     arcCtx: string
     archetype: string | null
+    echoText: string | null
+    echoType: string | null
+    arcText: string | null
+    imageUrl: string | null
   } = body
 
   const system = reflectSystemPrompt(
@@ -38,6 +46,38 @@ export async function POST(req: NextRequest) {
     arcCtx || '',
     archetype
   )
+
+  // Build richer user prompt with echo and arc context
+  let userPrompt = passage
+  if (echoText) {
+    userPrompt += `\n\nThey chose this ${echoType || 'echo'}: "${echoText}"`
+  }
+  if (arcText) {
+    userPrompt += `\n\nThe larger arc they named: "${arcText}"`
+  }
+  if (closingWord) {
+    userPrompt += `\n\nClosing word: "${closingWord}"`
+  }
+
+  // Build message content — include image as vision if available
+  let userContent: unknown
+  if (imageUrl) {
+    userContent = [
+      {
+        type: 'image',
+        source: {
+          type: 'url',
+          url: imageUrl,
+        },
+      },
+      {
+        type: 'text',
+        text: `The user chose this image as their semicolon moment. Read it as part of their day — not as a caption but as feeling.\n\n${userPrompt}`,
+      },
+    ]
+  } else {
+    userContent = userPrompt
+  }
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -51,7 +91,7 @@ export async function POST(req: NextRequest) {
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         system,
-        messages: [{ role: 'user', content: passage }],
+        messages: [{ role: 'user', content: userContent }],
       }),
     })
 

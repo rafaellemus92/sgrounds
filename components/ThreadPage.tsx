@@ -183,6 +183,10 @@ export default function ThreadPage() {
           newsCtx,
           arcCtx,
           archetype,
+          echoText: inspoText || null,
+          echoType: inspoType || null,
+          arcText: arcNote || null,
+          imageUrl: pictureUrl || null,
         }),
       })
       const data = await res.json()
