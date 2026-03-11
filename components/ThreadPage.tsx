@@ -24,7 +24,7 @@ const SCRIPTURE_PLACEHOLDERS: Record<string, string> = {
   'Tao Te Ching': 'e.g. Chapter 16 \u2014 Return to the root is called stillness...',
 }
 const ARCHETYPES: Archetype[] = [
-  'spouse', 'parent', 'their child', 'therapist', 'mentor', 'pastor', 'future self', 'inner critic',
+  'spouse', 'parent', 'their child', 'therapist', 'mentor', 'pastor', 'future self', 'inner critic', 'investor', 'clinical witness',
 ]
 
 const DREAM_STATES: { value: DreamState; label: string }[] = [
@@ -901,5 +901,3 @@ export default function ThreadPage() {
     </div>
   )
 }
-// injected by patch
-// injected by patch
