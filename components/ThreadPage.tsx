@@ -223,12 +223,12 @@ export default function ThreadPage() {
 
     const { error } = await supabase.storage
       .from('entry-images')
-      .upload(`${user.id}/${dk}.jpg`, file, { upsert: true, contentType: file.type })
+      .upload(`dev-user/${dk}.jpg`, file, { upsert: true, contentType: file.type })
 
     if (!error) {
       const { data: { publicUrl } } = supabase.storage
         .from('entry-images')
-        .getPublicUrl(`${user.id}/${dk}.jpg`)
+        .getPublicUrl(`dev-user/${dk}.jpg`)
       setPictureUrl(publicUrl)
     }
   }
@@ -293,12 +293,16 @@ export default function ThreadPage() {
               onClick={() => fileRef.current?.click()}
             >
               {pictureUrl ? (
-                <img
-                  src={pictureUrl}
-                  alt="day moment"
-                  className="w-full object-cover"
-                  style={{ maxHeight: 260 }}
-                />
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', overflow: 'hidden', borderRadius: '8px', cursor: 'grab' }}
+                  onMouseDown={(e) => {
+                    const el = e.currentTarget.querySelector('img') as HTMLImageElement
+                    const startY = e.clientY, startTop = parseInt(el.style.top || '50')
+                    const move = (ev: MouseEvent) => { el.style.objectPosition = `center ${Math.max(0, Math.min(100, startTop + (ev.clientY - startY) * 0.3))}%` }
+                    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+                    document.addEventListener('mousemove', move); document.addEventListener('mouseup', up)
+                  }}>
+                  <img src={pictureUrl} alt="day moment" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 50%' }} />
+                </div>
               ) : (
                 <span className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.2)' }}>
                   tap to add image
@@ -570,3 +574,5 @@ export default function ThreadPage() {
     </div>
   )
 }
+// injected by patch
+// injected by patch

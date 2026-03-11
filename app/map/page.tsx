@@ -1,121 +1,298 @@
-import Nav from '@/components/Nav'
-
-const labelStyle = {
-  fontSize: '8px',
-  color: 'rgba(var(--sg-text-rgb), 0.34)',
-  fontFamily: '"DM Mono", monospace',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.15em',
-  fontWeight: 500,
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-10">
-      <div style={labelStyle} className="mb-3">
-        {title}
-      </div>
-      {children}
-    </div>
-  )
-}
-
 export default function MapPage() {
   return (
-    <>
-      <Nav />
-      <div className="max-w-[520px] mx-auto px-4 pb-24 md:pb-8 pt-4">
-        <div className="text-center mb-10">
-          <h1 className="font-display text-[28px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.7)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--sg-bg)' }}>
+      <div className="max-w-[820px] mx-auto px-6 py-16">
+
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h1 className="font-display text-[42px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.85)' }}>
             The Map
           </h1>
-          <p className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>
+          <p className="font-body text-[13px] mt-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
             Anchors for reading the days
           </p>
         </div>
 
-        <Section title="THE CORRECTION">
-          <p className="font-display text-[22px] italic leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.65)' }}>
-            &ldquo;Seek to understand <span className="text-sg-gold">;</span> and then to be understood.&rdquo;
-          </p>
-        </Section>
+        <div className="space-y-16">
 
-        <Section title="THE GROUND">
-          <p className="font-display text-[16px] italic leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.55)' }}>
-            Be completely humble and gentle; be patient, bearing with one another in love.
-          </p>
-          <p className="font-mono text-[10px] mt-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.25)' }}>
-            Ephesians 4:2
-          </p>
-        </Section>
+          {/* 1. THE CORRECTION */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-4"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Correction</label>
+            <p className="font-display text-[28px] italic leading-snug"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.85)' }}>
+              "Seek to understand <span style={{ color: 'var(--sg-gold)' }}>;</span> and then to be understood."
+            </p>
+          </section>
 
-        <Section title="TRUST">
-          <div className="grid grid-cols-2 gap-3">
-            {['Candor', 'Competence', 'Care', 'Control'].map((t) => (
-              <div
-                key={t}
-                className="rounded-[12px] p-4 text-center"
-                style={{
-                  background: 'rgba(var(--sg-text-rgb), 0.02)',
-                  border: '1px solid rgba(var(--sg-text-rgb), 0.06)',
-                }}
-              >
-                <span className="font-display text-[16px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.55)' }}>
-                  {t}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Section>
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
 
-        <Section title="THE TWO ARCS">
-          <div className="grid grid-cols-1 gap-3">
-            <div
-              className="rounded-[12px] p-5"
-              style={{
-                background: 'rgba(var(--sg-text-rgb), 0.02)',
-                border: '1px solid rgba(var(--sg-text-rgb), 0.06)',
-              }}
-            >
-              <div className="font-display text-[18px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.6)' }}>OB</div>
-              <p className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.4)' }}>
-                possibility &middot; allowing &middot; arrival
-              </p>
-            </div>
-            <div
-              className="rounded-[12px] p-5"
-              style={{
-                background: 'rgba(var(--sg-text-rgb), 0.02)',
-                border: '1px solid rgba(var(--sg-text-rgb), 0.06)',
-              }}
-            >
-              <div className="font-display text-[18px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.6)' }}>NICU</div>
-              <p className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.4)' }}>
-                becoming &middot; tools &middot; trajectory
-              </p>
-            </div>
-          </div>
-        </Section>
+          {/* 2. THE GROUND */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-4"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Ground</label>
+            <p className="font-display text-[20px] italic leading-relaxed"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.75)' }}>
+              Be completely humble and gentle; be patient, bearing with one another in love.
+            </p>
+            <p className="font-mono text-[11px] mt-3" style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}>
+              Ephesians 4:2
+            </p>
+          </section>
 
-        <Section title="THE TRINITY">
-          <div className="flex justify-center gap-8">
-            {[
-              { name: 'Pride', sub: 'Identity' },
-              { name: 'Hope', sub: 'Direction' },
-              { name: 'Conviction', sub: 'Action' },
-            ].map((t) => (
-              <div key={t.name} className="text-center">
-                <div className="font-display text-[18px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.6)' }}>
-                  {t.name}
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 3. TRUST */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-6"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>Trust</label>
+            <div className="grid grid-cols-2 gap-3">
+              {['Candor', 'Competence', 'Care', 'Control'].map(word => (
+                <div key={word} className="rounded-[9px] p-5 text-center font-display text-[18px]"
+                  style={{
+                    background: 'rgba(var(--sg-text-rgb), 0.025)',
+                    border: '1px solid rgba(var(--sg-text-rgb), 0.08)',
+                    color: 'rgba(var(--sg-text-rgb), 0.7)'
+                  }}>
+                  {word}
                 </div>
-                <div className="font-mono text-[9px] mt-0.5" style={{ color: 'rgba(201, 169, 110, 0.5)' }}>
-                  = {t.sub}
+              ))}
+            </div>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 4. THE TWO ARCS */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-6"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Two Arcs</label>
+            <div className="space-y-3">
+              {[
+                { label: 'OB', items: 'possibility · allowing · arrival' },
+                { label: 'NICU', items: 'becoming · tools · trajectory' }
+              ].map(arc => (
+                <div key={arc.label} className="rounded-[9px] p-5"
+                  style={{
+                    background: 'rgba(var(--sg-text-rgb), 0.025)',
+                    border: '1px solid rgba(var(--sg-text-rgb), 0.08)'
+                  }}>
+                  <p className="font-mono text-[13px] font-semibold mb-1"
+                    style={{ color: 'rgba(var(--sg-text-rgb), 0.7)' }}>{arc.label}</p>
+                  <p className="font-body text-[13px]"
+                    style={{ color: 'rgba(var(--sg-text-rgb), 0.45)' }}>{arc.items}</p>
                 </div>
+              ))}
+            </div>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 5. THE TRINITY */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-6"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Trinity</label>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              {[
+                { word: 'Pride', sub: '= Identity' },
+                { word: 'Hope', sub: '= Direction' },
+                { word: 'Conviction', sub: '= Action' }
+              ].map(item => (
+                <div key={item.word}>
+                  <p className="font-display text-[20px]"
+                    style={{ color: 'rgba(var(--sg-text-rgb), 0.8)' }}>{item.word}</p>
+                  <p className="font-mono text-[10px] mt-1"
+                    style={{ color: 'var(--sg-gold)' }}>{item.sub}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 6. THE ARC */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-6"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Arc · 2022–2026</label>
+            <div className="space-y-4">
+              {[
+                { year: '2022', theme: 'Grief entered the curriculum.' },
+                { year: '2023', theme: 'Momentum meets limitation — control meets constraint.' },
+                { year: '2024', theme: 'Kairos, not chronos. Love coexists with grief.' },
+                { year: '2025', theme: 'Expansion across thresholds. Presence as therapeutic as intervention.' },
+                { year: '2026', theme: 'Structure replaces overextension. Build rails so love doesn\'t require collapse.' },
+              ].map(item => (
+                <div key={item.year} className="flex gap-5 items-start">
+                  <span className="font-mono text-[11px] pt-[3px] shrink-0"
+                    style={{ color: 'var(--sg-gold)' }}>{item.year}</span>
+                  <p className="font-body text-[14px] leading-relaxed"
+                    style={{ color: 'rgba(var(--sg-text-rgb), 0.65)' }}>{item.theme}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 7. THE THREE GIFTS */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-6"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Three Gifts</label>
+            <div className="space-y-4">
+              {[
+                { gift: 'Gold', meaning: 'Worth beyond outcomes. Dignity that survives Plan A.' },
+                { gift: 'Frankincense', meaning: 'Reverent uncertainty — hope that isn\'t naïve. Leave room for unexpected good.' },
+                { gift: 'Myrrh', meaning: 'Truthful love — presence with numbered days. Not abandonment dressed as honesty.' },
+              ].map(item => (
+                <div key={item.gift} className="rounded-[9px] p-5"
+                  style={{
+                    background: 'rgba(var(--sg-text-rgb), 0.025)',
+                    border: '1px solid rgba(var(--sg-text-rgb), 0.08)'
+                  }}>
+                  <p className="font-display text-[16px] italic mb-1"
+                    style={{ color: 'var(--sg-gold)' }}>{item.gift}</p>
+                  <p className="font-body text-[13px] leading-relaxed"
+                    style={{ color: 'rgba(var(--sg-text-rgb), 0.6)' }}>{item.meaning}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 8. THE VOW */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-4"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Vow</label>
+            <p className="font-display text-[24px] italic leading-snug"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.85)' }}>
+              "Build rails so love doesn't require collapse."
+            </p>
+            <p className="font-body text-[12px] mt-4 leading-relaxed"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.4)' }}>
+              From being a shock absorber → to being an engineer. Structure carries what one person shouldn't carry alone. Compassion without collapse. Presence without abandonment.
+            </p>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 9. THE SPIRAL */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-2"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Spiral</label>
+            <p className="font-body text-[12px] mb-6"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+              One complete cycle — center to departure to tension to mirror to return changed.
+            </p>
+            <div className="space-y-3">
+              {[
+                { chord: 'F♯min11', state: 'I am', freq: 'Beta ~15Hz', note: 'The passage — who you are today' },
+                { chord: 'Bsus2', state: 'I go out', freq: 'Beta ~18Hz', note: 'The image — what you brought outward' },
+                { chord: 'Dmaj7(♯11)', state: 'I see the other', freq: 'High Beta ~25Hz', note: 'What echoed it — the tension of recognition' },
+                { chord: 'E7(no5)', state: 'I hear the question', freq: 'Gamma ~40Hz', note: 'The And — the mirror moment' },
+                { chord: 'F♯(add9)/A', state: 'I return, changed', freq: 'Gamma ~40Hz', note: 'Closing word — integration' },
+              ].map((row, i) => (
+                <div key={i} className="rounded-[9px] p-4 flex gap-4 items-start"
+                  style={{
+                    background: 'rgba(var(--sg-text-rgb), 0.02)',
+                    border: '1px solid rgba(var(--sg-text-rgb), 0.07)'
+                  }}>
+                  <div className="shrink-0 w-[110px]">
+                    <p className="font-mono text-[10px]" style={{ color: 'var(--sg-gold)' }}>{row.chord}</p>
+                    <p className="font-mono text-[9px] mt-1" style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>{row.freq}</p>
+                  </div>
+                  <div>
+                    <p className="font-display text-[14px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.75)' }}>{row.state}</p>
+                    <p className="font-body text-[11px] mt-1" style={{ color: 'rgba(var(--sg-text-rgb), 0.4)' }}>{row.note}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="font-body text-[11px] mt-4 italic"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>
+              The return shares Gamma with the mirror — because you do not return to who you were. Integration and insight are the same frequency.
+            </p>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 10. THE PILLARS */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-2"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Pillars</label>
+            <p className="font-body text-[12px] mb-6"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+              The S-framework. A Weber-Rinne diagnostic for a life lived under pressure.
+            </p>
+            <div className="space-y-2">
+              {[
+                { n: '0.1', s: 'So', meaning: 'The spark, the sung note, the beginning of resonance' },
+                { n: '1', s: 'Sex', meaning: 'Union, creation, duality expressed in harmony' },
+                { n: '2', s: 'Self', meaning: 'Reflection, ego, individuality as a sacred structure' },
+                { n: '3', s: 'Sever', meaning: 'Detachment, thresholds, the necessary ending' },
+                { n: '4', s: 'Since', meaning: 'Time, memory, the logic of narrative and consequence' },
+                { n: '5', s: 'Script', meaning: 'The encoded form — words, DNA, destiny written' },
+                { n: '6', s: 'Silence', meaning: 'Listening, void, the canvas of awareness' },
+                { n: '7', s: 'Sanskrit', meaning: 'Sacred sound, ancient language, infinity' },
+                { n: '8', s: 'Symphony', meaning: 'Collective voice, orchestration, coexistence' },
+                { n: '9', s: 'Sympathize', meaning: 'Empathy, shared feeling, the moral response' },
+                { n: '10', s: 'Sanctum', meaning: 'Sacred interior, refuge, holy space within' },
+                { n: '11', s: 'Soar', meaning: 'Ascension, transcendence, lightness beyond burden' },
+                { n: '12', s: 'Spiral', meaning: 'Evolution, recursion, the shape of time and return' },
+                { n: '13', s: 'Stayed', meaning: 'Not arrival. Not mastery. The act of remaining — through rupture, through what almost broke you. The guardrail that outlasts you is built from every moment you chose not to leave.' },
+              ].map(item => (
+                <div key={item.n} className="flex gap-4 items-start py-2"
+                  style={{ borderBottom: '1px solid rgba(var(--sg-text-rgb), 0.05)' }}>
+                  <span className="font-mono text-[10px] w-8 shrink-0 pt-[2px]"
+                    style={{ color: item.n === '13' ? 'var(--sg-gold)' : 'rgba(var(--sg-text-rgb), 0.28)' }}>
+                    {item.n}
+                  </span>
+                  <span className="font-display text-[15px] italic w-24 shrink-0"
+                    style={{ color: item.n === '13' ? 'var(--sg-gold)' : 'rgba(var(--sg-text-rgb), 0.75)' }}>
+                    {item.s}
+                  </span>
+                  <span className="font-body text-[12px] leading-relaxed"
+                    style={{ color: item.n === '13' ? 'rgba(var(--sg-text-rgb), 0.65)' : 'rgba(var(--sg-text-rgb), 0.42)' }}>
+                    {item.meaning}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 11. THE ALCHEMIST */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-4"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Alchemist</label>
+            <div className="space-y-3">
+              <p className="font-body text-[14px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.55)' }}>
+                The strategist optimizes outcomes.
+              </p>
+              <p className="font-display text-[18px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.85)' }}>
+                The alchemist transforms: pressure into presence, complexity into coherence, grief into meaning.
+              </p>
+              <div className="mt-4 space-y-2">
+                {[
+                  'Becoming: "I\'m learning to save lives."',
+                  'Being: "I\'m the one responsible."',
+                  'Integration: "I build the structures that let this work stay human — for families and for me."'
+                ].map((line, i) => (
+                  <p key={i} className="font-body text-[13px]"
+                    style={{ color: 'rgba(var(--sg-text-rgb), 0.5)' }}>{line}</p>
+                ))}
               </div>
-            ))}
+            </div>
+          </section>
+
+          {/* Footer */}
+          <div className="text-center pt-8 pb-4">
+            <span className="font-display text-[32px] animate-breathe inline-block"
+              style={{ color: 'var(--sg-gold)' }}>s;</span>
           </div>
-        </Section>
+
+        </div>
       </div>
-    </>
+    </div>
   )
 }
