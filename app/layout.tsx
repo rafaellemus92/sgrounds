@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: 's; — sgrounds',
   description: 'Each day is a semicolon.',
   manifest: '/manifest.json',
+  icons: [
+    { url: '/logo.png', sizes: '192x192', type: 'image/png' },
+  ],
   other: {
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
