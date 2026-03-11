@@ -42,6 +42,6 @@ export interface DreamEntry {
 }
 
 export const DREAM_QUALITIES = ['void', 'threat', 'flight', 'presence', 'resolution', 'light'] as const
-export const LUCID_OPTIONS = ['yes', 'partially', 'no'] as const
+export const LUCID_OPTIONS = ['yes', 'partial', 'no'] as const
 export const DREAMED_OPTIONS = ['yes', 'fragments', 'no'] as const
 export const CONTINUITY_OPTIONS = ['yes', 'unclear', 'no'] as const

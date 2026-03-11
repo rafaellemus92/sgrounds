@@ -39,11 +39,10 @@ export default function AuthPage() {
             each day is a semicolon
           </p>
         </div>
-
         {sent ? (
           <div className="text-center animate-slideUp">
             <p className="font-display text-[18px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.7)' }}>
-              Check your email for a sign-in link.
+              Check your email — click the link within 60 seconds.
             </p>
           </div>
         ) : (

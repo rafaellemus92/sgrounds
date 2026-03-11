@@ -8,18 +8,9 @@ export async function POST(req: NextRequest) {
 
   const { dataPoints } = await req.json()
 
-  const prompt = `You are analyzing paired data from a personal longitudinal study.
-Each data point pairs a waking coherence score (0-100) with a dream quality score (0-7) from the following night.
-
-Data: ${JSON.stringify(dataPoints)}
-
-In 2-3 sentences, describe what pattern if any is emerging.
-Reference Lissajous curve theory specifically: does the scatter suggest a circle (1:1 coupling), figure-eight (2:1), trefoil (3:2), or no discernible pattern?
-
-Also note: does closing word valence appear to predict dream quality independently of coherence score?
-
-Be precise. Be honest if there is insufficient data.
-Do not use the word journey. Do not be encouraging if the data shows no pattern — that is a valid scientific finding.`
+  if (!dataPoints || dataPoints.length < 7) {
+    return NextResponse.json({ pattern: '' })
+  }
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -31,15 +22,19 @@ Do not use the word journey. Do not be encouraging if the data shows no pattern 
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 400,
-        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 200,
+        system: 'Given these paired data points of [waking coherence score, dream quality score] across consecutive days, describe in 2-3 sentences what pattern if any is emerging. Note whether the relationship looks like a circle (1:1 coupling), figure-eight (2:1), trefoil (3:2), or no pattern. Be specific and honest if there is not enough data yet. Do not use the word "journey". Plain text only.',
+        messages: [{
+          role: 'user',
+          content: `Data points (chronological): ${JSON.stringify(dataPoints.slice(-30))}`,
+        }],
       }),
     })
 
     const data = await res.json()
-    const text = data.content?.[0]?.text || ''
-    return NextResponse.json({ pattern: text })
+    const pattern = data.content?.[0]?.text || ''
+    return NextResponse.json({ pattern })
   } catch {
-    return NextResponse.json({ pattern: 'Insufficient data for pattern analysis.' })
+    return NextResponse.json({ pattern: '' })
   }
 }
