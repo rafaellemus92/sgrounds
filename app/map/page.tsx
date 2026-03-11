@@ -50,20 +50,41 @@ const ARC_YEARS = [
   { year: '2026', text: 'Structure replaces overextension. Build rails so love does not require collapse.' },
 ]
 
-// Shared styles — deepened contrast per design review
-const label = {
-  fontSize: '8px',
-  color: 'rgba(var(--sg-text-rgb), 0.40)',
+// Section label style — deepened contrast
+const sectionLabel = {
+  fontSize: '9px',
+  color: 'rgba(var(--sg-text-rgb), 0.50)',
   fontFamily: '"DM Mono", monospace',
   textTransform: 'uppercase' as const,
   letterSpacing: '0.15em',
   fontWeight: 500,
 }
 
-function Section({ id, title, children, className = '' }: { id: string; title: string; children: React.ReactNode; className?: string }) {
+// --- Section type 1: Aphorism / Axiom block ---
+function AphorismSection({ id, title, children, className = '' }: { id: string; title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section id={id} className={`mb-10 scroll-mt-20 ${className}`}>
-      <div style={label} className="mb-2.5">{title}</div>
+    <section id={id} className={`mb-12 scroll-mt-20 ${className}`}>
+      <div style={sectionLabel} className="mb-3">{title}</div>
+      {children}
+    </section>
+  )
+}
+
+// --- Section type 2: Editorial / Rows ---
+function EditorialSection({ id, title, children, className = '' }: { id: string; title: string; children: React.ReactNode; className?: string }) {
+  return (
+    <section id={id} className={`mb-12 scroll-mt-20 ${className}`}>
+      <div style={sectionLabel} className="mb-4">{title}</div>
+      {children}
+    </section>
+  )
+}
+
+// --- Section type 3: Contained card block ---
+function CardSection({ id, title, children, className = '' }: { id: string; title: string; children: React.ReactNode; className?: string }) {
+  return (
+    <section id={id} className={`mb-12 scroll-mt-20 ${className}`}>
+      <div style={sectionLabel} className="mb-4">{title}</div>
       {children}
     </section>
   )
@@ -77,9 +98,9 @@ function SidebarNav({ active }: { active: string }) {
           <a
             key={s.id}
             href={`#${s.id}`}
-            className="block font-mono text-[8px] text-right transition-colors"
+            className="block font-mono text-[9px] text-right transition-colors"
             style={{
-              color: active === s.id ? 'rgba(201, 169, 110, 0.75)' : 'rgba(var(--sg-text-rgb), 0.18)',
+              color: active === s.id ? 'rgba(201, 169, 110, 0.8)' : 'rgba(var(--sg-text-rgb), 0.28)',
               letterSpacing: '0.08em',
             }}
           >
@@ -116,89 +137,89 @@ export default function MapPage() {
     <>
       <Nav />
       <SidebarNav active={activeSection} />
-      <div className="max-w-[520px] mx-auto px-4 pb-24 md:pb-8 pt-4">
-        <div className="text-center mb-10">
-          <h1 className="font-display text-[28px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.78)' }}>
+      <div className="max-w-[540px] mx-auto px-5 sm:px-6 pb-28 md:pb-10 pt-4">
+        <div className="text-center mb-12">
+          <h1 className="font-display text-[28px] sm:text-[32px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.88)' }}>
             The Map
           </h1>
-          <p className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.36)' }}>
+          <p className="font-body text-[13px] mt-1" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
             Anchors for reading the days
           </p>
         </div>
 
-        {/* 1. THE CORRECTION — Aphorism block */}
-        <Section id="correction" title="THE CORRECTION">
-          <p className="font-display text-[31px] italic leading-snug" style={{ color: 'rgba(var(--sg-text-rgb), 0.88)' }}>
+        {/* 1. THE CORRECTION — Governing axiom */}
+        <AphorismSection id="correction" title="THE CORRECTION">
+          <p className="font-display text-[26px] sm:text-[31px] italic leading-snug" style={{ color: 'rgba(var(--sg-text-rgb), 0.90)' }}>
             &ldquo;Seek to understand <span className="text-sg-gold">;</span> and then to be understood.&rdquo;
           </p>
-        </Section>
+        </AphorismSection>
 
-        {/* 2. THE GROUND — Aphorism block */}
-        <Section id="ground" title="THE GROUND">
-          <p className="font-display text-[20px] italic leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.75)' }}>
+        {/* 2. THE GROUND — Grounding verse */}
+        <AphorismSection id="ground" title="THE GROUND">
+          <p className="font-display text-[18px] sm:text-[20px] italic leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.80)' }}>
             Be completely humble and gentle; be patient, bearing with one another in love.
           </p>
-          <p className="font-mono text-[11px] mt-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.40)' }}>
+          <p className="font-mono text-[11px] mt-2.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
             Ephesians 4:2
           </p>
-        </Section>
+        </AphorismSection>
 
         {/* 3. TRUST — 2x2 card grid */}
-        <Section id="trust" title="TRUST">
+        <CardSection id="trust" title="TRUST">
           <div className="grid grid-cols-2 gap-2.5">
             {['Candor', 'Competence', 'Care', 'Composure'].map((t) => (
               <div
                 key={t}
-                className="rounded-[12px] p-4 text-center"
+                className="rounded-[12px] p-4 sm:p-5 text-center"
                 style={{
-                  background: 'rgba(var(--sg-text-rgb), 0.024)',
-                  border: '1px solid rgba(var(--sg-text-rgb), 0.07)',
+                  background: 'rgba(var(--sg-text-rgb), 0.025)',
+                  border: '1px solid rgba(var(--sg-text-rgb), 0.08)',
                 }}
               >
-                <span className="font-display text-[18px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.72)' }}>
+                <span className="font-display text-[17px] sm:text-[18px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.78)' }}>
                   {t}
                 </span>
               </div>
             ))}
           </div>
-        </Section>
+        </CardSection>
 
         {/* 4. THE TWO ARCS — Editorial split rows */}
-        <Section id="arcs" title="THE TWO ARCS">
+        <EditorialSection id="arcs" title="THE TWO ARCS">
           <div className="py-1">
             <div className="flex items-baseline gap-4 py-3">
-              <span className="font-mono text-[13px] font-medium shrink-0 w-[42px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.70)' }}>
+              <span className="font-mono text-[13px] font-medium shrink-0 w-[42px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.75)' }}>
                 OB
               </span>
-              <span className="font-body text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.45)' }}>
+              <span className="font-body text-[13px] sm:text-[14px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.58)' }}>
                 possibility &middot; allowing &middot; arrival
               </span>
             </div>
             <div
               className="border-t"
-              style={{ borderColor: 'rgba(var(--sg-text-rgb), 0.06)' }}
+              style={{ borderColor: 'rgba(var(--sg-text-rgb), 0.07)' }}
             />
             <div className="flex items-baseline gap-4 py-3">
-              <span className="font-mono text-[13px] font-medium shrink-0 w-[42px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.70)' }}>
+              <span className="font-mono text-[13px] font-medium shrink-0 w-[42px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.75)' }}>
                 NICU
               </span>
-              <span className="font-body text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.45)' }}>
+              <span className="font-body text-[13px] sm:text-[14px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.58)' }}>
                 becoming &middot; tools &middot; trajectory
               </span>
             </div>
           </div>
-        </Section>
+        </EditorialSection>
 
         {/* 5. THE TRINITY — 3-column horizontal */}
-        <Section id="trinity" title="THE TRINITY">
-          <div className="flex justify-center gap-10">
+        <EditorialSection id="trinity" title="THE TRINITY">
+          <div className="flex justify-center gap-8 sm:gap-10">
             {[
               { name: 'Pride', sub: 'Identity' },
               { name: 'Hope', sub: 'Direction' },
               { name: 'Conviction', sub: 'Action' },
             ].map((t) => (
               <div key={t.name} className="text-center">
-                <div className="font-display text-[20px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.80)' }}>
+                <div className="font-display text-[18px] sm:text-[20px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.85)' }}>
                   {t.name}
                 </div>
                 <div className="font-mono text-[10px] mt-0.5" style={{ color: '#c9a96e' }}>
@@ -207,27 +228,27 @@ export default function MapPage() {
               </div>
             ))}
           </div>
-        </Section>
+        </EditorialSection>
 
-        {/* 6. THE ARC — Editorial list */}
-        <Section id="arc" title="THE ARC (2022–2026)">
-          <div className="space-y-2.5">
+        {/* 6. THE ARC — Biographical editorial list */}
+        <EditorialSection id="arc" title="THE ARC (2022\u20132026)">
+          <div className="space-y-3">
             {ARC_YEARS.map((a) => (
               <div key={a.year} className="flex gap-4 items-baseline">
                 <span className="font-mono text-[11px] shrink-0 w-[38px]" style={{ color: '#c9a96e' }}>
                   {a.year}
                 </span>
-                <p className="font-body text-[14px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.65)' }}>
+                <p className="font-body text-[14px] sm:text-[15px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.72)' }}>
                   {a.text}
                 </p>
               </div>
             ))}
           </div>
-        </Section>
+        </EditorialSection>
 
-        {/* 7. THE THREE GIFTS — Stacked cards */}
-        <Section id="gifts" title="THE THREE GIFTS">
-          <div className="space-y-2.5">
+        {/* 7. THE THREE GIFTS — Contained card blocks */}
+        <CardSection id="gifts" title="THE THREE GIFTS">
+          <div className="space-y-3">
             {[
               { name: 'Gold', text: 'Worth beyond outcomes. Dignity that survives Plan A.' },
               { name: 'Frankincense', text: 'Reverent uncertainty \u2014 hope that is not na\u00EFve. Leave room for unexpected good.' },
@@ -235,109 +256,142 @@ export default function MapPage() {
             ].map((g) => (
               <div
                 key={g.name}
-                className="rounded-[12px] p-4"
+                className="rounded-[12px] p-4 sm:p-5"
                 style={{
-                  background: 'rgba(var(--sg-text-rgb), 0.024)',
-                  border: '1px solid rgba(var(--sg-text-rgb), 0.07)',
+                  background: 'rgba(var(--sg-text-rgb), 0.025)',
+                  border: '1px solid rgba(var(--sg-text-rgb), 0.08)',
                 }}
               >
-                <div className="font-display text-[16px] italic mb-1" style={{ color: 'rgba(201, 169, 110, 0.85)' }}>
+                <div className="font-display text-[16px] sm:text-[17px] italic mb-1.5" style={{ color: 'rgba(201, 169, 110, 0.88)' }}>
                   {g.name}
                 </div>
-                <p className="font-body text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.62)' }}>
+                <p className="font-body text-[13px] sm:text-[14px] leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.70)' }}>
                   {g.text}
                 </p>
               </div>
             ))}
           </div>
-        </Section>
+        </CardSection>
 
         {/* 8. THE VOW — Liturgical centerpiece */}
-        <Section id="vow" title="THE VOW" className="mt-14 mb-14">
-          <p
-            className="font-display text-[27px] italic leading-snug mb-6"
-            style={{ color: 'rgba(var(--sg-text-rgb), 0.88)', maxWidth: 520 }}
+        <section id="vow" className="scroll-mt-20 mt-16 mb-16">
+          <div style={sectionLabel} className="mb-4">THE VOW</div>
+          <div
+            className="rounded-[16px] py-8 sm:py-10 px-6 sm:px-8"
+            style={{
+              background: 'rgba(201, 169, 110, 0.04)',
+              border: '1px solid rgba(201, 169, 110, 0.15)',
+            }}
           >
-            &ldquo;Build rails so love does not require collapse.&rdquo;
-          </p>
-          <div className="space-y-1.5">
-            <p className="font-body text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.50)' }}>
-              From shock absorber to engineer.
+            <p
+              className="font-display text-[24px] sm:text-[28px] italic leading-snug mb-6"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.92)' }}
+            >
+              &ldquo;Build rails so love does not require collapse.&rdquo;
             </p>
-            <p className="font-body text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.50)' }}>
-              Structure carries what one person should not carry alone.
-            </p>
-            <p className="font-body text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.50)' }}>
-              Presence without abandonment.
-            </p>
+            <div
+              className="border-t mb-5"
+              style={{ borderColor: 'rgba(201, 169, 110, 0.12)' }}
+            />
+            <div className="space-y-2">
+              <p className="font-body text-[13px] sm:text-[14px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.62)' }}>
+                From shock absorber to engineer.
+              </p>
+              <p className="font-body text-[13px] sm:text-[14px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.62)' }}>
+                Structure carries what one person should not carry alone.
+              </p>
+              <p className="font-body text-[13px] sm:text-[14px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.62)' }}>
+                Presence without abandonment.
+              </p>
+            </div>
           </div>
-        </Section>
+        </section>
 
-        {/* 9. THE SPIRAL — Stacked cards */}
-        <Section id="spiral" title="THE SPIRAL">
-          <p className="font-body text-[11px] mb-3" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+        {/* 9. THE SPIRAL — Editorial rows */}
+        <EditorialSection id="spiral" title="THE SPIRAL">
+          <p className="font-body text-[12px] mb-4" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
             One complete cycle &mdash; center to departure to tension to mirror to return changed.
           </p>
           <div className="space-y-1.5">
             {SPIRAL_ROWS.map((row) => (
               <div
                 key={row.chord}
-                className="rounded-[10px] px-3.5 py-2.5 flex items-baseline gap-3"
+                className="rounded-[10px] px-3 sm:px-3.5 py-2.5 flex items-baseline gap-2 sm:gap-3"
                 style={{
-                  background: 'rgba(var(--sg-text-rgb), 0.024)',
-                  border: '1px solid rgba(var(--sg-text-rgb), 0.06)',
+                  background: 'rgba(var(--sg-text-rgb), 0.025)',
+                  border: '1px solid rgba(var(--sg-text-rgb), 0.07)',
                 }}
               >
-                <span className="font-mono text-[11px] shrink-0 w-[88px]" style={{ color: 'rgba(201, 169, 110, 0.78)' }}>
+                <span className="font-mono text-[10px] sm:text-[11px] shrink-0 w-[70px] sm:w-[88px]" style={{ color: 'rgba(201, 169, 110, 0.82)' }}>
                   {row.chord}
                 </span>
-                <span className="font-display text-[14px] italic flex-1" style={{ color: 'rgba(var(--sg-text-rgb), 0.78)' }}>
+                <span className="font-display text-[13px] sm:text-[14px] italic flex-1" style={{ color: 'rgba(var(--sg-text-rgb), 0.82)' }}>
                   {row.state}
                 </span>
-                <span className="font-mono text-[10px] shrink-0" style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}>
+                <span className="font-mono text-[9px] sm:text-[10px] shrink-0 hidden sm:inline" style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}>
                   {row.freq}
                 </span>
-                <span className="font-body text-[11px] shrink-0 hidden sm:inline" style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}>
+                <span className="font-body text-[11px] shrink-0 hidden md:inline" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
                   {row.field}
                 </span>
               </div>
             ))}
           </div>
-          <p className="font-display italic text-[12px] mt-4" style={{ color: 'rgba(var(--sg-text-rgb), 0.30)' }}>
+          <p className="font-display italic text-[12px] mt-4" style={{ color: 'rgba(var(--sg-text-rgb), 0.40)' }}>
             The return shares Gamma with the mirror &mdash; because you do not return to who you were. Insight and integration are the same frequency.
           </p>
-        </Section>
+        </EditorialSection>
 
-        {/* 10. THE PILLARS — Doctrine list */}
-        <Section id="pillars" title="THE PILLARS">
-          <p className="font-mono text-[9px] mb-5" style={{ color: 'rgba(var(--sg-text-rgb), 0.28)' }}>
+        {/* 10. THE PILLARS — Doctrine list with culmination at 13 */}
+        <EditorialSection id="pillars" title="THE PILLARS">
+          <p className="font-mono text-[10px] mb-5" style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}>
             A Weber-Rinne diagnostic for a life lived under pressure.
           </p>
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {PILLARS.map((p) => {
               const isLast = p.num === '13'
+              if (isLast) {
+                return (
+                  <div
+                    key={p.num}
+                    className="mt-8 pt-6 rounded-[14px] px-5 sm:px-6 pb-6"
+                    style={{
+                      background: 'rgba(201, 169, 110, 0.04)',
+                      border: '1px solid rgba(201, 169, 110, 0.15)',
+                    }}
+                  >
+                    <div className="flex items-baseline gap-3 mb-2">
+                      <span className="font-mono text-[14px] font-medium" style={{ color: '#c9a96e' }}>
+                        {p.num}
+                      </span>
+                      <span className="font-display text-[22px] sm:text-[24px] italic" style={{ color: '#c9a96e' }}>
+                        {p.name}
+                      </span>
+                    </div>
+                    <p className="font-body text-[14px] sm:text-[15px] leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.75)' }}>
+                      {p.desc}
+                    </p>
+                  </div>
+                )
+              }
               return (
-                <div
-                  key={p.num}
-                  className="flex gap-3"
-                  style={isLast ? { marginTop: '2rem' } : undefined}
-                >
+                <div key={p.num} className="flex gap-3">
                   <span
                     className="font-mono text-[10px] shrink-0 w-[28px] text-right pt-0.5"
-                    style={{ color: isLast ? '#c9a96e' : 'rgba(var(--sg-text-rgb), 0.30)' }}
+                    style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}
                   >
                     {p.num}
                   </span>
                   <div>
                     <span
-                      className="font-display text-[15px] italic"
-                      style={{ color: isLast ? '#c9a96e' : 'rgba(var(--sg-text-rgb), 0.58)' }}
+                      className="font-display text-[15px] sm:text-[16px] italic"
+                      style={{ color: 'rgba(var(--sg-text-rgb), 0.68)' }}
                     >
                       {p.name}
                     </span>
                     <p
-                      className="font-body text-[12px] mt-0.5"
-                      style={{ color: isLast ? 'rgba(var(--sg-text-rgb), 0.65)' : 'rgba(var(--sg-text-rgb), 0.44)' }}
+                      className="font-body text-[12px] sm:text-[13px] mt-0.5"
+                      style={{ color: 'rgba(var(--sg-text-rgb), 0.52)' }}
                     >
                       {p.desc}
                     </p>
@@ -346,36 +400,43 @@ export default function MapPage() {
               )
             })}
           </div>
-        </Section>
+        </EditorialSection>
 
-        {/* 11. THE ALCHEMIST — Editorial coda */}
-        <Section id="alchemist" title="THE ALCHEMIST">
-          <p className="font-body text-[14px] mb-3" style={{ color: 'rgba(var(--sg-text-rgb), 0.55)' }}>
+        {/* 11. THE ALCHEMIST — Coda */}
+        <section id="alchemist" className="scroll-mt-20 mb-12">
+          <div style={sectionLabel} className="mb-4">THE ALCHEMIST</div>
+          <p className="font-body text-[14px] sm:text-[15px] mb-4" style={{ color: 'rgba(var(--sg-text-rgb), 0.60)' }}>
             The strategist optimizes outcomes.
           </p>
-          <p className="font-display text-[21px] italic leading-snug mb-6" style={{ color: 'rgba(var(--sg-text-rgb), 0.85)' }}>
+          <p className="font-display text-[22px] sm:text-[26px] italic leading-snug mb-8" style={{ color: 'rgba(var(--sg-text-rgb), 0.90)' }}>
             The alchemist transforms: pressure into presence, complexity into coherence, grief into meaning.
           </p>
-          <div className="space-y-3">
+          <div
+            className="rounded-[14px] p-5 sm:p-6 space-y-4"
+            style={{
+              background: 'rgba(var(--sg-text-rgb), 0.025)',
+              border: '1px solid rgba(var(--sg-text-rgb), 0.08)',
+            }}
+          >
             {[
               { label: 'Becoming', text: 'I am learning to save lives.' },
               { label: 'Being', text: 'I am the one responsible.' },
               { label: 'Integration', text: 'I build the structures that let this work stay human \u2014 for families and for me.' },
             ].map((a) => (
               <div key={a.label} className="flex gap-3 items-baseline">
-                <span className="font-mono text-[9px] uppercase tracking-[0.1em] shrink-0 w-[80px]" style={{ color: 'rgba(201, 169, 110, 0.65)' }}>
+                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.1em] shrink-0 w-[72px] sm:w-[80px]" style={{ color: 'rgba(201, 169, 110, 0.72)' }}>
                   {a.label}
                 </span>
-                <p className="font-display italic text-[15px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.70)' }}>
+                <p className="font-display italic text-[14px] sm:text-[15px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.78)' }}>
                   &ldquo;{a.text}&rdquo;
                 </p>
               </div>
             ))}
           </div>
-        </Section>
+        </section>
 
         {/* Footer semicolon */}
-        <div className="text-center py-8">
+        <div className="text-center py-10">
           <span className="font-display text-[32px] text-sg-gold animate-breathe inline-block">;</span>
         </div>
       </div>

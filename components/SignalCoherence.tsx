@@ -49,12 +49,12 @@ export default function SignalCoherence({ coherence }: { coherence: Coherence })
       <div className="flex items-center justify-between mb-1">
         <span
           className="font-mono text-[8px] uppercase tracking-[0.15em]"
-          style={{ color: 'rgba(var(--sg-text-rgb), 0.34)' }}
+          style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}
         >
           Signal Coherence
         </span>
       </div>
-      <p className="font-body text-[10px] mb-3" style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>
+      <p className="font-body text-[10px] mb-3" style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}>
         Higher does not mean better. It means clearer.
       </p>
 
@@ -62,7 +62,7 @@ export default function SignalCoherence({ coherence }: { coherence: Coherence })
         <span className="font-mono text-[28px] font-medium cursor-default" style={{ color: 'rgba(var(--sg-text-rgb), 0.7)' }}>
           {overall}%
         </span>
-        <span className="font-mono text-[11px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}>
+        <span className="font-mono text-[11px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.45)' }}>
           {coherenceDescriptor(overall)}
         </span>
         <div
@@ -108,14 +108,14 @@ export default function SignalCoherence({ coherence }: { coherence: Coherence })
                 </div>
                 <span
                   className="font-mono text-[9px] w-[24px] text-right"
-                  style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}
                 >
                   {val}
                 </span>
               </button>
               {isExpanded && (
                 <div className="ml-[100px] pl-3 mt-1 mb-2 animate-slideUp">
-                  <p className="font-body text-[10px] leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}>
+                  <p className="font-body text-[10px] leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.45)' }}>
                     {guidance}
                   </p>
                 </div>
@@ -125,7 +125,7 @@ export default function SignalCoherence({ coherence }: { coherence: Coherence })
         })}
       </div>
 
-      <p className="font-display italic text-[10px] mt-4" style={{ color: 'rgba(var(--sg-text-rgb), 0.2)' }}>
+      <p className="font-display italic text-[10px] mt-4" style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}>
         Signal Coherence is not a grade. It is a mirror.
       </p>
     </div>

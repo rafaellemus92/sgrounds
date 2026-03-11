@@ -83,7 +83,7 @@ export default function ReflectionModal({ reflection, weave, onClose }: Reflecti
               <div key={label} className="mb-6">
                 <p
                   className="font-mono text-[13px] italic"
-                  style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.50)' }}
                 >
                   {content}
                 </p>
@@ -95,7 +95,7 @@ export default function ReflectionModal({ reflection, weave, onClose }: Reflecti
               <div key={label} className="mb-6">
                 <p
                   className="font-display text-[18px] leading-relaxed"
-                  style={{ color: 'rgba(var(--sg-text-rgb), 0.78)' }}
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.85)' }}
                 >
                   {content}
                 </p>
@@ -119,7 +119,7 @@ export default function ReflectionModal({ reflection, weave, onClose }: Reflecti
               <div key={label} className="mb-6">
                 <p
                   className="font-display text-[13px] italic"
-                  style={{ color: 'rgba(var(--sg-text-rgb), 0.4)' }}
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.50)' }}
                 >
                   {content}
                 </p>
@@ -133,7 +133,7 @@ export default function ReflectionModal({ reflection, weave, onClose }: Reflecti
           <details className="mt-4">
             <summary
               className="font-mono text-[9px] uppercase tracking-[0.15em] cursor-pointer mb-3"
-              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}
             >
               The Weave
             </summary>
@@ -148,7 +148,7 @@ export default function ReflectionModal({ reflection, weave, onClose }: Reflecti
                   </span>
                   <p
                     className="font-body text-[13px] mt-1"
-                    style={{ color: 'rgba(var(--sg-text-rgb), 0.55)' }}
+                    style={{ color: 'rgba(var(--sg-text-rgb), 0.65)' }}
                   >
                     {content}
                   </p>
@@ -160,7 +160,7 @@ export default function ReflectionModal({ reflection, weave, onClose }: Reflecti
 
         <p
           className="text-center font-mono text-[9px] mt-6 cursor-pointer"
-          style={{ color: 'rgba(var(--sg-text-rgb), 0.2)' }}
+          style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}
           onClick={onClose}
         >
           tap anywhere to close
