@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Entry, InspoType, Archetype } from '@/lib/types'
+import { Entry, InspoType, Archetype, DreamState, LucidState, DreamQuality, ContinuityState } from '@/lib/types'
 import { todayKey, todayLabel, currentTime, dailyPrompt, passageFontSize, computeCoherence } from '@/lib/utils'
 import SignalCoherence from './SignalCoherence'
 import SongCard from './SongCard'
@@ -17,8 +17,41 @@ const CLOSING_SUGGESTIONS = [
 
 const INSPO_TYPES: InspoType[] = ['lyric', 'scripture', 'film', 'poem', 'news', 'quote']
 const NEWS_TAGS = ['world', 'local', 'personal'] as const
+const SCRIPTURE_TRADITIONS = ['Bible', 'Torah', 'Quran', 'Vedas', 'Egyptian Book of the Dead', 'Tao Te Ching', 'Upanishads', 'Bhagavad Gita'] as const
+const SCRIPTURE_PLACEHOLDERS: Record<string, string> = {
+  'Bible': 'e.g. Ephesians 4:2 \u2014 Be completely humble and gentle...',
+  'Quran': 'e.g. Surah 2:286 \u2014 God does not burden a soul beyond that it can bear...',
+  'Tao Te Ching': 'e.g. Chapter 16 \u2014 Return to the root is called stillness...',
+}
 const ARCHETYPES: Archetype[] = [
   'spouse', 'parent', 'their child', 'therapist', 'mentor', 'pastor', 'future self', 'inner critic',
+]
+
+const DREAM_STATES: { value: DreamState; label: string }[] = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' },
+  { value: 'fragments', label: 'Fragments only' },
+]
+
+const LUCID_STATES: { value: LucidState; label: string }[] = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'partial', label: 'Partially' },
+  { value: 'no', label: 'No' },
+]
+
+const DREAM_QUALITIES: { value: DreamQuality; label: string }[] = [
+  { value: 'threat', label: 'Threat' },
+  { value: 'resolution', label: 'Resolution' },
+  { value: 'flight', label: 'Flight' },
+  { value: 'presence', label: 'Presence' },
+  { value: 'void', label: 'Void' },
+  { value: 'light', label: 'Light' },
+]
+
+const CONTINUITY_STATES: { value: ContinuityState; label: string }[] = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' },
+  { value: 'unclear', label: 'Unclear' },
 ]
 
 export default function ThreadPage() {
@@ -56,8 +89,24 @@ export default function ThreadPage() {
   const [saving, setSaving] = useState(false)
   const [showSignal, setShowSignal] = useState(false)
   const [showMelody, setShowMelody] = useState(false)
+  const [imgPosition, setImgPosition] = useState(50)
+  const [inspoTradition, setInspoTradition] = useState<string | null>(null)
+
+  // Dream state
+  const [dreamOpen, setDreamOpen] = useState(false)
+  const [hasDreamEntry, setHasDreamEntry] = useState(false)
+  const [dreamed, setDreamed] = useState<DreamState | null>(null)
+  const [lucid, setLucid] = useState<LucidState | null>(null)
+  const [dreamQuality, setDreamQuality] = useState<DreamQuality | null>(null)
+  const [closingImage, setClosingImage] = useState('')
+  const [continuity, setContinuity] = useState<ContinuityState | null>(null)
+  const [dreamSaving, setDreamSaving] = useState(false)
+  const [dreamSaved, setDreamSaved] = useState(false)
 
   const fileRef = useRef<HTMLInputElement>(null)
+  const draggingRef = useRef(false)
+  const dragStartYRef = useRef(0)
+  const dragStartPosRef = useRef(50)
 
   // Update time every minute
   useEffect(() => {
@@ -98,6 +147,23 @@ export default function ThreadPage() {
           })
         }
         if (data.passage) setSaved(true)
+      }
+
+      // Check for existing dream entry today
+      const { data: dreamData } = await supabase
+        .from('dream_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('entry_date', dk)
+        .single()
+      if (dreamData) {
+        setHasDreamEntry(true)
+        setDreamed(dreamData.dreamed === true ? 'yes' : dreamData.dreamed === false ? 'no' : 'fragments')
+        setLucid(dreamData.lucid as LucidState | null)
+        setDreamQuality(dreamData.quality as DreamQuality | null)
+        setClosingImage(dreamData.closing_image || '')
+        setContinuity(dreamData.continuity as ContinuityState | null)
+        setDreamSaved(true)
       }
     }
     load()
@@ -233,6 +299,39 @@ export default function ThreadPage() {
     }
   }
 
+  async function handleDreamSave() {
+    setDreamSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setDreamSaving(false); return }
+
+    // Get previous day's coherence score
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayKey = yesterday.toISOString().slice(0, 10)
+    const { data: prevEntry } = await supabase
+      .from('entries')
+      .select('coherence_score')
+      .eq('user_id', user.id)
+      .eq('date_key', yesterdayKey)
+      .single()
+
+    const dreamEntry = {
+      user_id: user.id,
+      entry_date: dk,
+      dreamed: dreamed === 'yes' || dreamed === 'fragments',
+      lucid: dreamed === 'yes' ? lucid : null,
+      quality: dreamQuality,
+      closing_image: closingImage,
+      continuity,
+      waking_coherence: prevEntry?.coherence_score ?? null,
+    }
+
+    await supabase.from('dream_entries').upsert(dreamEntry, { onConflict: 'user_id,entry_date' })
+    setDreamSaved(true)
+    setHasDreamEntry(true)
+    setDreamSaving(false)
+  }
+
   const coherence = passage
     ? computeCoherence({ passage, arcNote, picture: pictureUrl, inspoType, inspoText, closingWord })
     : null
@@ -271,6 +370,166 @@ export default function ThreadPage() {
         </p>
       </div>
 
+      {/* LAST NIGHT — Morning dream entry */}
+      {!hasDreamEntry && (
+        <div className="mb-6 animate-slideUp">
+          <button
+            onClick={() => setDreamOpen(!dreamOpen)}
+            className="flex items-center gap-2 w-full"
+          >
+            <span style={labelStyle}>LAST NIGHT</span>
+            <span
+              className="font-mono text-[10px] transition-transform"
+              style={{
+                color: 'rgba(var(--sg-text-rgb), 0.2)',
+                transform: dreamOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+              }}
+            >
+              {dreamOpen ? '−' : '+'}
+            </span>
+          </button>
+
+          {dreamOpen && (
+            <div className="mt-3 space-y-4 animate-slideUp max-w-[480px]">
+              {/* Did you dream? */}
+              <div>
+                <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                  Did you dream?
+                </div>
+                <div className="flex gap-1.5">
+                  {DREAM_STATES.map((s) => (
+                    <button
+                      key={s.value}
+                      onClick={() => { setDreamed(s.value); setDreamSaved(false) }}
+                      className="px-[10px] py-[3px] rounded-full text-[10px] font-body transition-all"
+                      style={{
+                        background: dreamed === s.value ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
+                        border: `1.5px solid ${dreamed === s.value ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
+                        color: dreamed === s.value ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Was it lucid? */}
+              {dreamed === 'yes' && (
+                <div className="animate-slideUp">
+                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                    Was it lucid?
+                  </div>
+                  <div className="flex gap-1.5">
+                    {LUCID_STATES.map((s) => (
+                      <button
+                        key={s.value}
+                        onClick={() => { setLucid(s.value); setDreamSaved(false) }}
+                        className="px-[10px] py-[3px] rounded-full text-[10px] font-body transition-all"
+                        style={{
+                          background: lucid === s.value ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
+                          border: `1.5px solid ${lucid === s.value ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
+                          color: lucid === s.value ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                        }}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Dominant quality */}
+              {(dreamed === 'yes' || dreamed === 'fragments') && (
+                <div className="animate-slideUp">
+                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                    Dominant quality
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DREAM_QUALITIES.map((q) => (
+                      <button
+                        key={q.value}
+                        onClick={() => { setDreamQuality(q.value); setDreamSaved(false) }}
+                        className="px-[10px] py-[3px] rounded-full text-[10px] font-body transition-all"
+                        style={{
+                          background: dreamQuality === q.value ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
+                          border: `1.5px solid ${dreamQuality === q.value ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
+                          color: dreamQuality === q.value ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                        }}
+                      >
+                        {q.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Closing image */}
+              {(dreamed === 'yes' || dreamed === 'fragments') && (
+                <div className="animate-slideUp">
+                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                    Closing image
+                  </div>
+                  <input
+                    type="text"
+                    value={closingImage}
+                    onChange={(e) => { setClosingImage(e.target.value); setDreamSaved(false) }}
+                    placeholder="one word"
+                    className="w-full max-w-[200px] rounded-[9px] px-[13px] py-[8px] text-center font-display text-[18px] outline-none transition-all focus:ring-2 focus:ring-sg-gold/50 focus:ring-offset-2"
+                    style={{
+                      background: 'rgba(var(--sg-text-rgb), 0.032)',
+                      border: '1px solid rgba(var(--sg-text-rgb), 0.11)',
+                      color: 'rgba(var(--sg-text-rgb), 0.85)',
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Continuity with yesterday? */}
+              {(dreamed === 'yes' || dreamed === 'fragments') && (
+                <div className="animate-slideUp">
+                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                    Connected to yesterday&apos;s passage?
+                  </div>
+                  <div className="flex gap-1.5">
+                    {CONTINUITY_STATES.map((s) => (
+                      <button
+                        key={s.value}
+                        onClick={() => { setContinuity(s.value); setDreamSaved(false) }}
+                        className="px-[10px] py-[3px] rounded-full text-[10px] font-body transition-all"
+                        style={{
+                          background: continuity === s.value ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
+                          border: `1.5px solid ${continuity === s.value ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
+                          color: continuity === s.value ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                        }}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Save dream */}
+              {dreamed && (
+                <button
+                  onClick={handleDreamSave}
+                  disabled={dreamSaving}
+                  className="py-[8px] px-6 rounded-[18px] font-body text-[12px] tracking-wide transition-all"
+                  style={{
+                    background: dreamSaved ? 'rgba(201, 169, 110, 0.08)' : 'rgba(201, 169, 110, 0.15)',
+                    border: '1.5px solid rgba(201, 169, 110, 0.3)',
+                    color: dreamSaved ? 'rgba(201, 169, 110, 0.5)' : 'rgba(201, 169, 110, 0.85)',
+                  }}
+                >
+                  {dreamSaving ? 'Saving…' : dreamSaved ? 'Saved' : 'Save last night'}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Two-column layout */}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] gap-8">
         {/* LEFT COLUMN */}
@@ -290,18 +549,46 @@ export default function ThreadPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
-              onClick={() => fileRef.current?.click()}
+              onClick={() => { if (!pictureUrl) fileRef.current?.click() }}
             >
               {pictureUrl ? (
-                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', overflow: 'hidden', borderRadius: '8px', cursor: 'grab' }}
+                <div
+                  className="w-full relative select-none"
+                  style={{ height: 260, cursor: 'grab' }}
                   onMouseDown={(e) => {
-                    const el = e.currentTarget.querySelector('img') as HTMLImageElement
-                    const startY = e.clientY, startTop = parseInt(el.style.top || '50')
-                    const move = (ev: MouseEvent) => { el.style.objectPosition = `center ${Math.max(0, Math.min(100, startTop + (ev.clientY - startY) * 0.3))}%` }
-                    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
-                    document.addEventListener('mousemove', move); document.addEventListener('mouseup', up)
-                  }}>
-                  <img src={pictureUrl} alt="day moment" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 50%' }} />
+                    e.preventDefault()
+                    draggingRef.current = true
+                    dragStartYRef.current = e.clientY
+                    dragStartPosRef.current = imgPosition
+                  }}
+                  onMouseMove={(e) => {
+                    if (!draggingRef.current) return
+                    const delta = e.clientY - dragStartYRef.current
+                    const newPos = Math.max(0, Math.min(100, dragStartPosRef.current - delta * 0.3))
+                    setImgPosition(newPos)
+                  }}
+                  onMouseUp={() => { draggingRef.current = false }}
+                  onMouseLeave={() => { draggingRef.current = false }}
+                  onTouchStart={(e) => {
+                    draggingRef.current = true
+                    dragStartYRef.current = e.touches[0].clientY
+                    dragStartPosRef.current = imgPosition
+                  }}
+                  onTouchMove={(e) => {
+                    if (!draggingRef.current) return
+                    const delta = e.touches[0].clientY - dragStartYRef.current
+                    const newPos = Math.max(0, Math.min(100, dragStartPosRef.current - delta * 0.3))
+                    setImgPosition(newPos)
+                  }}
+                  onTouchEnd={() => { draggingRef.current = false }}
+                >
+                  <img
+                    src={pictureUrl}
+                    alt="day moment"
+                    className="w-full h-full object-cover pointer-events-none"
+                    style={{ objectPosition: `center ${imgPosition}%` }}
+                    draggable={false}
+                  />
                 </div>
               ) : (
                 <span className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.2)' }}>
@@ -309,6 +596,20 @@ export default function ThreadPage() {
                 </span>
               )}
             </div>
+            {pictureUrl && (
+              <div className="flex justify-between items-center mt-1">
+                <p className="font-mono text-[9px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.18)' }}>
+                  drag to reframe
+                </p>
+                <button
+                  className="font-mono text-[9px]"
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.18)' }}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  change image
+                </button>
+              </div>
+            )}
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           </div>
 
@@ -412,6 +713,32 @@ export default function ThreadPage() {
               className="w-full rounded-[9px] px-[13px] py-[10px] font-display italic text-[14px] outline-none resize-none transition-all focus:ring-2 focus:ring-sg-gold/50 focus:ring-offset-2"
               style={inputStyle}
             />
+
+            {inspoType === 'scripture' && (
+              <div className="mt-2">
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {SCRIPTURE_TRADITIONS.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setInspoTradition(inspoTradition === t ? null : t)}
+                      className="px-[10px] py-[2px] rounded-full text-[10px] font-body transition-all"
+                      style={{
+                        background: inspoTradition === t ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
+                        border: `1.5px solid ${inspoTradition === t ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
+                        color: inspoTradition === t ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                {inspoTradition && (
+                  <p className="font-body text-[10px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.25)' }}>
+                    {SCRIPTURE_PLACEHOLDERS[inspoTradition] || 'Paste or type the verse or passage...'}
+                  </p>
+                )}
+              </div>
+            )}
 
             {inspoType === 'lyric' && (
               <div className="mt-2">

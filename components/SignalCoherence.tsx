@@ -1,17 +1,40 @@
 'use client'
 
+import { useState } from 'react'
 import { Coherence } from '@/lib/types'
 import { coherenceDescriptor } from '@/lib/utils'
 
-const LABELS = [
-  { key: 'momentClarity', label: 'moment clarity' },
-  { key: 'arcContinuity', label: 'arc continuity' },
-  { key: 'imageResonance', label: 'image resonance' },
-  { key: 'echoFit', label: 'echo fit' },
-  { key: 'emotionalUnity', label: 'emotional unity' },
-] as const
+const LABELS: { key: keyof Coherence; label: string; guidance: string }[] = [
+  {
+    key: 'momentClarity',
+    label: 'moment clarity',
+    guidance: 'How precisely have you named what happened? A single specific event scores higher than a vague feeling. Try: I [verb] when [moment]. The math reads sentence density.',
+  },
+  {
+    key: 'arcContinuity',
+    label: 'arc continuity',
+    guidance: 'Does THE AND field connect today to a larger pattern? Name the specific arc \u2014 not I felt tired but the arc of building trust with a new team. What recurring theme does today belong to?',
+  },
+  {
+    key: 'imageResonance',
+    label: 'image resonance',
+    guidance: 'An image creates a visual anchor. Ask: what would I photograph from today? If you have not uploaded one, the signal is still open.',
+  },
+  {
+    key: 'echoFit',
+    label: 'echo fit',
+    guidance: 'How specifically does your echo connect to the passage? The more the echo could only be from this day, the higher the signal.',
+  },
+  {
+    key: 'emotionalUnity',
+    label: 'emotional unity',
+    guidance: 'The closing word is the day\u2019s final calibration. One word that holds the whole. If you have not chosen one, the signal is still open.',
+  },
+]
 
 export default function SignalCoherence({ coherence }: { coherence: Coherence }) {
+  const [expanded, setExpanded] = useState<string | null>(null)
+
   const overall = Math.round(
     (coherence.momentClarity +
       coherence.arcContinuity +
@@ -45,38 +68,55 @@ export default function SignalCoherence({ coherence }: { coherence: Coherence })
       </div>
 
       <div className="space-y-2">
-        {LABELS.map(({ key, label }) => {
+        {LABELS.map(({ key, label, guidance }) => {
           const val = coherence[key]
+          const isExpanded = expanded === key
           return (
-            <div key={key} className="flex items-center gap-3">
-              <span
-                className="font-mono text-[9px] w-[100px] shrink-0"
-                style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}
+            <div key={key}>
+              <button
+                className="w-full flex items-center gap-3 group"
+                onClick={() => setExpanded(isExpanded ? null : key)}
               >
-                {label}
-              </span>
-              <div
-                className="flex-1 h-[3px] rounded-full overflow-hidden"
-                style={{ background: 'rgba(var(--sg-text-rgb), 0.05)' }}
-              >
+                <span
+                  className="font-mono text-[9px] w-[100px] shrink-0 text-left transition-colors"
+                  style={{ color: isExpanded ? 'rgba(201, 169, 110, 0.6)' : 'rgba(var(--sg-text-rgb), 0.3)' }}
+                >
+                  {label}
+                </span>
                 <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${val}%`,
-                    background: `rgba(201, 169, 110, ${0.3 + (val / 100) * 0.5})`,
-                  }}
-                />
-              </div>
-              <span
-                className="font-mono text-[9px] w-[24px] text-right"
-                style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}
-              >
-                {val}
-              </span>
+                  className="flex-1 h-[3px] rounded-full overflow-hidden"
+                  style={{ background: 'rgba(var(--sg-text-rgb), 0.05)' }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${val}%`,
+                      background: `rgba(201, 169, 110, ${0.3 + (val / 100) * 0.5})`,
+                    }}
+                  />
+                </div>
+                <span
+                  className="font-mono text-[9px] w-[24px] text-right"
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}
+                >
+                  {val}
+                </span>
+              </button>
+              {isExpanded && (
+                <div className="ml-[100px] pl-3 mt-1 mb-2 animate-slideUp">
+                  <p className="font-body text-[10px] leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}>
+                    {guidance}
+                  </p>
+                </div>
+              )}
             </div>
           )
         })}
       </div>
+
+      <p className="font-display italic text-[10px] mt-4" style={{ color: 'rgba(var(--sg-text-rgb), 0.2)' }}>
+        Signal Coherence is not a grade. It is a mirror.
+      </p>
     </div>
   )
 }
