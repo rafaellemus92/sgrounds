@@ -99,6 +99,77 @@ const HATS = [
   { id: "pastor",   label: "pastor",     voice: "Speak through a spiritual/pastoral lens — grounded in meaning, purpose, and grace. Not preachy. Connect patterns to calling, forgiveness, and what it means to live well. Ask the question that matters eternally." },
 ];
 
+// ── Reference Assist database ─────────────────────────────────────────────────
+const REF_DB = [
+  // Scripture — Bible
+  { type: "scripture", title: "John 3:16", text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.", source: "Bible", cv: "John 3:16", keys: ["john 3", "god so loved", "for god so loved"] },
+  { type: "scripture", title: "John 1:1", text: "In the beginning was the Word, and the Word was with God, and the Word was God.", source: "Bible", cv: "John 1:1", keys: ["john 1", "in the beginning was the word"] },
+  { type: "scripture", title: "Genesis 1:1", text: "In the beginning God created the heaven and the earth.", source: "Bible", cv: "Genesis 1:1", keys: ["genesis 1", "in the beginning god created"] },
+  { type: "scripture", title: "Psalm 23:1", text: "The Lord is my shepherd; I shall not want.", source: "Bible", cv: "Psalm 23:1", keys: ["psalm 23", "the lord is my shepherd"] },
+  { type: "scripture", title: "Psalm 23:4", text: "Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me.", source: "Bible", cv: "Psalm 23:4", keys: ["valley of the shadow", "fear no evil"] },
+  { type: "scripture", title: "Proverbs 3:5-6", text: "Trust in the Lord with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths.", source: "Bible", cv: "Proverbs 3:5-6", keys: ["proverbs 3", "trust in the lord", "lean not"] },
+  { type: "scripture", title: "Ecclesiastes 1:2", text: "Vanity of vanities, saith the Preacher, vanity of vanities; all is vanity.", source: "Bible", cv: "Ecclesiastes 1:2", keys: ["ecclesiastes", "vanity of vanities"] },
+  { type: "scripture", title: "1 Corinthians 13:4-7", text: "Love is patient, love is kind. It does not envy, it does not boast, it is not proud. It does not dishonor others, it is not self-seeking, it is not easily angered, it keeps no record of wrongs. Love does not delight in evil but rejoices with the truth. It always protects, always trusts, always hopes, always perseveres.", source: "Bible", cv: "1 Corinthians 13:4-7", keys: ["love is patient", "love is kind", "1 corinthians 13"] },
+  { type: "scripture", title: "Romans 8:28", text: "And we know that in all things God works for the good of those who love him, who have been called according to his purpose.", source: "Bible", cv: "Romans 8:28", keys: ["romans 8:28", "all things work together", "works for the good"] },
+  { type: "scripture", title: "Philippians 4:13", text: "I can do all things through Christ which strengtheneth me.", source: "Bible", cv: "Philippians 4:13", keys: ["philippians 4:13", "i can do all things", "all things through christ"] },
+  { type: "scripture", title: "Isaiah 40:31", text: "But they that wait upon the Lord shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.", source: "Bible", cv: "Isaiah 40:31", keys: ["isaiah 40", "mount up with wings", "wings as eagles", "renew their strength"] },
+  { type: "scripture", title: "Jeremiah 29:11", text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", source: "Bible", cv: "Jeremiah 29:11", keys: ["jeremiah 29:11", "i know the plans", "plans to prosper"] },
+  { type: "scripture", title: "Matthew 6:34", text: "Take therefore no thought for the morrow: for the morrow shall take thought for the things of itself. Sufficient unto the day is the evil thereof.", source: "Bible", cv: "Matthew 6:34", keys: ["matthew 6:34", "no thought for the morrow", "sufficient unto the day"] },
+  { type: "scripture", title: "John 8:32", text: "And ye shall know the truth, and the truth shall make you free.", source: "Bible", cv: "John 8:32", keys: ["john 8:32", "the truth shall", "truth will set you free", "truth shall make you free"] },
+  { type: "scripture", title: "Ephesians 4:2", text: "Be completely humble and gentle; be patient, bearing with one another in love.", source: "Bible", cv: "Ephesians 4:2", keys: ["ephesians 4:2", "completely humble", "bearing with one another"] },
+  { type: "scripture", title: "Micah 6:8", text: "He hath shewed thee, O man, what is good; and what doth the Lord require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?", source: "Bible", cv: "Micah 6:8", keys: ["micah 6:8", "do justly", "love mercy", "walk humbly"] },
+  { type: "scripture", title: "Matthew 11:28", text: "Come unto me, all ye that labour and are heavy laden, and I will give you rest.", source: "Bible", cv: "Matthew 11:28", keys: ["matthew 11:28", "come unto me", "heavy laden", "give you rest"] },
+  { type: "scripture", title: "Romans 12:2", text: "And be not conformed to this world: but be ye transformed by the renewing of your mind.", source: "Bible", cv: "Romans 12:2", keys: ["romans 12:2", "be not conformed", "renewing of your mind", "transformed"] },
+  // Scripture — Torah / Hebrew Bible
+  { type: "scripture", title: "Deuteronomy 6:4", text: "Hear, O Israel: The Lord our God, the Lord is one.", source: "Torah", cv: "Deuteronomy 6:4", keys: ["deuteronomy 6:4", "hear o israel", "shema"] },
+  // Film quotes
+  { type: "film", title: "Star Wars: The Empire Strikes Back", text: "Do or do not. There is no try.", source: "Star Wars", attribution: "Yoda", year: "1980", keys: ["do or do not", "there is no try", "star wars", "yoda"] },
+  { type: "film", title: "The Lord of the Rings: The Fellowship of the Ring", text: "Not all those who wander are lost.", source: "The Lord of the Rings", attribution: "Bilbo Baggins / J.R.R. Tolkien", year: "2001", keys: ["not all those who wander", "all who wander", "wander are lost"] },
+  { type: "film", title: "The Lion, the Witch and the Wardrobe", text: "Aslan is on the move.", source: "The Chronicles of Narnia", attribution: "Mr. Beaver", year: "2005", keys: ["aslan", "aslan is on the move", "narnia"] },
+  { type: "film", title: "Interstellar", text: "Do not go gentle into that good night. Rage, rage against the dying of the light.", source: "Interstellar (poem by Dylan Thomas)", attribution: "Professor Brand", year: "2014", keys: ["interstellar", "do not go gentle", "rage against the dying", "dying of the light"] },
+  { type: "film", title: "Interstellar", text: "Love is the one thing we're capable of perceiving that transcends dimensions of time and space.", source: "Interstellar", attribution: "Dr. Brand", year: "2014", keys: ["interstellar love", "transcends dimensions", "love transcends"] },
+  { type: "film", title: "The Shawshank Redemption", text: "Get busy living, or get busy dying.", source: "The Shawshank Redemption", attribution: "Andy Dufresne", year: "1994", keys: ["shawshank", "get busy living", "busy dying"] },
+  { type: "film", title: "The Shawshank Redemption", text: "Hope is a good thing, maybe the best of things, and no good thing ever dies.", source: "The Shawshank Redemption", attribution: "Andy Dufresne", year: "1994", keys: ["hope is a good thing", "no good thing ever dies"] },
+  { type: "film", title: "Dead Poets Society", text: "Carpe diem. Seize the day, boys. Make your lives extraordinary.", source: "Dead Poets Society", attribution: "John Keating", year: "1989", keys: ["carpe diem", "seize the day", "dead poets", "make your lives extraordinary"] },
+  { type: "film", title: "Good Will Hunting", text: "It's not your fault.", source: "Good Will Hunting", attribution: "Sean Maguire", year: "1997", keys: ["good will hunting", "not your fault"] },
+  { type: "film", title: "The Dark Knight", text: "Why do we fall? So we can learn to pick ourselves up.", source: "Batman Begins / The Dark Knight", attribution: "Alfred Pennyworth", year: "2005", keys: ["why do we fall", "pick ourselves up", "batman", "dark knight"] },
+  { type: "film", title: "Gladiator", text: "What we do in life echoes in eternity.", source: "Gladiator", attribution: "Maximus", year: "2000", keys: ["gladiator", "echoes in eternity", "what we do in life"] },
+  { type: "film", title: "The Pursuit of Happyness", text: "Don't ever let somebody tell you you can't do something.", source: "The Pursuit of Happyness", attribution: "Chris Gardner", year: "2006", keys: ["pursuit of happyness", "can't do something", "don't ever let somebody"] },
+  // Proverbs / Sayings / Literature
+  { type: "proverb", title: "The truth will set you free", text: "The truth will set you free.", source: "Common saying (John 8:32)", keys: ["truth will set you free", "truth shall set", "truth sets you free"] },
+  { type: "proverb", title: "This too shall pass", text: "This too shall pass.", source: "Persian adage", keys: ["this too shall pass", "shall pass"] },
+  { type: "proverb", title: "Be the change", text: "Be the change you wish to see in the world.", source: "Attributed to Mahatma Gandhi", keys: ["be the change", "wish to see in the world"] },
+  { type: "proverb", title: "A journey of a thousand miles", text: "A journey of a thousand miles begins with a single step.", source: "Lao Tzu, Tao Te Ching", keys: ["journey of a thousand", "thousand miles", "single step"] },
+  { type: "proverb", title: "Know thyself", text: "Know thyself.", source: "Ancient Greek maxim (Temple of Apollo at Delphi)", keys: ["know thyself", "know yourself"] },
+  { type: "proverb", title: "Two roads diverged", text: "Two roads diverged in a wood, and I — I took the one less traveled by, and that has made all the difference.", source: "Robert Frost, 'The Road Not Taken'", keys: ["two roads diverged", "road not taken", "less traveled", "robert frost"] },
+  { type: "proverb", title: "Still I Rise", text: "You may tread me in the very dirt / But still, like dust, I'll rise.", source: "Maya Angelou, 'Still I Rise'", keys: ["still i rise", "maya angelou", "i'll rise"] },
+  { type: "proverb", title: "Invictus", text: "I am the master of my fate, I am the captain of my soul.", source: "William Ernest Henley, 'Invictus'", keys: ["invictus", "master of my fate", "captain of my soul"] },
+  { type: "proverb", title: "If—", text: "If you can keep your head when all about you are losing theirs and blaming it on you… yours is the Earth and everything that's in it.", source: "Rudyard Kipling, 'If—'", keys: ["if you can keep your head", "kipling", "losing theirs"] },
+];
+
+const matchRefs = (q) => {
+  if (!q || q.length < 2) return [];
+  const low = q.toLowerCase().trim();
+  const scored = REF_DB.map(ref => {
+    let score = 0;
+    for (const k of ref.keys) {
+      if (k === low) { score = 100; break; }
+      if (k.startsWith(low)) score = Math.max(score, 80);
+      else if (low.startsWith(k)) score = Math.max(score, 70);
+      else if (k.includes(low)) score = Math.max(score, 60);
+      else if (low.includes(k)) score = Math.max(score, 50);
+      else {
+        const words = low.split(/\s+/);
+        const matches = words.filter(w => w.length > 2 && k.includes(w)).length;
+        if (matches > 0) score = Math.max(score, 20 + matches * 10);
+      }
+    }
+    if (ref.title.toLowerCase().includes(low)) score = Math.max(score, 75);
+    return { ...ref, score };
+  }).filter(r => r.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
+  return scored;
+};
+
 const today = () => {
   const d = new Date();
   return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -199,6 +270,13 @@ export default function App() {
   const [spReflection, setSpReflection] = useState(null);
   const [spReflecting, setSpReflecting] = useState(false);
   const [spSaved, setSpSaved] = useState(false);
+
+  // ── Reference Assist state ──
+  const [refQuery, setRefQuery] = useState("");
+  const [refResults, setRefResults] = useState([]);
+  const [refSearching, setRefSearching] = useState(false);
+  const [entryRefs, setEntryRefs] = useState([]);
+  const [refShowDrop, setRefShowDrop] = useState(false);
   const spAudioRef = useRef(null);
 
   const passageRef = useRef(null);
@@ -234,6 +312,7 @@ export default function App() {
         if (existing.inspoSong) setInspoSong(existing.inspoSong);
         if (existing.scriptTrad) setScriptTrad(existing.scriptTrad);
         if (existing.filmGenre) setFilmGenre(existing.filmGenre);
+        if (existing.refs) setEntryRefs(existing.refs);
         setSaved(true);
         // restore semicolon page fields
         if (existing.spMoment) setSpMoment(existing.spMoment);
@@ -264,6 +343,7 @@ export default function App() {
         inspoSong: inspoSong.trim() || null,
         scriptTrad: scriptTrad || null,
         filmGenre: filmGenre || null,
+        refs: entryRefs.length > 0 ? entryRefs : null,
         ts: new Date().toISOString(),
       };
       const existing = allDays.filter(d => d.key !== dk);
@@ -327,6 +407,10 @@ export default function App() {
         ? `\nKey signature today (${inspoType}): ${artistLine ? `${artistLine}` : ''}${inspoText.trim() ? `\nLyric: "${inspoText.trim()}"` : ''}`
         : "";
 
+      const refsCtx = entryRefs.length > 0
+        ? `\nReferences anchoring today's entry:\n${entryRefs.map(r => `- ${r.title} (${r.type}): "${r.quoteText?.slice(0,100) || ''}" — ${r.sourceName}`).join('\n')}`
+        : "";
+
       const chosenHat = hat ? HATS.find(h => h.id === hat) : null;
       const hatPrefix = chosenHat
         ? `HAT ON: ${chosenHat.voice}\n\nYou are wearing this hat fully. Use its idiom, its vocabulary, its emotional register — the way a friend speaks differently than a drill sergeant, who speaks differently than a pastor. The hat changes HOW you speak and what metaphors you reach for. The three-movement structure (SIGNAL, STORY, AMPLIFY) stays the same.\n\n---\n\n`
@@ -366,7 +450,7 @@ If the day's passage resonates with one of these anchors, let that recognition s
 Two internal lenses (never name them in output, just apply):
 1. Pattern recognition — does today rhyme with a past entry? Does a word, image, or feeling recur? Name it if so. Don't force it if not.
 2. Emotional frequency — what key is this day actually in? Not what sounds poetic. What's true.
-${inspoCtx || ""}
+${inspoCtx || ""}${refsCtx || ""}
 ${artistLine ? `\n${artistLine} — let their sensibility influence your tone, not your vocabulary.` : ""}
 
 Previous entries:
@@ -861,6 +945,79 @@ Plain text only. No markdown. Match the weight of what was endured.`,
       if (!d.error) setSpGift(d.content?.map(i => i.text || '').join('\n') || null);
     } catch {}
     setSpGiftLoading(false);
+  };
+
+  // ── Reference Assist: local matching + AI lookup ──
+  useEffect(() => {
+    if (!refQuery.trim() || refQuery.length < 2) { setRefResults([]); return; }
+    const local = matchRefs(refQuery);
+    if (local.length > 0) { setRefResults(local); setRefShowDrop(true); return; }
+    // debounce AI lookup for queries with no local match
+    if (!apiKey) { setRefResults([]); return; }
+    const ac = new AbortController();
+    const t = setTimeout(async () => {
+      setRefSearching(true);
+      try {
+        const r = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          signal: ac.signal,
+          headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 500,
+            system: `You are a reference identification engine. Given a partial quote, phrase, or reference, identify the most likely sources. Return 1-4 results as a JSON array. Each object must have: type ("scripture"|"film"|"proverb"), title (short name), text (the exact or best-known wording of the quote, max 200 chars), source (attribution/book/film name), cv (chapter:verse if scripture, else null), attribution (speaker/character if applicable, else null), year (if film, else null), confidence (0-1). Return ONLY the JSON array, no other text.`,
+            messages: [{ role: "user", content: `Identify this reference: "${refQuery}"` }],
+          }),
+        });
+        const d = await r.json();
+        if (!ac.signal.aborted && !d.error) {
+          const raw = d.content?.map(i => i.text || '').join('') || '';
+          try {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) {
+              setRefResults(arr.map(r => ({ ...r, keys: [], score: (r.confidence || 0.5) * 100 })));
+              setRefShowDrop(true);
+            }
+          } catch { setRefResults([]); }
+        }
+      } catch (e) { if (e.name !== 'AbortError') setRefResults([]); }
+      if (!ac.signal.aborted) setRefSearching(false);
+    }, 800);
+    return () => { clearTimeout(t); ac.abort(); };
+  }, [refQuery, apiKey]);
+
+  const addRef = (ref, action) => {
+    const entry = {
+      id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      type: ref.type,
+      userQuery: refQuery,
+      canonicalReference: ref.cv || null,
+      title: ref.title,
+      quoteText: ref.text,
+      sourceName: ref.source,
+      chapterVerse: ref.cv || null,
+      attribution: ref.attribution || null,
+      workYear: ref.year || null,
+      confidence: ref.score ? ref.score / 100 : null,
+    };
+    if (action === "insert") {
+      const quote = ref.cv
+        ? `"${ref.text}" — ${ref.cv}`
+        : ref.attribution
+        ? `"${ref.text}" — ${ref.attribution}, ${ref.source}`
+        : `"${ref.text}" — ${ref.source}`;
+      setPassage(prev => prev ? prev.trimEnd() + "\n\n" + quote : quote);
+    }
+    setEntryRefs(prev => [...prev, entry]);
+    setRefQuery("");
+    setRefResults([]);
+    setRefShowDrop(false);
+    setSaved(false);
+  };
+
+  const removeRef = (id) => {
+    setEntryRefs(prev => prev.filter(r => r.id !== id));
+    setSaved(false);
   };
 
   const handleSpPicture = (e) => {
@@ -1448,6 +1605,127 @@ Plain text only. No markdown. Match the weight of what was endured.`,
                   minHeight: 140,
                 }}
               />
+            </div>
+
+            {/* ── REFERENCE ASSIST ── */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                fontSize: 9, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                letterSpacing: "0.12em", fontFamily: F.b, display: "block", marginBottom: 5,
+              }}>Reference assist</label>
+              <p style={{ fontSize: 10, color: "rgba(var(--sg-t),0.13)", marginBottom: 8,
+                fontStyle: "italic", lineHeight: 1.5, fontFamily: F.b }}>
+                A verse, a line, a scene — type a fragment and find its source.
+              </p>
+              <div style={{ position: "relative" }}>
+                <input
+                  value={refQuery}
+                  onChange={e => { setRefQuery(e.target.value); setRefShowDrop(true); }}
+                  onFocus={() => { if (refResults.length > 0) setRefShowDrop(true); }}
+                  onBlur={() => setTimeout(() => setRefShowDrop(false), 200)}
+                  placeholder="John 3:16… Love is patient… Do or do not… Aslan…"
+                  spellCheck={false}
+                  style={{
+                    ...inputStyle, fontSize: 13, fontFamily: F.h, fontStyle: "italic",
+                    paddingRight: refSearching ? 80 : undefined,
+                  }}
+                />
+                {refSearching && (
+                  <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                    fontSize: 8, color: "rgba(201,169,110,0.3)", fontFamily: F.m,
+                    animation: "breathe 1.2s ease-in-out infinite" }}>identifying…</div>
+                )}
+                {refShowDrop && refResults.length > 0 && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20,
+                    background: "var(--sg-bg)", border: "1px solid rgba(201,169,110,0.18)",
+                    borderRadius: 9, marginTop: 3, overflow: "hidden",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
+                    {refResults.map((ref, i) => (
+                      <div key={i} style={{
+                        padding: "10px 14px",
+                        borderBottom: i < refResults.length - 1 ? "1px solid rgba(201,169,110,0.05)" : "none",
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                              <span style={{ fontSize: 12, color: "rgba(var(--sg-t),0.6)", fontFamily: F.b,
+                                fontWeight: 500 }}>{ref.title}</span>
+                              <span style={{
+                                fontSize: 8, color: G, fontFamily: F.m, textTransform: "uppercase",
+                                letterSpacing: "0.08em", opacity: 0.6,
+                                padding: "1px 6px", borderRadius: 8,
+                                border: "1px solid rgba(201,169,110,0.15)",
+                              }}>{ref.type}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.35)", fontFamily: F.h,
+                              fontStyle: "italic", lineHeight: 1.5,
+                              overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                            }}>
+                              "{ref.text?.slice(0, 120)}{ref.text?.length > 120 ? '…' : ''}"
+                            </div>
+                            {ref.source && (
+                              <div style={{ fontSize: 9, color: "rgba(201,169,110,0.35)", fontFamily: F.b, marginTop: 3 }}>
+                                — {ref.source}{ref.attribution ? `, ${ref.attribution}` : ''}{ref.year ? ` (${ref.year})` : ''}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                          <button onClick={() => addRef(ref, "insert")} style={{
+                            padding: "3px 10px", fontSize: 9, fontFamily: F.b,
+                            background: "rgba(201,169,110,0.08)",
+                            border: "1px solid rgba(201,169,110,0.2)",
+                            color: G, borderRadius: 12, cursor: "pointer",
+                            letterSpacing: "0.02em", transition: "all 0.2s",
+                          }}>insert into passage</button>
+                          <button onClick={() => addRef(ref, "attach")} style={{
+                            padding: "3px 10px", fontSize: 9, fontFamily: F.b,
+                            background: "rgba(var(--sg-t),0.02)",
+                            border: "1px solid rgba(var(--sg-t),0.06)",
+                            color: "rgba(var(--sg-t),0.35)", borderRadius: 12, cursor: "pointer",
+                            letterSpacing: "0.02em", transition: "all 0.2s",
+                          }}>attach as backbone</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Attached references */}
+              {entryRefs.length > 0 && (
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                  {entryRefs.map(ref => (
+                    <div key={ref.id} style={{
+                      padding: "8px 12px", display: "flex", alignItems: "flex-start", gap: 8,
+                      borderLeft: `2px solid ${ref.type === "scripture" ? "rgba(201,169,110,0.25)" : ref.type === "film" ? "rgba(150,170,200,0.25)" : "rgba(170,200,150,0.25)"}`,
+                      background: "rgba(201,169,110,0.02)", borderRadius: "0 8px 8px 0",
+                      animation: "slideUp 0.15s ease",
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                          <span style={{ fontSize: 10, color: "rgba(var(--sg-t),0.45)", fontFamily: F.b }}>{ref.title}</span>
+                          <span style={{ fontSize: 7, color: G, fontFamily: F.m, textTransform: "uppercase",
+                            letterSpacing: "0.08em", opacity: 0.5 }}>{ref.type}</span>
+                        </div>
+                        {ref.quoteText && (
+                          <div style={{ fontSize: 11, color: "rgba(var(--sg-t),0.3)", fontFamily: F.h,
+                            fontStyle: "italic", lineHeight: 1.5,
+                            overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                          }}>"{ref.quoteText.slice(0, 100)}{ref.quoteText.length > 100 ? '…' : ''}"</div>
+                        )}
+                        <div style={{ fontSize: 8, color: "rgba(201,169,110,0.3)", fontFamily: F.b, marginTop: 2 }}>
+                          — {ref.sourceName}{ref.attribution ? `, ${ref.attribution}` : ''}
+                        </div>
+                      </div>
+                      <button onClick={() => removeRef(ref.id)} style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        fontSize: 10, color: "rgba(var(--sg-t),0.15)", fontFamily: F.b, flexShrink: 0,
+                        padding: "0 2px",
+                      }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={{ marginBottom: 20 }}>
@@ -2097,6 +2375,37 @@ Plain text only. No markdown. Match the weight of what was endured.`,
                     <div style={{ fontSize: 10, color: "rgba(201,169,110,0.3)", fontFamily: F.b,
                       marginTop: 5 }}>— {day.inspoArtist}</div>
                   )}
+                </div>
+              )}
+
+              {day.refs?.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 7, color: "rgba(201,169,110,0.25)", textTransform: "uppercase",
+                    letterSpacing: "0.14em", marginBottom: 8, fontFamily: F.b }}>references</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {day.refs.map((ref, i) => (
+                      <div key={ref.id || i} style={{
+                        padding: "8px 12px",
+                        borderLeft: `2px solid ${ref.type === "scripture" ? "rgba(201,169,110,0.2)" : ref.type === "film" ? "rgba(150,170,200,0.2)" : "rgba(170,200,150,0.2)"}`,
+                        background: "rgba(201,169,110,0.015)", borderRadius: "0 8px 8px 0",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                          <span style={{ fontSize: 10, color: "rgba(var(--sg-t),0.4)", fontFamily: F.b }}>{ref.title}</span>
+                          <span style={{ fontSize: 7, color: G, fontFamily: F.m, textTransform: "uppercase",
+                            letterSpacing: "0.06em", opacity: 0.45 }}>{ref.type}</span>
+                        </div>
+                        {ref.quoteText && (
+                          <p style={{ fontSize: 12, color: "rgba(var(--sg-t),0.3)", fontFamily: F.h,
+                            fontStyle: "italic", margin: 0, lineHeight: 1.6 }}>
+                            "{ref.quoteText.slice(0, 150)}{ref.quoteText.length > 150 ? '…' : ''}"
+                          </p>
+                        )}
+                        <div style={{ fontSize: 8, color: "rgba(201,169,110,0.25)", fontFamily: F.b, marginTop: 3 }}>
+                          — {ref.sourceName}{ref.attribution ? `, ${ref.attribution}` : ''}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
