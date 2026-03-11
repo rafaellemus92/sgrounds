@@ -210,7 +210,7 @@ export default function MapPage() {
         </Section>
 
         {/* 6. THE ARC — Editorial list */}
-        <Section id="arc" title="THE ARC (2022\u20132026)">
+        <Section id="arc" title="THE ARC (2022–2026)">
           <div className="space-y-2.5">
             {ARC_YEARS.map((a) => (
               <div key={a.year} className="flex gap-4 items-baseline">

@@ -289,12 +289,12 @@ export default function ThreadPage() {
 
     const { error } = await supabase.storage
       .from('entry-images')
-      .upload(`${user.id}/${dk}.jpg`, file, { upsert: true, contentType: file.type })
+      .upload(`dev-user/${dk}.jpg`, file, { upsert: true, contentType: file.type })
 
     if (!error) {
       const { data: { publicUrl } } = supabase.storage
         .from('entry-images')
-        .getPublicUrl(`${user.id}/${dk}.jpg`)
+        .getPublicUrl(`dev-user/${dk}.jpg`)
       setPictureUrl(publicUrl)
     }
   }
@@ -901,3 +901,5 @@ export default function ThreadPage() {
     </div>
   )
 }
+// injected by patch
+// injected by patch
