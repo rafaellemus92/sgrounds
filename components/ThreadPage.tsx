@@ -339,38 +339,38 @@ export default function ThreadPage() {
     : null
 
   const inputStyle = {
-    background: 'rgba(var(--sg-text-rgb), 0.032)',
-    border: '1px solid rgba(var(--sg-text-rgb), 0.11)',
-    color: 'rgba(var(--sg-text-rgb), 0.85)',
+    background: 'rgba(var(--sg-text-rgb), 0.035)',
+    border: '1px solid rgba(var(--sg-text-rgb), 0.13)',
+    color: 'rgba(var(--sg-text-rgb), 0.88)',
   }
 
   const labelStyle = {
-    fontSize: '8px',
-    color: 'rgba(var(--sg-text-rgb), 0.34)',
+    fontSize: '9px',
+    color: 'rgba(var(--sg-text-rgb), 0.48)',
     fontFamily: 'var(--font-mono, "DM Mono", monospace)',
     textTransform: 'uppercase' as const,
-    letterSpacing: '0.15em',
+    letterSpacing: '0.14em',
     fontWeight: 500 as const,
   }
 
   return (
-    <div className="max-w-[820px] mx-auto px-4 pb-24 md:pb-8 relative">
+    <div className="max-w-[820px] mx-auto px-4 sm:px-6 pb-28 md:pb-8 relative">
       {/* Lissajous background — visible only when empty */}
       <LissajousBackground visible={!passage && !pictureUrl} />
 
       {/* Header */}
       <div className="text-center pt-6 pb-8">
         <div style={labelStyle} className="mb-3">{dl.toUpperCase()}</div>
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          <span className="font-mono text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.4)' }}>
+        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap px-2">
+          <span className="font-mono text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
             {time}
           </span>
-          <span className="font-display text-[46px] text-sg-gold animate-breathe leading-none">;</span>
-          <span className="font-display text-[22px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.55)' }}>
+          <span className="font-display text-[40px] sm:text-[46px] text-sg-gold animate-breathe leading-none">;</span>
+          <span className="font-display text-[18px] sm:text-[22px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.65)' }}>
             {dailyPrompt()}
           </span>
         </div>
-        <p className="font-display text-[12px] italic mt-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>
+        <p className="font-display text-[12px] italic mt-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
           and what did it continue?
         </p>
       </div>
@@ -398,7 +398,7 @@ export default function ThreadPage() {
             <div className="mt-3 space-y-4 animate-slideUp max-w-[480px]">
               {/* Did you dream? */}
               <div>
-                <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
                   Did you dream?
                 </div>
                 <div className="flex gap-1.5">
@@ -410,7 +410,7 @@ export default function ThreadPage() {
                       style={{
                         background: dreamed === s.value ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
                         border: `1.5px solid ${dreamed === s.value ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                        color: dreamed === s.value ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                        color: dreamed === s.value ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.48)',
                       }}
                     >
                       {s.label}
@@ -422,7 +422,7 @@ export default function ThreadPage() {
               {/* Was it lucid? */}
               {dreamed === 'yes' && (
                 <div className="animate-slideUp">
-                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
                     Was it lucid?
                   </div>
                   <div className="flex gap-1.5">
@@ -434,7 +434,7 @@ export default function ThreadPage() {
                         style={{
                           background: lucid === s.value ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
                           border: `1.5px solid ${lucid === s.value ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                          color: lucid === s.value ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                          color: lucid === s.value ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.48)',
                         }}
                       >
                         {s.label}
@@ -447,7 +447,7 @@ export default function ThreadPage() {
               {/* Dominant quality */}
               {(dreamed === 'yes' || dreamed === 'fragments') && (
                 <div className="animate-slideUp">
-                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
                     Dominant quality
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -459,7 +459,7 @@ export default function ThreadPage() {
                         style={{
                           background: dreamQuality === q.value ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
                           border: `1.5px solid ${dreamQuality === q.value ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                          color: dreamQuality === q.value ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                          color: dreamQuality === q.value ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.48)',
                         }}
                       >
                         {q.label}
@@ -472,7 +472,7 @@ export default function ThreadPage() {
               {/* Closing image */}
               {(dreamed === 'yes' || dreamed === 'fragments') && (
                 <div className="animate-slideUp">
-                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
                     Closing image
                   </div>
                   <input
@@ -493,7 +493,7 @@ export default function ThreadPage() {
               {/* Continuity with yesterday? */}
               {(dreamed === 'yes' || dreamed === 'fragments') && (
                 <div className="animate-slideUp">
-                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+                  <div className="font-body text-[11px] mb-1.5" style={{ color: 'rgba(var(--sg-text-rgb), 0.48)' }}>
                     Connected to yesterday&apos;s passage?
                   </div>
                   <div className="flex gap-1.5">
@@ -505,7 +505,7 @@ export default function ThreadPage() {
                         style={{
                           background: continuity === s.value ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
                           border: `1.5px solid ${continuity === s.value ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                          color: continuity === s.value ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                          color: continuity === s.value ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.48)',
                         }}
                       >
                         {s.label}
@@ -542,7 +542,7 @@ export default function ThreadPage() {
           {/* A. THE ; MOMENT */}
           <div>
             <div style={labelStyle} className="mb-1">THE ; MOMENT</div>
-            <p className="font-body text-[10px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.28)' }}>
+            <p className="font-body text-[10px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}>
               The frame you would keep if the day had only one image.
             </p>
             <div
@@ -596,19 +596,19 @@ export default function ThreadPage() {
                   />
                 </div>
               ) : (
-                <span className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.2)' }}>
+                <span className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}>
                   tap to add image
                 </span>
               )}
             </div>
             {pictureUrl && (
               <div className="flex justify-between items-center mt-1">
-                <p className="font-mono text-[9px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.18)' }}>
+                <p className="font-mono text-[9px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}>
                   drag to reframe
                 </p>
                 <button
                   className="font-mono text-[9px]"
-                  style={{ color: 'rgba(var(--sg-text-rgb), 0.18)' }}
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}
                   onClick={() => fileRef.current?.click()}
                 >
                   change image
@@ -662,7 +662,7 @@ export default function ThreadPage() {
                   style={{
                     background: closingWord === w ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
                     border: `1.5px solid ${closingWord === w ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                    color: closingWord === w ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                    color: closingWord === w ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.48)',
                   }}
                 >
                   {w}
@@ -691,7 +691,7 @@ export default function ThreadPage() {
           {/* D. WHAT ECHOED IT */}
           <div>
             <div style={labelStyle} className="mb-1">WHAT ECHOED IT</div>
-            <p className="font-body text-[10px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.28)' }}>
+            <p className="font-body text-[10px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}>
               Song, lyric, scripture, film, poem, quote, headline, or news.
             </p>
             <div className="flex flex-wrap gap-1 mb-3">
@@ -703,7 +703,7 @@ export default function ThreadPage() {
                   style={{
                     background: inspoType === t ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
                     border: `1.5px solid ${inspoType === t ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                    color: inspoType === t ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                    color: inspoType === t ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.48)',
                   }}
                 >
                   {t}
@@ -730,7 +730,7 @@ export default function ThreadPage() {
                       style={{
                         background: inspoTradition === t ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
                         border: `1.5px solid ${inspoTradition === t ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                        color: inspoTradition === t ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                        color: inspoTradition === t ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.48)',
                       }}
                     >
                       {t}
@@ -738,7 +738,7 @@ export default function ThreadPage() {
                   ))}
                 </div>
                 {inspoTradition && (
-                  <p className="font-body text-[10px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.25)' }}>
+                  <p className="font-body text-[10px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
                     {SCRIPTURE_PLACEHOLDERS[inspoTradition] || 'Paste or type the verse or passage...'}
                   </p>
                 )}
@@ -769,7 +769,7 @@ export default function ThreadPage() {
                     style={{
                       background: newsTag === t ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
                       border: `1.5px solid ${newsTag === t ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                      color: newsTag === t ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                      color: newsTag === t ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.48)',
                     }}
                   >
                     {t === 'world' ? '\uD83C\uDF0D world' : t === 'local' ? '\uD83D\uDCCD local' : '\uD83E\uDEC0 personal'}
@@ -782,7 +782,7 @@ export default function ThreadPage() {
           {/* E. THE AND */}
           <div>
             <div style={labelStyle} className="mb-1">THE AND</div>
-            <p className="font-body text-[10px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.28)' }}>
+            <p className="font-body text-[10px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}>
               The larger arc this moment belongs to.
             </p>
             <textarea
@@ -820,7 +820,7 @@ export default function ThreadPage() {
                   style={{
                     background: archetype === a ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
                     border: `1.5px solid ${archetype === a ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                    color: archetype === a ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                    color: archetype === a ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.48)',
                   }}
                 >
                   {a}
@@ -848,7 +848,7 @@ export default function ThreadPage() {
               {reflecting ? 'The Lighthouse is reading…' : 'Ask the Lighthouse to read'}
             </button>
             {!passage && (
-              <p className="text-center font-body text-[10px] mt-1" style={{ color: 'rgba(var(--sg-text-rgb), 0.25)' }}>
+              <p className="text-center font-body text-[10px] mt-1" style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
                 write your moment first
               </p>
             )}
@@ -872,7 +872,7 @@ export default function ThreadPage() {
             <details>
               <summary
                 className="font-mono text-[9px] uppercase tracking-[0.15em] cursor-pointer mb-2"
-                style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}
+                style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}
               >
                 Day Signal Image
               </summary>
@@ -885,7 +885,7 @@ export default function ThreadPage() {
             <details>
               <summary
                 className="font-mono text-[9px] uppercase tracking-[0.15em] cursor-pointer mb-2"
-                style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}
+                style={{ color: 'rgba(var(--sg-text-rgb), 0.42)' }}
               >
                 Day Melody
               </summary>

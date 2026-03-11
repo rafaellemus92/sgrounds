@@ -8,6 +8,12 @@
   --sg-bg: rgb(253, 250, 242);
   --sg-text: rgb(38, 32, 22);
   --sg-text-rgb: 38, 32, 22;
+  --sg-label: rgba(38, 32, 22, 0.52);
+  --sg-muted: rgba(38, 32, 22, 0.42);
+  --sg-body: rgba(38, 32, 22, 0.74);
+  --sg-heading: rgba(38, 32, 22, 0.88);
+  --sg-input-bg: rgba(38, 32, 22, 0.035);
+  --sg-input-border: rgba(38, 32, 22, 0.12);
 }
 
 body {

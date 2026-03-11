@@ -35,7 +35,7 @@ export default function AuthPage() {
             className="font-display text-[46px] text-sg-gold inline-block"
             style={{ animation: 'zoomSettle 1.2s ease-out forwards' }}
           >s;</span>
-          <p className="font-body text-[13px] mt-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.45)' }}>
+          <p className="font-body text-[13px] mt-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.55)' }}>
             each day is a semicolon
           </p>
         </div>
