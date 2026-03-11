@@ -18,7 +18,7 @@ export default function Nav() {
       {/* Desktop nav */}
       <nav className="hidden md:flex items-center gap-1 px-6 py-3 max-w-[820px] mx-auto">
         <Link href="/thread" className="mr-4">
-          <img src="/logo.png" alt="sgrounds" className="h-8 w-8 object-contain" />
+          <img src="/logo.png" alt="sgrounds" className="h-8 w-8 object-contain rounded-full" />
         </Link>
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href
@@ -46,7 +46,7 @@ export default function Nav() {
         }}
       >
         <Link href="/thread" className="flex flex-col items-center gap-0.5">
-          <img src="/logo.png" alt="sgrounds" className="h-8 w-8 object-contain" />
+          <img src="/logo.png" alt="sgrounds" className="h-8 w-8 object-contain rounded-full" />
         </Link>
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href
