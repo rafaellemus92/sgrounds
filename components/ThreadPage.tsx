@@ -574,5 +574,3 @@ export default function ThreadPage() {
     </div>
   )
 }
-// injected by patch
-// injected by patch
