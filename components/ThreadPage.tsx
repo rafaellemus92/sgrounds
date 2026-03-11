@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Entry, InspoType, Archetype, DreamState, LucidState, DreamQuality, ContinuityState } from '@/lib/types'
 import { todayKey, todayLabel, currentTime, dailyPrompt, passageFontSize, computeCoherence } from '@/lib/utils'
 import SignalCoherence from './SignalCoherence'
@@ -286,30 +287,24 @@ export default function ThreadPage() {
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const { data: { user } } = await supabase.auth.getUser()
+
+    const browserClient = createClient()
+    const { data: { user } } = await browserClient.auth.getUser()
     if (!user) return
 
     const ext = file.name.split('.').pop() || 'jpg'
-    const path = `${user.id}/${dk}.${ext}`
+    const path = `${user.id}/${Date.now()}.${ext}`
 
-    const { error } = await supabase.storage
-      .from('moments')
+    const { error } = await browserClient.storage
+      .from('entry-images')
       .upload(path, file, { upsert: true, contentType: file.type })
 
     if (!error) {
-      const { data: { publicUrl } } = supabase.storage
-        .from('moments')
+      const { data: { publicUrl } } = browserClient.storage
+        .from('entry-images')
         .getPublicUrl(path)
       setPictureUrl(publicUrl)
       setSaved(false)
-
-      // Persist the image URL to the database immediately
-      await supabase
-        .from('entries')
-        .upsert(
-          { user_id: user.id, date_key: dk, date_label: dl, picture_url: publicUrl, updated_at: new Date().toISOString() },
-          { onConflict: 'user_id,date_key' }
-        )
     }
   }
 
