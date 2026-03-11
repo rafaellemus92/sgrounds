@@ -56,6 +56,9 @@ export default function ThreadPage() {
   const [saving, setSaving] = useState(false)
   const [showSignal, setShowSignal] = useState(false)
   const [showMelody, setShowMelody] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -170,6 +173,21 @@ export default function ThreadPage() {
     const newsCtx = newsTag ? `News context: ${newsTag}` : ''
     const arcCtx = arcNote ? `The And (larger arc): "${arcNote}"` : ''
 
+    // Fetch image as base64 if present
+    let imageBase64: string | undefined
+    let imageMediaType: string | undefined
+    if (pictureUrl) {
+      try {
+        const imgRes = await fetch(pictureUrl)
+        const blob = await imgRes.blob()
+        imageMediaType = blob.type || 'image/jpeg'
+        const buf = await blob.arrayBuffer()
+        imageBase64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
+      } catch {
+        // Continue without image if conversion fails
+      }
+    }
+
     try {
       const res = await fetch('/api/reflect', {
         method: 'POST',
@@ -183,6 +201,8 @@ export default function ThreadPage() {
           newsCtx,
           arcCtx,
           archetype,
+          imageBase64,
+          imageMediaType,
         }),
       })
       const data = await res.json()
@@ -218,19 +238,39 @@ export default function ThreadPage() {
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    setUploadError(null)
+    setUploading(true)
+    setPreviewUrl(URL.createObjectURL(file))
+
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      setUploading(false)
+      setPreviewUrl(null)
+      setUploadError('Sign in to upload images.')
+      return
+    }
+
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `${user.id}/${Date.now()}.${ext}`
 
     const { error } = await supabase.storage
       .from('entry-images')
-      .upload(`dev-user/${dk}.jpg`, file, { upsert: true, contentType: file.type })
+      .upload(path, file, { upsert: true, contentType: file.type })
 
-    if (!error) {
-      const { data: { publicUrl } } = supabase.storage
-        .from('entry-images')
-        .getPublicUrl(`dev-user/${dk}.jpg`)
-      setPictureUrl(publicUrl)
+    if (error) {
+      setUploading(false)
+      setPreviewUrl(null)
+      setUploadError('Image upload failed. Try again.')
+      return
     }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('entry-images')
+      .getPublicUrl(path)
+    setPictureUrl(publicUrl)
+    setSaved(false)
+    setUploading(false)
   }
 
   const coherence = passage
@@ -292,7 +332,7 @@ export default function ThreadPage() {
               }}
               onClick={() => fileRef.current?.click()}
             >
-              {pictureUrl ? (
+              {(pictureUrl || previewUrl) ? (
                 <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', overflow: 'hidden', borderRadius: '8px', cursor: 'grab' }}
                   onMouseDown={(e) => {
                     const el = e.currentTarget.querySelector('img') as HTMLImageElement
@@ -301,7 +341,12 @@ export default function ThreadPage() {
                     const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
                     document.addEventListener('mousemove', move); document.addEventListener('mouseup', up)
                   }}>
-                  <img src={pictureUrl} alt="day moment" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 50%' }} />
+                  <img src={pictureUrl || previewUrl!} alt="day moment" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 50%', opacity: uploading ? 0.4 : 1, transition: 'opacity 0.3s' }} />
+                  {uploading && (
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span className="font-mono text-[11px] animate-breathe" style={{ color: 'rgba(201, 169, 110, 0.8)' }}>uploading…</span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <span className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.2)' }}>
@@ -310,6 +355,9 @@ export default function ThreadPage() {
               )}
             </div>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            {uploadError && (
+              <p className="font-body text-[11px] mt-1" style={{ color: 'rgba(220, 80, 80, 0.8)' }}>{uploadError}</p>
+            )}
           </div>
 
           {/* B. WHAT HAPPENED */}
@@ -368,7 +416,7 @@ export default function ThreadPage() {
           {/* Save button */}
           <button
             onClick={handleSave}
-            disabled={saving || !passage}
+            disabled={saving || uploading || !passage}
             className="w-full py-[12px] rounded-[18px] font-body text-[14px] tracking-wide transition-all"
             style={{
               background: saved ? 'rgba(201, 169, 110, 0.08)' : 'rgba(201, 169, 110, 0.18)',
@@ -376,7 +424,7 @@ export default function ThreadPage() {
               color: saved ? 'rgba(201, 169, 110, 0.5)' : 'rgba(201, 169, 110, 0.9)',
             }}
           >
-            {saving ? 'Saving…' : saved ? 'Saved \u2713' : 'Save the semicolon page'}
+            {uploading ? 'Image uploading…' : saving ? 'Saving…' : saved ? 'Saved \u2713' : 'Save the semicolon page'}
           </button>
         </div>
 
@@ -574,5 +622,3 @@ export default function ThreadPage() {
     </div>
   )
 }
-// injected by patch
-// injected by patch

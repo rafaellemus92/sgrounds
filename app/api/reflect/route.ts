@@ -18,6 +18,8 @@ export async function POST(req: NextRequest) {
     newsCtx,
     arcCtx,
     archetype,
+    imageBase64,
+    imageMediaType,
   }: {
     passage: string
     closingWord: string
@@ -27,6 +29,8 @@ export async function POST(req: NextRequest) {
     newsCtx: string
     arcCtx: string
     archetype: string | null
+    imageBase64?: string
+    imageMediaType?: string
   } = body
 
   const system = reflectSystemPrompt(
@@ -51,7 +55,25 @@ export async function POST(req: NextRequest) {
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         system,
-        messages: [{ role: 'user', content: passage }],
+        messages: [{
+          role: 'user',
+          content: imageBase64 && imageMediaType
+            ? [
+                {
+                  type: 'image',
+                  source: {
+                    type: 'base64',
+                    media_type: imageMediaType,
+                    data: imageBase64,
+                  },
+                },
+                {
+                  type: 'text',
+                  text: `The user chose this image as their semicolon moment — the frame they would keep if the day had only one image. Read it as part of their entry, not as a detached object. Let what you notice inform the reflection naturally, emotionally, and symbolically where appropriate, without turning clinical or sounding like an image caption.\n\n${passage}`,
+                },
+              ]
+            : passage,
+        }],
       }),
     })
 
