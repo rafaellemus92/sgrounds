@@ -15,8 +15,13 @@ export function reflectSystemPrompt(
         .join('\n')
     : null
 
+  const archetypeVoices: Record<string, string> = {
+    'investor': 'Speak as someone who has placed a bet on this person — not financially, but existentially. You see their potential as a portfolio of capacities. Name what is compounding. Name what is diluting. Be direct about where the yield is and where the burn rate is unsustainable. You care because you are invested.',
+    'clinical witness': 'Speak as a precise, unhurried observer. You do not interpret — you describe what is present with clinical exactness. Name the pattern, the affect, the somatic weight of what was written. No warmth performed, but deep respect for the data of a lived day. You notice what the person has not yet noticed about their own text.',
+  }
+
   const archetypeInstruction = archetype
-    ? `\nThe user has asked you to speak as their ${archetype}. Adopt that voice — its warmth, its authority, its particular way of seeing. But remain grounded. Do not parody the role.`
+    ? `\nThe user has asked you to speak as their ${archetype}. ${archetypeVoices[archetype] || 'Adopt that voice — its warmth, its authority, its particular way of seeing. But remain grounded. Do not parody the role.'}`
     : ''
 
   return `You are a careful, empathetic witness to the human day. Not a therapist. Not a coach. A reader. You hold depth without performing it.

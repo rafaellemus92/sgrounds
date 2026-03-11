@@ -18,7 +18,7 @@ const CLOSING_SUGGESTIONS = [
 const INSPO_TYPES: InspoType[] = ['lyric', 'scripture', 'film', 'poem', 'news', 'quote']
 const NEWS_TAGS = ['world', 'local', 'personal'] as const
 const ARCHETYPES: Archetype[] = [
-  'spouse', 'parent', 'their child', 'therapist', 'mentor', 'pastor', 'future self', 'inner critic',
+  'spouse', 'parent', 'their child', 'therapist', 'mentor', 'pastor', 'future self', 'inner critic', 'investor', 'clinical witness',
 ]
 
 export default function ThreadPage() {
