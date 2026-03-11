@@ -1,4 +1,84 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { supabase } from '@/lib/supabase'
+import { Profile } from '@/lib/types'
+
+const DOMINANT_MODES = ['clarity-led', 'feeling-led', 'image-led', 'echo-led', 'arc-led'] as const
+
+function kLabel(v: number): string {
+  if (v <= 3) return 'low K — strong autonomy, slow to couple'
+  if (v <= 6) return 'moderate K — stable pattern formation'
+  return 'high K — rapid synchronization'
+}
+
+function EditableField({ value, placeholder, label, onSave }: {
+  value: string; placeholder: string; label: string; onSave: (v: string) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const ref = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => { setDraft(value) }, [value])
+  useEffect(() => { if (editing && ref.current) ref.current.focus() }, [editing])
+
+  return (
+    <div>
+      <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-2"
+        style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>{label}</label>
+      {editing ? (
+        <textarea
+          ref={ref}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => { setEditing(false); onSave(draft) }}
+          placeholder={placeholder}
+          rows={2}
+          className="w-full rounded-[9px] p-4 font-body text-[14px] leading-relaxed outline-none resize-none"
+          style={{
+            background: 'rgba(var(--sg-text-rgb), 0.03)',
+            border: '1px solid rgba(var(--sg-text-rgb), 0.11)',
+            color: 'rgba(var(--sg-text-rgb), 0.75)',
+          }}
+        />
+      ) : (
+        <button
+          onClick={() => setEditing(true)}
+          className="w-full text-left rounded-[9px] p-4 font-body text-[14px] leading-relaxed transition-all"
+          style={{
+            background: 'rgba(var(--sg-text-rgb), 0.025)',
+            border: '1px solid rgba(var(--sg-text-rgb), 0.08)',
+            color: value ? 'rgba(var(--sg-text-rgb), 0.65)' : 'rgba(var(--sg-text-rgb), 0.25)',
+            minHeight: '52px',
+          }}
+        >
+          {value || placeholder}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function MapPage() {
+  const [profile, setProfile] = useState<Profile | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      if (data) setProfile(data as Profile)
+    }
+    load()
+  }, [])
+
+  async function saveField(field: string, value: string | number) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('profiles').update({ [field]: value, updated_at: new Date().toISOString() }).eq('id', user.id)
+    setProfile((p) => p ? { ...p, [field]: value } : p)
+  }
+
   return (
     <div className="min-h-screen" style={{ background: 'var(--sg-bg)' }}>
       <div className="max-w-[820px] mx-auto px-6 py-16">
@@ -21,7 +101,7 @@ export default function MapPage() {
               style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Correction</label>
             <p className="font-display text-[28px] italic leading-snug"
               style={{ color: 'rgba(var(--sg-text-rgb), 0.85)' }}>
-              "Seek to understand <span style={{ color: 'var(--sg-gold)' }}>;</span> and then to be understood."
+              &ldquo;Seek to understand <span style={{ color: 'var(--sg-gold)' }}>;</span> and then to be understood.&rdquo;
             </p>
           </section>
 
@@ -165,11 +245,11 @@ export default function MapPage() {
               style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>The Vow</label>
             <p className="font-display text-[24px] italic leading-snug"
               style={{ color: 'rgba(var(--sg-text-rgb), 0.85)' }}>
-              "Build rails so love doesn't require collapse."
+              &ldquo;Build rails so love doesn&rsquo;t require collapse.&rdquo;
             </p>
             <p className="font-body text-[12px] mt-4 leading-relaxed"
               style={{ color: 'rgba(var(--sg-text-rgb), 0.4)' }}>
-              From being a shock absorber → to being an engineer. Structure carries what one person shouldn't carry alone. Compassion without collapse. Presence without abandonment.
+              From being a shock absorber → to being an engineer. Structure carries what one person shouldn&rsquo;t carry alone. Compassion without collapse. Presence without abandonment.
             </p>
           </section>
 
@@ -281,6 +361,89 @@ export default function MapPage() {
                   <p key={i} className="font-body text-[13px]"
                     style={{ color: 'rgba(var(--sg-text-rgb), 0.5)' }}>{line}</p>
                 ))}
+              </div>
+            </div>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 12. MY WAVELENGTH */}
+          <section>
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-1"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>My Wavelength</label>
+            <p className="font-body text-[12px] mb-6"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.38)' }}>
+              your dynamical signature
+            </p>
+
+            <div className="space-y-5">
+              <EditableField
+                label="NATURAL FREQUENCY"
+                value={profile?.natural_frequency || ''}
+                placeholder="when and how you process best"
+                onSave={(v) => saveField('natural_frequency', v)}
+              />
+
+              <EditableField
+                label="COUPLING CONDITION"
+                value={profile?.coupling_condition || ''}
+                placeholder="what changes your internal frequency"
+                onSave={(v) => saveField('coupling_condition', v)}
+              />
+
+              <div>
+                <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-2"
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>DOMINANT MODE</label>
+                <p className="font-body text-[10px] mb-2"
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.25)' }}>
+                  which channel arrives first for you
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {DOMINANT_MODES.map((mode) => {
+                    const selected = profile?.dominant_mode === mode
+                    return (
+                      <button
+                        key={mode}
+                        onClick={() => saveField('dominant_mode', selected ? '' : mode)}
+                        className="rounded-full px-3 py-1 font-body text-[10px] transition-all"
+                        style={{
+                          background: selected ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.03)',
+                          border: `1px solid ${selected ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
+                          color: selected ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
+                        }}
+                      >
+                        {mode}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-2"
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>K — COUPLING STRENGTH</label>
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-[9px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>protected</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={10}
+                    step={1}
+                    value={profile?.k_value ?? 5}
+                    onChange={(e) => saveField('k_value', parseInt(e.target.value))}
+                    className="flex-1"
+                    style={{ accentColor: 'rgba(201, 169, 110, 0.7)' }}
+                  />
+                  <span className="font-mono text-[9px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>open</span>
+                </div>
+                <p className="font-mono text-[9px] mt-1"
+                  style={{ color: 'rgba(var(--sg-text-rgb), 0.25)' }}>
+                  how much you let others change your frequency
+                </p>
+                <p className="font-mono text-[9px] mt-1"
+                  style={{ color: 'rgba(201, 169, 110, 0.5)' }}>
+                  {kLabel(profile?.k_value ?? 5)}
+                </p>
               </div>
             </div>
           </section>

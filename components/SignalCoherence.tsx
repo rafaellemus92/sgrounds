@@ -23,6 +23,14 @@ export default function SignalCoherence({ coherence }: { coherence: Coherence })
       5
   )
 
+  const attunementGap = coherence.momentClarity - coherence.emotionalUnity
+
+  const gapDisplay = attunementGap > 5
+    ? { text: `named before felt  \u2191${attunementGap}`, sub: 'air conduction' }
+    : attunementGap < -5
+    ? { text: `felt before named  \u2193${Math.abs(attunementGap)}`, sub: 'bone conduction' }
+    : { text: 'arrived together', sub: 'both channels' }
+
   return (
     <section className="animate-slideUp">
       <SectionLabel
@@ -95,6 +103,41 @@ export default function SignalCoherence({ coherence }: { coherence: Coherence })
             </div>
           )
         })}
+
+        {/* Conduction route (attunement gap) */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: space[3],
+          marginTop: space[2],
+          paddingTop: space[2],
+          borderTop: '1px solid rgba(var(--sg-text-rgb), 0.05)',
+        }}>
+          <span style={{
+            fontFamily: font.mono,
+            fontSize: fontSize.xs,
+            color: color.text30,
+            width: '100px',
+            flexShrink: 0,
+          }}>
+            conduction route
+          </span>
+          <span style={{
+            fontFamily: font.mono,
+            fontSize: fontSize.xs,
+            color: color.gold70,
+            flex: 1,
+          }}>
+            {gapDisplay.text}
+          </span>
+          <span style={{
+            fontFamily: font.mono,
+            fontSize: fontSize.xs,
+            color: color.text25,
+          }}>
+            {gapDisplay.sub}
+          </span>
+        </div>
       </div>
     </section>
   )
