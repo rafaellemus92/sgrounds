@@ -58,13 +58,24 @@ export default function SignalCoherence({ coherence }: { coherence: Coherence })
         Higher does not mean better. It means clearer.
       </p>
 
-      <div className="flex items-baseline gap-2 mb-4">
-        <span className="font-mono text-[28px] font-medium" style={{ color: 'rgba(var(--sg-text-rgb), 0.7)' }}>
+      <div className="flex items-baseline gap-2 mb-4 group/coh relative">
+        <span className="font-mono text-[28px] font-medium cursor-default" style={{ color: 'rgba(var(--sg-text-rgb), 0.7)' }}>
           {overall}%
         </span>
         <span className="font-mono text-[11px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.35)' }}>
           {coherenceDescriptor(overall)}
         </span>
+        <div
+          className="absolute left-0 top-full mt-1 w-[260px] rounded-[9px] px-3 py-2.5 opacity-0 group-hover/coh:opacity-100 transition-opacity duration-300 pointer-events-none z-10"
+          style={{
+            background: 'rgba(9, 9, 10, 0.95)',
+            border: '1px solid rgba(201, 169, 110, 0.15)',
+          }}
+        >
+          <p className="font-body text-[10px] leading-relaxed" style={{ color: 'rgba(var(--sg-text-rgb), 0.4)' }}>
+            Coherence is not optimized. It is recognized. Like cardiorespiratory coupling — the signal was always there. This just names its shape.
+          </p>
+        </div>
       </div>
 
       <div className="space-y-2">

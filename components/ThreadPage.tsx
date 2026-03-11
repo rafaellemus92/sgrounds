@@ -9,10 +9,12 @@ import SongCard from './SongCard'
 import ReflectionModal from './ReflectionModal'
 import DaySignalImage from './DaySignalImage'
 import DayMelody from './DayMelody'
+import LissajousBackground from './LissajousBackground'
 
 const CLOSING_SUGGESTIONS = [
   'enduring', 'suspended', 'load-bearing', 'clarifying', 'faithful',
   'still', 'held', 'present', 'steady', 'returned', 'thin', 'enough', 'witness',
+  'coupled', 'entrained', 'phase', 'cycling', 'amplitude',
 ]
 
 const INSPO_TYPES: InspoType[] = ['lyric', 'scripture', 'film', 'poem', 'news', 'quote']
@@ -352,7 +354,10 @@ export default function ThreadPage() {
   }
 
   return (
-    <div className="max-w-[820px] mx-auto px-4 pb-24 md:pb-8">
+    <div className="max-w-[820px] mx-auto px-4 pb-24 md:pb-8 relative">
+      {/* Lissajous background — visible only when empty */}
+      <LissajousBackground visible={!passage && !pictureUrl} />
+
       {/* Header */}
       <div className="text-center pt-6 pb-8">
         <div style={labelStyle} className="mb-3">{dl.toUpperCase()}</div>
