@@ -1,14 +1,21 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Entry, InspoType, Archetype } from '@/lib/types'
+import { InspoType, Archetype } from '@/lib/types'
 import { todayKey, todayLabel, currentTime, dailyPrompt, passageFontSize, computeCoherence } from '@/lib/utils'
+import { color, font, fontSize, radius, transition, inputStyle, eyebrowStyle, space } from '@/lib/theme'
 import SignalCoherence from './SignalCoherence'
 import SongCard from './SongCard'
 import ReflectionModal from './ReflectionModal'
 import DaySignalImage from './DaySignalImage'
 import DayMelody from './DayMelody'
+import SectionLabel from './ui/SectionLabel'
+import Pill from './ui/Pill'
+import ImageFrame from './ui/ImageFrame'
+import RitualButton from './ui/RitualButton'
+import ReflectiveTextarea from './ui/ReflectiveTextarea'
+import Disclosure from './ui/Disclosure'
 
 const CLOSING_SUGGESTIONS = [
   'enduring', 'suspended', 'load-bearing', 'clarifying', 'faithful',
@@ -54,10 +61,7 @@ export default function ThreadPage() {
   // UI state
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [showSignal, setShowSignal] = useState(false)
-  const [showMelody, setShowMelody] = useState(false)
-
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [saveFlash, setSaveFlash] = useState(false)
 
   // Update time every minute
   useEffect(() => {
@@ -103,7 +107,7 @@ export default function ThreadPage() {
     load()
   }, [dk])
 
-  async function handleSave() {
+  const handleSave = useCallback(async () => {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSaving(false); return }
@@ -128,6 +132,8 @@ export default function ThreadPage() {
     await supabase.from('entries').upsert(entry, { onConflict: 'user_id,date_key' })
     setSaved(true)
     setSaving(false)
+    setSaveFlash(true)
+    setTimeout(() => setSaveFlash(false), 1600)
 
     // Fetch day gift
     if (passage && !dayGift) {
@@ -145,7 +151,7 @@ export default function ThreadPage() {
         })
         .catch(() => {})
     }
-  }
+  }, [dk, dl, passage, arcNote, closingWord, pictureUrl, inspoType, inspoText, inspoArtist, inspoSong, inspoPreviewUrl, newsTag, dayGift])
 
   async function handleReflect() {
     if (!passage) return
@@ -154,10 +160,8 @@ export default function ThreadPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setReflecting(false); return }
 
-    // Get profile
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
-    // Get previous entries
     const { data: prevEntries } = await supabase
       .from('entries')
       .select('*')
@@ -193,16 +197,13 @@ export default function ThreadPage() {
       setReflection(data.reflection)
       setShowModal(true)
 
-      // Save reflection
       await supabase.from('entries').update({ reflection: data.reflection }).eq('user_id', user.id).eq('date_key', dk)
 
-      // Extract tomorrow question
       const tMatch = data.reflection?.match(/TOMORROW::\s*(.+?)$/m)
       if (tMatch) {
         await supabase.from('entries').update({ tomorrow_q: tMatch[1].trim() }).eq('user_id', user.id).eq('date_key', dk)
       }
 
-      // Weave if 5+ entries
       if (prevEntries && prevEntries.length >= 4) {
         const weaveRes = await fetch('/api/weave', {
           method: 'POST',
@@ -241,328 +242,345 @@ export default function ThreadPage() {
     ? computeCoherence({ passage, arcNote, picture: pictureUrl, inspoType, inspoText, closingWord })
     : null
 
-  const inputStyle = {
-    background: 'rgba(var(--sg-text-rgb), 0.032)',
-    border: '1px solid rgba(var(--sg-text-rgb), 0.11)',
-    color: 'rgba(var(--sg-text-rgb), 0.85)',
-  }
-
-  const labelStyle = {
-    fontSize: '8px',
-    color: 'rgba(var(--sg-text-rgb), 0.34)',
-    fontFamily: 'var(--font-mono, "DM Mono", monospace)',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.15em',
-    fontWeight: 500 as const,
+  const charCountStyle: React.CSSProperties = {
+    fontFamily: font.mono,
+    fontSize: fontSize.xs,
+    color: passage.length > 238 ? color.gold : color.text20,
+    transition: `color ${transition.normal}`,
   }
 
   return (
-    <div className="max-w-[820px] mx-auto px-4 pb-24 md:pb-8">
-      {/* Header */}
-      <div className="text-center pt-6 pb-8">
-        <div style={labelStyle} className="mb-3">{dl.toUpperCase()}</div>
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          <span className="font-mono text-[13px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.4)' }}>
+    <div style={{ maxWidth: '860px', margin: '0 auto', padding: `0 ${space[4]} ${space[16]}` }}
+      className="sg-thread-page"
+    >
+      {/* ─── Header ─── */}
+      <header style={{ textAlign: 'center', paddingTop: space[6], paddingBottom: space[10] }}>
+        <div style={{ ...eyebrowStyle, marginBottom: space[4] }}>{dl.toUpperCase()}</div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: space[3],
+          flexWrap: 'wrap',
+        }}>
+          <span style={{ fontFamily: font.mono, fontSize: fontSize.md, color: color.text38 }}>
             {time}
           </span>
-          <span className="font-display text-[46px] text-sg-gold animate-breathe leading-none">;</span>
-          <span className="font-display text-[22px] italic" style={{ color: 'rgba(var(--sg-text-rgb), 0.55)' }}>
+          <span
+            className="animate-breathe"
+            style={{
+              fontFamily: font.display,
+              fontSize: fontSize['5xl'],
+              color: color.gold,
+              lineHeight: '1',
+            }}
+          >
+            ;
+          </span>
+          <span style={{
+            fontFamily: font.display,
+            fontSize: fontSize['3xl'],
+            fontStyle: 'italic',
+            color: color.text55,
+            maxWidth: '420px',
+          }}>
             {dailyPrompt()}
           </span>
         </div>
-        <p className="font-display text-[12px] italic mt-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>
+        <p style={{
+          fontFamily: font.display,
+          fontSize: fontSize.base,
+          fontStyle: 'italic',
+          color: color.text25,
+          marginTop: space[2],
+        }}>
           and what did it continue?
         </p>
-      </div>
+      </header>
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] gap-8">
-        {/* LEFT COLUMN */}
-        <div className="space-y-6">
-          {/* A. THE ; MOMENT */}
-          <div>
-            <div style={labelStyle} className="mb-1">THE ; MOMENT</div>
-            <p className="font-body text-[10px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.28)' }}>
-              The frame you would keep if the day had only one image.
-            </p>
-            <div
-              className="rounded-[12px] overflow-hidden cursor-pointer transition-all"
-              style={{
-                minHeight: pictureUrl ? 'auto' : '140px',
-                ...inputStyle,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onClick={() => fileRef.current?.click()}
-            >
-              {pictureUrl ? (
-                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', overflow: 'hidden', borderRadius: '8px', cursor: 'grab' }}
-                  onMouseDown={(e) => {
-                    const el = e.currentTarget.querySelector('img') as HTMLImageElement
-                    const startY = e.clientY, startTop = parseInt(el.style.top || '50')
-                    const move = (ev: MouseEvent) => { el.style.objectPosition = `center ${Math.max(0, Math.min(100, startTop + (ev.clientY - startY) * 0.3))}%` }
-                    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
-                    document.addEventListener('mousemove', move); document.addEventListener('mouseup', up)
-                  }}>
-                  <img src={pictureUrl} alt="day moment" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 50%' }} />
-                </div>
-              ) : (
-                <span className="font-body text-[12px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.2)' }}>
-                  tap to add image
-                </span>
-              )}
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-          </div>
+      {/* ─── Two-column layout ─── */}
+      <div className="sg-two-col">
+        {/* ─── LEFT COLUMN ─── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: space[6] }}>
+
+          {/* A. THE ; MOMENT — Image */}
+          <section>
+            <SectionLabel
+              label="THE ; MOMENT"
+              helper="The frame you would keep if the day had only one image."
+            />
+            <ImageFrame src={pictureUrl} onUpload={handleImageUpload} />
+          </section>
 
           {/* B. WHAT HAPPENED */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span style={labelStyle}>WHAT HAPPENED — AND WHAT I THINK IT MEANT</span>
-              <span
-                className="font-mono text-[9px]"
-                style={{ color: passage.length > 238 ? '#c9a96e' : 'rgba(var(--sg-text-rgb), 0.2)' }}
-              >
-                {passage.length}/280
-              </span>
-            </div>
-            <textarea
-              value={passage}
-              onChange={(e) => { if (e.target.value.length <= 280) { setPassage(e.target.value); setSaved(false) } }}
-              placeholder="Name the event. Then name the meaning you felt forming."
-              className="w-full rounded-[9px] px-[13px] py-[10px] outline-none resize-none transition-all focus:ring-2 focus:ring-sg-gold/50 focus:ring-offset-2"
-              style={{
-                ...inputStyle,
-                fontFamily: 'var(--font-body, "DM Sans", system-ui, sans-serif)',
-                fontSize: passageFontSize(passage.length),
-                minHeight: 120,
-              }}
+          <section>
+            <SectionLabel
+              label="WHAT HAPPENED — AND WHAT I THINK IT MEANT"
+              right={<span style={charCountStyle}>{passage.length}/280</span>}
             />
-          </div>
+            <ReflectiveTextarea
+              value={passage}
+              onChange={(v) => { setPassage(v); setSaved(false) }}
+              placeholder="Name the event. Then name the meaning you felt forming."
+              maxLength={280}
+              fontSize={passageFontSize(passage.length)}
+              minHeight={120}
+              autoResize
+              ariaLabel="Today's passage"
+            />
+          </section>
 
           {/* C. CLOSING WORD */}
-          <div>
-            <div style={labelStyle} className="mb-1">CLOSING WORD</div>
+          <section>
+            <SectionLabel label="CLOSING WORD" />
             <input
               type="text"
               value={closingWord}
               onChange={(e) => { setClosingWord(e.target.value); setSaved(false) }}
-              className="w-full rounded-[9px] px-[13px] py-[10px] text-center font-display text-[26px] outline-none transition-all focus:ring-2 focus:ring-sg-gold/50 focus:ring-offset-2"
-              style={inputStyle}
+              aria-label="Closing word"
+              className="sg-textarea"
+              style={{
+                ...inputStyle,
+                width: '100%',
+                borderRadius: radius.md,
+                padding: '10px 13px',
+                textAlign: 'center',
+                fontFamily: font.display,
+                fontSize: fontSize['4xl'],
+                outline: 'none',
+                transition: `all ${transition.normal}`,
+              }}
             />
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space[1], marginTop: space[2] }}>
               {CLOSING_SUGGESTIONS.map((w) => (
-                <button
+                <Pill
                   key={w}
+                  label={w}
+                  selected={closingWord === w}
                   onClick={() => { setClosingWord(w); setSaved(false) }}
-                  className="px-[10px] py-[2px] rounded-full text-[10px] font-body transition-all"
-                  style={{
-                    background: closingWord === w ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
-                    border: `1.5px solid ${closingWord === w ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                    color: closingWord === w ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
-                  }}
-                >
-                  {w}
-                </button>
+                />
               ))}
             </div>
-          </div>
+          </section>
 
           {/* Save button */}
-          <button
-            onClick={handleSave}
-            disabled={saving || !passage}
-            className="w-full py-[12px] rounded-[18px] font-body text-[14px] tracking-wide transition-all"
-            style={{
-              background: saved ? 'rgba(201, 169, 110, 0.08)' : 'rgba(201, 169, 110, 0.18)',
-              border: '1.5px solid rgba(201, 169, 110, 0.35)',
-              color: saved ? 'rgba(201, 169, 110, 0.5)' : 'rgba(201, 169, 110, 0.9)',
-            }}
-          >
-            {saving ? 'Saving…' : saved ? 'Saved \u2713' : 'Save the semicolon page'}
-          </button>
+          <div style={{ position: 'relative' }}>
+            <RitualButton
+              onClick={handleSave}
+              disabled={!passage}
+              loading={saving}
+              loadingText="Saving…"
+              variant={saved ? 'ghost' : 'primary'}
+              style={saved ? {
+                background: color.gold08,
+                border: `1.5px solid ${color.gold22}`,
+                color: color.gold50,
+              } : undefined}
+            >
+              {saved ? 'Saved \u2713' : 'Save the semicolon page'}
+            </RitualButton>
+            {saveFlash && (
+              <div className="sg-save-flash" style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: radius.xl,
+                border: `1.5px solid ${color.gold38}`,
+                pointerEvents: 'none',
+              }} />
+            )}
+          </div>
         </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="space-y-6">
+        {/* ─── RIGHT COLUMN ─── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: space[6] }}>
+
           {/* D. WHAT ECHOED IT */}
-          <div>
-            <div style={labelStyle} className="mb-1">WHAT ECHOED IT</div>
-            <p className="font-body text-[10px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.28)' }}>
-              Song, lyric, scripture, film, poem, quote, headline, or news.
-            </p>
-            <div className="flex flex-wrap gap-1 mb-3">
+          <section>
+            <SectionLabel
+              label="WHAT ECHOED IT"
+              helper="Song, lyric, scripture, film, poem, quote, headline, or news."
+            />
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space[1], marginBottom: space[3] }}>
               {INSPO_TYPES.map((t) => (
-                <button
+                <Pill
                   key={t}
+                  label={t}
+                  selected={inspoType === t}
                   onClick={() => setInspoType(inspoType === t ? null : t)}
-                  className="px-[10px] py-[2px] rounded-full text-[10px] font-body transition-all"
-                  style={{
-                    background: inspoType === t ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
-                    border: `1.5px solid ${inspoType === t ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                    color: inspoType === t ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
-                  }}
-                >
-                  {t}
-                </button>
+                />
               ))}
             </div>
-            <textarea
-              value={inspoText}
-              onChange={(e) => setInspoText(e.target.value)}
-              placeholder="The line, verse, or quote that echoed today"
-              rows={2}
-              className="w-full rounded-[9px] px-[13px] py-[10px] font-display italic text-[14px] outline-none resize-none transition-all focus:ring-2 focus:ring-sg-gold/50 focus:ring-offset-2"
-              style={inputStyle}
-            />
 
-            {inspoType === 'lyric' && (
-              <div className="mt-2">
-                <SongCard
-                  song={selectedSong}
-                  onSelect={(s) => {
-                    setSelectedSong(s)
-                    setInspoArtist(s.artistName)
-                    setInspoSong(s.trackName)
-                    setInspoPreviewUrl(s.previewUrl || null)
-                  }}
+            {inspoType ? (
+              <div className="animate-slideUp">
+                <ReflectiveTextarea
+                  value={inspoText}
+                  onChange={setInspoText}
+                  placeholder="The line, verse, or quote that echoed today"
+                  fontFamily="display"
+                  italic
+                  fontSize={fontSize.lg}
+                  minHeight={60}
+                  ariaLabel="Echo source text"
                 />
-              </div>
-            )}
 
-            {inspoType === 'news' && (
-              <div className="flex gap-1 mt-2">
-                {NEWS_TAGS.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setNewsTag(newsTag === t ? null : t)}
-                    className="px-[10px] py-[2px] rounded-full text-[10px] font-body transition-all"
-                    style={{
-                      background: newsTag === t ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
-                      border: `1.5px solid ${newsTag === t ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                      color: newsTag === t ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
-                    }}
-                  >
-                    {t === 'world' ? '\uD83C\uDF0D world' : t === 'local' ? '\uD83D\uDCCD local' : '\uD83E\uDEC0 personal'}
-                  </button>
-                ))}
+                {inspoType === 'lyric' && (
+                  <div style={{ marginTop: space[2] }}>
+                    <SongCard
+                      song={selectedSong}
+                      onSelect={(s) => {
+                        setSelectedSong(s)
+                        setInspoArtist(s.artistName)
+                        setInspoSong(s.trackName)
+                        setInspoPreviewUrl(s.previewUrl || null)
+                      }}
+                    />
+                  </div>
+                )}
+
+                {inspoType === 'news' && (
+                  <div style={{ display: 'flex', gap: space[1], marginTop: space[2] }}>
+                    {NEWS_TAGS.map((t) => (
+                      <Pill
+                        key={t}
+                        label={t === 'world' ? '\uD83C\uDF0D world' : t === 'local' ? '\uD83D\uDCCD local' : '\uD83E\uDEC0 personal'}
+                        selected={newsTag === t}
+                        onClick={() => setNewsTag(newsTag === t ? null : t)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
+            ) : (
+              <p style={{
+                fontFamily: font.display,
+                fontSize: fontSize.lg,
+                fontStyle: 'italic',
+                color: color.text15,
+                padding: '12px 0',
+              }}>
+                choose a source above to begin
+              </p>
             )}
-          </div>
+          </section>
 
           {/* E. THE AND */}
-          <div>
-            <div style={labelStyle} className="mb-1">THE AND</div>
-            <p className="font-body text-[10px] mb-2" style={{ color: 'rgba(var(--sg-text-rgb), 0.28)' }}>
-              The larger arc this moment belongs to.
-            </p>
-            <textarea
-              value={arcNote}
-              onChange={(e) => { setArcNote(e.target.value); setSaved(false) }}
-              placeholder={'And what did this continue?\n\ne.g. trust being built \u00B7 time as treatment \u00B7 endurance as area under the curve \u00B7 identity becoming action'}
-              rows={3}
-              className="w-full rounded-[9px] px-[13px] py-[10px] font-body text-[13px] outline-none resize-none transition-all focus:ring-2 focus:ring-sg-gold/50 focus:ring-offset-2"
-              style={inputStyle}
+          <section>
+            <SectionLabel
+              label="THE AND"
+              helper="The larger arc this moment belongs to."
             />
-          </div>
+            <ReflectiveTextarea
+              value={arcNote}
+              onChange={(v) => { setArcNote(v); setSaved(false) }}
+              placeholder={'And what did this continue?\n\ne.g. trust being built \u00B7 time as treatment \u00B7 endurance as area under the curve'}
+              minHeight={80}
+              ariaLabel="The larger arc"
+            />
+          </section>
 
           {/* F. WHAT TODAY GAVE YOU */}
-          {dayGift && (
-            <div className="animate-fortuneIn">
-              <div style={labelStyle} className="mb-1">WHAT TODAY GAVE YOU</div>
-              <p className="font-display italic text-[14px]" style={{ color: 'rgba(201, 169, 110, 0.7)' }}>
+          {dayGift ? (
+            <section className="animate-fortuneIn">
+              <SectionLabel label="WHAT TODAY GAVE YOU" />
+              <p style={{
+                fontFamily: font.display,
+                fontSize: fontSize.lg,
+                fontStyle: 'italic',
+                color: color.gold70,
+                lineHeight: '1.6',
+              }}>
                 {dayGift}
               </p>
-            </div>
-          )}
+            </section>
+          ) : saved ? (
+            <section>
+              <SectionLabel label="WHAT TODAY GAVE YOU" />
+              <p style={{
+                fontFamily: font.display,
+                fontSize: fontSize.md,
+                fontStyle: 'italic',
+                color: color.text15,
+              }}>
+                appears after you save
+              </p>
+            </section>
+          ) : null}
 
           {/* G. SIGNAL COHERENCE */}
           {coherence && <SignalCoherence coherence={coherence} />}
 
           {/* H. SPEAK TO ME AS MY… */}
-          <div>
-            <div style={labelStyle} className="mb-2">SPEAK TO ME AS MY…</div>
-            <div className="flex flex-wrap gap-1">
+          <section>
+            <SectionLabel label="SPEAK TO ME AS MY…" />
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space[1] }}>
               {ARCHETYPES.map((a) => (
-                <button
+                <Pill
                   key={a}
+                  label={a}
+                  selected={archetype === a}
                   onClick={() => setArchetype(archetype === a ? null : a)}
-                  className="px-[10px] py-[2px] rounded-full text-[10px] font-body transition-all"
-                  style={{
-                    background: archetype === a ? 'rgba(201, 169, 110, 0.12)' : 'rgba(var(--sg-text-rgb), 0.025)',
-                    border: `1.5px solid ${archetype === a ? 'rgba(201, 169, 110, 0.38)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                    color: archetype === a ? 'rgba(201, 169, 110, 0.85)' : 'rgba(var(--sg-text-rgb), 0.38)',
-                  }}
-                >
-                  {a}
-                </button>
+                />
               ))}
             </div>
-          </div>
+          </section>
 
           {/* I. ASK THE LIGHTHOUSE TO READ */}
-          <div>
-            <button
+          <section>
+            <RitualButton
               onClick={handleReflect}
-              disabled={reflecting || !passage}
-              className="w-full py-[12px] rounded-[18px] font-body text-[14px] tracking-wide transition-all"
-              style={{
-                background: reflecting
-                  ? 'rgba(201, 169, 110, 0.08)'
-                  : passage
-                  ? 'rgba(201, 169, 110, 0.22)'
-                  : 'rgba(var(--sg-text-rgb), 0.04)',
-                border: `1.5px solid ${passage ? 'rgba(201, 169, 110, 0.4)' : 'rgba(var(--sg-text-rgb), 0.08)'}`,
-                color: passage ? 'rgba(201, 169, 110, 0.9)' : 'rgba(var(--sg-text-rgb), 0.25)',
-              }}
+              disabled={!passage}
+              loading={reflecting}
+              loadingText="The Lighthouse is reading…"
             >
-              {reflecting ? 'The Lighthouse is reading…' : 'Ask the Lighthouse to read'}
-            </button>
+              Ask the Lighthouse to read
+            </RitualButton>
             {!passage && (
-              <p className="text-center font-body text-[10px] mt-1" style={{ color: 'rgba(var(--sg-text-rgb), 0.25)' }}>
+              <p style={{
+                textAlign: 'center',
+                fontFamily: font.body,
+                fontSize: fontSize.sm,
+                color: color.text25,
+                marginTop: space[1],
+              }}>
                 write your moment first
               </p>
             )}
             {reflection && !reflecting && (
               <button
                 onClick={() => setShowModal(true)}
-                className="w-full mt-2 py-[6px] rounded-[12px] font-mono text-[10px] transition-all"
                 style={{
-                  background: 'rgba(var(--sg-text-rgb), 0.02)',
-                  border: '1px solid rgba(var(--sg-text-rgb), 0.06)',
-                  color: 'rgba(var(--sg-text-rgb), 0.3)',
+                  width: '100%',
+                  marginTop: space[2],
+                  padding: '6px 0',
+                  borderRadius: radius.lg,
+                  fontFamily: font.mono,
+                  fontSize: fontSize.sm,
+                  background: color.surface03,
+                  border: `1px solid ${color.border06}`,
+                  color: color.text30,
+                  cursor: 'pointer',
+                  transition: `all ${transition.normal}`,
                 }}
+                aria-label="Open lighthouse reading"
               >
                 read again ;
               </button>
             )}
-          </div>
+          </section>
 
           {/* J. DAY SIGNAL IMAGE */}
           {passage && (
-            <details>
-              <summary
-                className="font-mono text-[9px] uppercase tracking-[0.15em] cursor-pointer mb-2"
-                style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}
-              >
-                Day Signal Image
-              </summary>
+            <Disclosure label="Day Signal Image">
               <DaySignalImage passage={passage} closingWord={closingWord} />
-            </details>
+            </Disclosure>
           )}
 
           {/* K. DAY MELODY */}
           {passage && (
-            <details>
-              <summary
-                className="font-mono text-[9px] uppercase tracking-[0.15em] cursor-pointer mb-2"
-                style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}
-              >
-                Day Melody
-              </summary>
+            <Disclosure label="Day Melody">
               <DayMelody passage={passage} />
-            </details>
+            </Disclosure>
           )}
         </div>
       </div>
@@ -578,5 +596,3 @@ export default function ThreadPage() {
     </div>
   )
 }
-// injected by patch
-// injected by patch

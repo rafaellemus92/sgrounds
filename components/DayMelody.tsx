@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { color, font, fontSize, radius, transition } from '@/lib/theme'
 
 const PENTATONIC = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25]
 
@@ -45,14 +46,22 @@ export default function DayMelody({ passage }: { passage: string }) {
     <button
       onClick={play}
       disabled={playing || !passage}
-      className="w-full py-2 rounded-[12px] font-mono text-[10px] tracking-wide transition-all"
+      aria-label={playing ? 'Playing melody' : 'Play day melody'}
       style={{
-        background: playing ? 'rgba(201, 169, 110, 0.1)' : 'rgba(var(--sg-text-rgb), 0.025)',
-        border: '1px solid rgba(var(--sg-text-rgb), 0.06)',
-        color: playing ? 'rgba(201, 169, 110, 0.7)' : 'rgba(var(--sg-text-rgb), 0.35)',
+        width: '100%',
+        padding: '8px 0',
+        borderRadius: radius.lg,
+        fontFamily: font.mono,
+        fontSize: fontSize.sm,
+        letterSpacing: '0.04em',
+        background: playing ? color.gold08 : color.surface03,
+        border: `1px solid ${color.border06}`,
+        color: playing ? color.gold70 : color.text34,
+        cursor: playing || !passage ? 'default' : 'pointer',
+        transition: `all ${transition.normal}`,
       }}
     >
-      {playing ? 'playing melody…' : '▶ play day melody'}
+      {playing ? 'playing melody\u2026' : '\u25B6 play day melody'}
     </button>
   )
 }

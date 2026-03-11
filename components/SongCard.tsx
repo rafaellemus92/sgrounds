@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { color, font, fontSize, radius, transition, inputStyle, space } from '@/lib/theme'
 
 interface SongResult {
   trackName: string
@@ -54,27 +55,37 @@ export default function SongCard({
   if (song) {
     return (
       <div
-        className="rounded-[12px] p-3 animate-slideUp"
+        className="animate-slideUp"
         style={{
-          background: 'rgba(var(--sg-text-rgb), 0.025)',
-          border: '1px solid rgba(var(--sg-text-rgb), 0.06)',
+          borderRadius: radius.lg,
+          padding: space[3],
+          background: color.surface03,
+          border: `1px solid ${color.border06}`,
         }}
       >
-        <div className="font-display text-[17px]" style={{ color: 'rgba(var(--sg-text-rgb), 0.75)' }}>
+        <div style={{ fontFamily: font.display, fontSize: '17px', color: color.text75 }}>
           {song.trackName}
         </div>
-        <div className="font-body text-[12px] text-sg-gold mt-0.5">{song.artistName}</div>
+        <div style={{ fontFamily: font.body, fontSize: fontSize.base, color: color.gold70, marginTop: '2px' }}>
+          {song.artistName}
+        </div>
         {song.previewUrl && (
           <button
             onClick={togglePlay}
-            className="mt-2 font-mono text-[10px] px-3 py-1 rounded-full transition-all"
             style={{
-              background: playing ? 'rgba(201, 169, 110, 0.15)' : 'rgba(var(--sg-text-rgb), 0.04)',
-              border: '1px solid rgba(var(--sg-text-rgb), 0.08)',
-              color: 'rgba(var(--sg-text-rgb), 0.45)',
+              marginTop: space[2],
+              fontFamily: font.mono,
+              fontSize: fontSize.sm,
+              padding: '4px 12px',
+              borderRadius: radius.pill,
+              background: playing ? color.gold15 : color.surface04,
+              border: `1px solid ${color.border08}`,
+              color: color.text45,
+              cursor: 'pointer',
+              transition: `all ${transition.normal}`,
             }}
           >
-            {playing ? '▮▮ pause' : '▶ preview'}
+            {playing ? '\u25AE\u25AE pause' : '\u25B6 preview'}
           </button>
         )}
       </div>
@@ -88,27 +99,46 @@ export default function SongCard({
         value={query}
         onChange={(e) => search(e.target.value)}
         placeholder="search artist or song"
-        className="w-full px-[13px] py-[8px] rounded-[9px] font-body text-[13px] outline-none transition-all focus:ring-2 focus:ring-sg-gold/50"
+        className="sg-textarea"
+        aria-label="Search for a song"
         style={{
-          background: 'rgba(var(--sg-text-rgb), 0.032)',
-          border: '1px solid rgba(var(--sg-text-rgb), 0.11)',
-          color: 'rgba(var(--sg-text-rgb), 0.75)',
+          ...inputStyle,
+          width: '100%',
+          padding: '8px 13px',
+          borderRadius: radius.md,
+          fontFamily: font.body,
+          fontSize: fontSize.md,
+          outline: 'none',
+          transition: `all ${transition.normal}`,
         }}
       />
       {results.length > 0 && (
-        <div className="mt-1 rounded-[9px] overflow-hidden" style={{ border: '1px solid rgba(var(--sg-text-rgb), 0.08)' }}>
+        <div style={{
+          marginTop: space[1],
+          borderRadius: radius.md,
+          overflow: 'hidden',
+          border: `1px solid ${color.border08}`,
+        }}>
           {results.map((r, i) => (
             <button
               key={i}
               onClick={() => { onSelect?.(r); setResults([]); setQuery('') }}
-              className="w-full text-left px-3 py-2 font-body text-[12px] transition-all hover:bg-sg-gold/5"
               style={{
-                borderBottom: i < results.length - 1 ? '1px solid rgba(var(--sg-text-rgb), 0.04)' : 'none',
-                color: 'rgba(var(--sg-text-rgb), 0.6)',
+                width: '100%',
+                textAlign: 'left',
+                padding: '8px 12px',
+                fontFamily: font.body,
+                fontSize: fontSize.base,
+                background: 'transparent',
+                border: 'none',
+                borderBottom: i < results.length - 1 ? `1px solid ${color.surface04}` : 'none',
+                color: color.text55,
+                cursor: 'pointer',
+                transition: `background ${transition.fast}`,
               }}
             >
-              <span className="font-medium">{r.trackName}</span>
-              <span className="ml-1" style={{ color: 'rgba(201, 169, 110, 0.7)' }}>— {r.artistName}</span>
+              <span style={{ fontWeight: 500 }}>{r.trackName}</span>
+              <span style={{ marginLeft: '4px', color: color.gold70 }}>— {r.artistName}</span>
             </button>
           ))}
         </div>
