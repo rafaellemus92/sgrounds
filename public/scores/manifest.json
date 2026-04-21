@@ -1,0 +1,22 @@
+{
+  "pieces": [
+    {
+      "id": "c-major-scale",
+      "title": "C Major — Contrary Motion",
+      "composer": "Warm-up",
+      "file": "/scores/c-major-scale.musicxml",
+      "suggestedTempo": 80,
+      "difficulty": 1,
+      "description": "Two-hand contrary motion scale. Best opening exercise — the hands diverge, then mirror back. Phase-lock here before moving on."
+    },
+    {
+      "id": "bach-invention-1",
+      "title": "Two-Part Invention in C (excerpt)",
+      "composer": "J. S. Bach, BWV 772",
+      "file": "/scores/bach-invention-1.musicxml",
+      "suggestedTempo": 72,
+      "difficulty": 3,
+      "description": "Four measures: RH states the subject, LH answers an octave down, both hands converge in scalar counter-motion. Classic two-voice independence study."
+    }
+  ]
+}
