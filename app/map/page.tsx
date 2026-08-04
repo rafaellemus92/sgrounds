@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Profile } from '@/lib/types'
 
@@ -446,6 +447,28 @@ export default function MapPage() {
                 </p>
               </div>
             </div>
+          </section>
+
+          <div style={{ borderTop: '1px solid rgba(var(--sg-text-rgb), 0.07)' }} />
+
+          {/* 13. EG-001 */}
+          <section className="text-center">
+            <label className="block font-mono text-[8px] tracking-[0.15em] uppercase mb-4"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.3)' }}>EG-001</label>
+            <p className="font-display text-[18px] italic mb-4"
+              style={{ color: 'rgba(var(--sg-text-rgb), 0.75)' }}>
+              Seven circles, drawn one intersection at a time. Observe before you color.
+            </p>
+            <Link href="/map/eg-001"
+              className="inline-block font-body text-[13px] rounded-full px-5 py-2 transition-all"
+              style={{
+                background: 'rgba(201, 169, 110, 0.12)',
+                border: '1.5px solid rgba(201, 169, 110, 0.38)',
+                color: 'rgba(201, 169, 110, 0.9)',
+                textDecoration: 'none',
+              }}>
+              Begin the construction →
+            </Link>
           </section>
 
           {/* Footer */}
