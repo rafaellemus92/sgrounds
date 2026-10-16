@@ -69,4 +69,22 @@ export interface SessionResult {
   matches: NoteMatch[];
   rSeries: KuramotoFrame[];
   accuracyPct: number;      // correct / (correct + wrong + missed)
+  // Optional lived-moment context captured before/after the session.
+  // Mathematics gets its meaning here: `r̄ = 0.84` doesn't teach anyone
+  // anything, but `r̄ = 0.84, played Bach after coffee, felt it click`
+  // does. These fields are the bridge between the signature and the moment.
+  reflection?: SessionReflection;
+}
+
+// Pre- and post-session user context attached to a SessionResult.
+//
+// `intention` is set before you hit play ("what are you bringing to this?").
+// The rest is captured after, in the analytics modal, while the playing is
+// still fresh. All fields are free-form; `lastWord` by convention is one
+// word (same contract as the sgrounds day entry).
+export interface SessionReflection {
+  intention?: string;
+  passage?: string;
+  lastWord?: string;
+  mood?: string;
 }

@@ -26,6 +26,11 @@ export default function SessionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
 
+  // Lighthouse reflection state.
+  const [reflection, setReflection] = useState<string | null>(null);
+  const [reflecting, setReflecting] = useState(false);
+  const [reflectError, setReflectError] = useState<string | null>(null);
+
   useEffect(() => {
     listSessions(100)
       .then(setRows)
@@ -41,6 +46,34 @@ export default function SessionsPage() {
     if (ok && rows) setRows(rows.filter(r => r.id !== id));
     setRemoving(null);
   }
+
+  async function handleAskLighthouse() {
+    if (!rows || rows.length === 0) return;
+    setReflecting(true);
+    setReflectError(null);
+    setReflection(null);
+    try {
+      const res = await fetch('/api/piano/reflect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setReflectError(data.error ?? `HTTP ${res.status}`);
+      } else {
+        setReflection(data.reflection ?? null);
+      }
+    } catch (e) {
+      setReflectError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setReflecting(false);
+    }
+  }
+
+  // Count rows that have any reflection content — the Lighthouse needs
+  // at least one, but it reads the math on empty-reflection rows too.
+  const reflectedCount = rows?.filter(r => r.intention || r.passage || r.last_word || r.mood).length ?? 0;
 
   return (
     <main className="min-h-screen bg-[#09090a] text-white/90">
@@ -77,6 +110,37 @@ export default function SessionsPage() {
 
         {rows === null && (
           <div className="font-mono text-xs text-white/40">reading the tapestry…</div>
+        )}
+
+        {/* Lighthouse reflection — reads across the whole archive and names one pattern. */}
+        {rows !== null && rows.length > 0 && (
+          <section className="mb-5 rounded-lg border border-[#c9a96e]/20 bg-[#c9a96e]/[0.04] p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="font-display text-xl leading-none">the Lighthouse</h2>
+                <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-white/50">
+                  reads across your threads · names one pattern · {reflectedCount} of {rows.length} sessions have reflection
+                </p>
+              </div>
+              <button
+                onClick={handleAskLighthouse}
+                disabled={reflecting}
+                className="rounded border border-[#c9a96e]/50 bg-[#c9a96e]/10 px-4 py-1.5 font-mono text-xs uppercase tracking-wider text-[#c9a96e] transition hover:bg-[#c9a96e]/20 disabled:opacity-50"
+              >
+                {reflecting ? 'reading the tapestry…' : reflection ? 'read again' : 'ask the Lighthouse'}
+              </button>
+            </div>
+            {reflectError && (
+              <p className="mt-3 font-mono text-xs text-red-300">
+                lighthouse unreachable: {reflectError}
+              </p>
+            )}
+            {reflection && (
+              <blockquote className="mt-3 animate-fortuneIn whitespace-pre-wrap border-l-2 border-[#c9a96e]/60 pl-3 font-display text-base leading-relaxed text-white/85">
+                {reflection}
+              </blockquote>
+            )}
+          </section>
         )}
 
         {rows !== null && rows.length === 0 && (
@@ -123,12 +187,42 @@ export default function SessionsPage() {
                   </button>
                 </div>
                 <RSparkline series={row.r_series} />
+                <ReflectionDisplay row={row} />
               </li>
             ))}
           </ul>
         )}
       </div>
     </main>
+  );
+}
+
+// Inline reflection — immediate, next to the metrics. Hidden when the row
+// has no reflection content; this keeps the archive dense without hiding
+// what's there.
+function ReflectionDisplay({ row }: { row: SessionRow }) {
+  const hasAny = row.intention || row.passage || row.last_word || row.mood;
+  if (!hasAny) return null;
+  return (
+    <div className="mt-3 border-t border-white/5 pt-3 text-sm leading-snug text-white/70">
+      {row.intention && (
+        <div className="mb-2">
+          <span className="mr-2 font-mono text-[9px] uppercase tracking-wider text-white/35">brought</span>
+          <span className="italic text-white/55">{row.intention}</span>
+        </div>
+      )}
+      {row.passage && (
+        <p className="mb-2 whitespace-pre-wrap text-white/80">{row.passage}</p>
+      )}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider">
+        {row.last_word && (
+          <span className="text-[#c9a96e]">{row.last_word}</span>
+        )}
+        {row.mood && (
+          <span className="text-white/45">· {row.mood}</span>
+        )}
+      </div>
+    </div>
   );
 }
 

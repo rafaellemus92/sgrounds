@@ -17,12 +17,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 For local dev, copy `.env.local.example` → `.env.local` and fill it in.
 For the deployed app (Vercel or similar), these should already be set.
 
-## 2. Apply the migration
+## 2. Apply the migrations
 
-The only migration you need is
-[`migrations/20261016_piano_sessions.sql`](migrations/20261016_piano_sessions.sql).
-It creates the `piano_sessions` table, an index, and the three per-user
-RLS policies. It's idempotent — safe to re-run.
+Two files in `migrations/`, applied in filename order:
+
+1. `20261016_piano_sessions.sql` — creates the table, index, and three
+   per-user RLS policies.
+2. `20261017_piano_session_reflections.sql` — adds the reflection columns
+   (`intention`, `passage`, `last_word`, `mood`) and a partial index for
+   the Lighthouse read.
+
+Both are idempotent — safe to re-run.
 
 Pick whichever path is lowest-friction for you.
 
@@ -50,17 +55,30 @@ Grab the project connection string from
 
 ```sh
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20261016_piano_sessions.sql
+psql "$SUPABASE_DB_URL" -f supabase/migrations/20261017_piano_session_reflections.sql
 ```
 
-## 3. Verify
+## 3. (Optional) Set the Lighthouse API key
+
+For the cross-session reflection on `/piano/sessions`, set
+`ANTHROPIC_API_KEY` server-side (Vercel → Project Settings → Environment
+Variables, or in `.env.local` for local dev). Without it, the Lighthouse
+button returns a 500 and the UI shows "lighthouse unreachable".
+
+## 4. Verify
 
 - Open `/piano`.
+- Type an intention in the "bringing" field (optional).
 - Play one session, hit **stop**.
 - The analytics modal header should show the gold indicator:
   **● woven into the tapestry**
-  (if you're signed in via `/auth` and the migration is applied).
+  (if you're signed in via `/auth` and the migrations are applied).
+- Add a reflection (passage, last word, mood) at the bottom of the
+  modal; click **save reflection**. The flash reads **● woven in**.
 - Open `/piano/sessions` — your new row should be there with the r(t)
-  sparkline.
+  sparkline *and* the reflection inline.
+- With ≥ 1 session saved, click **ask the Lighthouse** to see a cross-
+  session read.
 
 If you see **○ held locally — sign in to weave**, you're not signed in
 yet; go to `/auth` first.

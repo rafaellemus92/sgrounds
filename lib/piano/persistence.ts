@@ -18,7 +18,7 @@
 import { createClient } from '@/lib/supabase/client';
 import { histogramFromEvents } from './pitchHistogram';
 import { interOnsetIntervals, welchPSD } from './onsetPSD';
-import type { SessionResult } from './types';
+import type { SessionReflection, SessionResult } from './types';
 
 const LOCAL_KEY = 'sg-piano-sessions';
 
@@ -41,6 +41,11 @@ export interface SessionRow {
     rh: number[];
     combined: number[];
   };
+  // Reflection — nullable; set via updateReflection() after save.
+  intention: string | null;
+  passage: string | null;
+  last_word: string | null;
+  mood: string | null;
   created_at: string;
 }
 
@@ -87,6 +92,7 @@ export function buildRowFromResult(
       ? result.rSeries.reduce((a, f) => a + f.r, 0) / result.rSeries.length
       : 0;
 
+  const refl = result.reflection ?? {};
   return {
     user_id: userId,
     piece_id: ctx.pieceId,
@@ -105,6 +111,10 @@ export function buildRowFromResult(
       rh: Array.from(hist.rh.byClass),
       combined: Array.from(hist.combined.byClass),
     },
+    intention: refl.intention?.trim() || null,
+    passage: refl.passage?.trim() || null,
+    last_word: refl.lastWord?.trim() || null,
+    mood: refl.mood?.trim() || null,
   };
 }
 
@@ -211,6 +221,45 @@ function persistLocal(result: SessionResult, ctx: SessionContext): SaveOutcome {
   return { ok: true, mode: 'local', rowId: row.id };
 }
 
+// Update a saved row's reflection fields. Handles both remote and local
+// rows. Returns the new row (or null on failure). Caller is responsible
+// for propagating the new row into any list state they're holding.
+export async function updateReflection(
+  rowId: string,
+  reflection: SessionReflection,
+): Promise<SessionRow | null> {
+  const patch = {
+    intention: reflection.intention?.trim() || null,
+    passage: reflection.passage?.trim() || null,
+    last_word: reflection.lastWord?.trim() || null,
+    mood: reflection.mood?.trim() || null,
+  };
+
+  if (rowId.startsWith('local-')) {
+    const rows = readLocal();
+    const idx = rows.findIndex(r => r.id === rowId);
+    if (idx < 0) return null;
+    rows[idx] = { ...rows[idx], ...patch };
+    writeLocal(rows);
+    return rows[idx];
+  }
+
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('piano_sessions')
+      .update(patch)
+      .eq('id', rowId)
+      .select('*')
+      .single();
+    if (error || !data) return null;
+    return data as SessionRow;
+  } catch {
+    return null;
+  }
+}
+
 // Push every locally-saved row for this user up to Supabase, then clear
 // local. One-shot migration on sign-in. Best-effort — any error leaves the
 // local archive intact.
@@ -230,6 +279,10 @@ async function flushLocalToRemote(userId: string): Promise<void> {
     psd_slope: r.psd_slope,
     r_series: r.r_series,
     pitch_hist: r.pitch_hist,
+    intention: r.intention,
+    passage: r.passage,
+    last_word: r.last_word,
+    mood: r.mood,
   }));
   const { error } = await supabase.from('piano_sessions').insert(payloads);
   if (!error) writeLocal([]);

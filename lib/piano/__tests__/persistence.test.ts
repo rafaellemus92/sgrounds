@@ -60,6 +60,36 @@ describe('buildRowFromResult', () => {
     expect(Number.isFinite(row.psd_slope)).toBe(true);
   });
 
+  it('carries reflection fields through onto the row', () => {
+    const base = makeResult();
+    const r = { ...base, reflection: {
+      intention: 'calm',
+      passage: 'felt the hands sync',
+      lastWord: 'tether',
+      mood: 'flowing',
+    } };
+    const row = buildRowFromResult(r, { pieceId: 'test' }, 'u1');
+    expect(row.intention).toBe('calm');
+    expect(row.passage).toBe('felt the hands sync');
+    expect(row.last_word).toBe('tether');
+    expect(row.mood).toBe('flowing');
+  });
+
+  it('nullifies blank reflection fields', () => {
+    const base = makeResult();
+    const r = { ...base, reflection: {
+      intention: '   ',
+      passage: '',
+      lastWord: undefined,
+      mood: '',
+    } };
+    const row = buildRowFromResult(r, { pieceId: 'test' }, null);
+    expect(row.intention).toBeNull();
+    expect(row.passage).toBeNull();
+    expect(row.last_word).toBeNull();
+    expect(row.mood).toBeNull();
+  });
+
   it('handles empty event lists without throwing', () => {
     const empty: SessionResult = {
       startedAt: 0,

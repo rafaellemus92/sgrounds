@@ -9,7 +9,7 @@
 // Reuses the math modules in /lib/piano. No recharts required for these
 // plots — we draw everything directly on SVG/canvas for full control.
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ComposedChart,
   Line,
@@ -21,8 +21,8 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import type { SessionResult } from '@/lib/piano/types';
-import type { SaveOutcome } from '@/lib/piano/persistence';
+import type { SessionReflection, SessionResult } from '@/lib/piano/types';
+import { updateReflection, type SaveOutcome } from '@/lib/piano/persistence';
 import {
   histogramFromEvents,
   PITCH_CLASS_LABELS,
@@ -36,12 +36,52 @@ export interface SessionAnalyticsProps {
   saveOutcome?: SaveOutcome | null;
 }
 
+const MOOD_SUGGESTIONS = ['calm', 'flowing', 'rushed', 'tired', 'sharp', 'distracted'];
+
 const LH_COLOR = '#60a5fa';
 const RH_COLOR = '#f59e0b';
 const GOLD = '#c9a96e';
 const RED = '#ef4444';
 
 export default function SessionAnalytics({ result, onClose, piecesTitle, saveOutcome }: SessionAnalyticsProps) {
+  // Reflection draft — binds to the three post-session fields. Seeded with
+  // the pre-session intention so the user can see it as context (read-only).
+  const initialReflection = result.reflection ?? {};
+  const [passage, setPassage] = useState(initialReflection.passage ?? '');
+  const [lastWord, setLastWord] = useState(initialReflection.lastWord ?? '');
+  const [mood, setMood] = useState(initialReflection.mood ?? '');
+  const [savingRef, setSavingRef] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  // When the saveOutcome arrives late (fire-and-forget on the parent), we
+  // enable the "save reflection" button.
+  const canSaveRef = Boolean(saveOutcome?.rowId);
+
+  // If the user hasn't typed anything, don't offer to save noise.
+  const hasContent = Boolean(
+    passage.trim() || lastWord.trim() || mood.trim(),
+  );
+
+  async function handleSaveReflection() {
+    if (!saveOutcome?.rowId) return;
+    setSavingRef(true);
+    const payload: SessionReflection = {
+      intention: initialReflection.intention,
+      passage,
+      lastWord,
+      mood,
+    };
+    const row = await updateReflection(saveOutcome.rowId, payload);
+    setSavingRef(false);
+    if (row) setSavedAt(Date.now());
+  }
+
+  // Flash the "saved" indicator for 2 seconds.
+  useEffect(() => {
+    if (savedAt == null) return;
+    const id = setTimeout(() => setSavedAt(null), 2000);
+    return () => clearTimeout(id);
+  }, [savedAt]);
+
   const { histData, psdData, psdSlope, rSeriesData, heatmapData } = useMemo(() => {
     // ── Panel 1: pitch histogram ───────────────────────────────────────
     const h = histogramFromEvents(result.events, result.durationSec);
@@ -234,6 +274,102 @@ export default function SessionAnalytics({ result, onClose, piecesTitle, saveOut
           <Panel title="Per-bar phase-lock" subtitle="mean r within each bar · where the hands decoupled">
             <BarHeatmap data={heatmapData} />
           </Panel>
+
+          {/* ── Reflection block — the bridge between the signature and the moment ── */}
+          <section className="col-span-1 rounded-lg border border-[#c9a96e]/15 bg-[#c9a96e]/[0.03] p-4 md:col-span-2">
+            <header className="mb-3">
+              <h3 className="font-display text-lg leading-none">reflection</h3>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-white/40">
+                tether the math to a moment · S ; R → N
+              </p>
+            </header>
+
+            {initialReflection.intention && (
+              <blockquote className="mb-3 border-l-2 border-[#c9a96e]/40 pl-3 text-sm italic text-white/60">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-white/30">brought</span>
+                <br />
+                {initialReflection.intention}
+              </blockquote>
+            )}
+
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-white/40">
+                what did this reveal?
+              </span>
+              <textarea
+                value={passage}
+                onChange={(e) => setPassage(e.target.value)}
+                placeholder="where was your attention · what the hands knew that the mind didn't · what shifted"
+                maxLength={1200}
+                rows={3}
+                className="mt-1 w-full rounded border border-white/5 bg-white/[0.03] px-3 py-2 text-sm text-white/85 placeholder:text-white/25 focus:border-[#c9a96e]/30 focus:outline-none"
+              />
+            </label>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-[180px_1fr]">
+              <label className="block">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-white/40">
+                  last word
+                </span>
+                <input
+                  type="text"
+                  value={lastWord}
+                  onChange={(e) => setLastWord(e.target.value.replace(/\s/g, ''))}
+                  placeholder="one word"
+                  maxLength={32}
+                  className="mt-1 w-full rounded border border-white/5 bg-white/[0.03] px-3 py-1.5 text-sm text-white/85 placeholder:text-white/25 focus:border-[#c9a96e]/30 focus:outline-none"
+                />
+              </label>
+
+              <div className="block">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-white/40">mood</span>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  {MOOD_SUGGESTIONS.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMood(mood === m ? '' : m)}
+                      className={`rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider transition ${
+                        mood === m
+                          ? 'border-[#c9a96e] bg-[#c9a96e]/15 text-[#c9a96e]'
+                          : 'border-white/10 text-white/50 hover:border-white/25'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                  <input
+                    type="text"
+                    value={MOOD_SUGGESTIONS.includes(mood) ? '' : mood}
+                    onChange={(e) => setMood(e.target.value)}
+                    placeholder="or type"
+                    maxLength={32}
+                    className="min-w-[80px] max-w-[140px] rounded-full border border-white/10 bg-transparent px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-white/70 placeholder:normal-case placeholder:text-white/25 focus:border-[#c9a96e]/40 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 flex items-center justify-end gap-2">
+              {savedAt && (
+                <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-300 sg-save-flash">
+                  ● woven in
+                </span>
+              )}
+              {!canSaveRef && (
+                <span className="font-mono text-[10px] uppercase tracking-wider text-white/40">
+                  saving the session…
+                </span>
+              )}
+              <button
+                onClick={handleSaveReflection}
+                disabled={!canSaveRef || !hasContent || savingRef}
+                className="rounded border border-[#c9a96e]/40 bg-[#c9a96e]/10 px-4 py-1.5 font-mono text-xs uppercase tracking-wider text-[#c9a96e] transition hover:bg-[#c9a96e]/20 disabled:border-white/10 disabled:bg-transparent disabled:text-white/30"
+              >
+                {savingRef ? 'weaving…' : 'save reflection'}
+              </button>
+            </div>
+          </section>
         </div>
       </div>
     </div>

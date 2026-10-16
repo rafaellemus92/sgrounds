@@ -104,6 +104,12 @@ export default function PianoPage() {
   const [playing, setPlaying] = useState(false);
   const [result, setResult] = useState<SessionResult | null>(null);
   const [saveOutcome, setSaveOutcome] = useState<SaveOutcome | null>(null);
+  // Captured BEFORE you hit play: "what are you bringing to this?". Lives
+  // on the session row alongside the post-session reflection; cleared when
+  // a new session starts so each session carries its own intention.
+  const [intention, setIntention] = useState('');
+  const intentionRef = useRef('');
+  useEffect(() => { intentionRef.current = intention; }, [intention]);
   const sessionStartRef = useRef<number>(0);
   const eventsRef = useRef<OnsetEvent[]>([]);
   const matchesRef = useRef<Map<string, NoteMatch>>(new Map());
@@ -310,7 +316,7 @@ export default function PianoPage() {
         );
 
         if (events.length > 0) {
-          const sessionResult = {
+          const sessionResult: SessionResult = {
             startedAt: sessionStartRef.current,
             durationSec: duration,
             config: { ...config },
@@ -318,6 +324,9 @@ export default function PianoPage() {
             matches,
             rSeries,
             accuracyPct: accuracy,
+            reflection: intentionRef.current.trim()
+              ? { intention: intentionRef.current.trim() }
+              : undefined,
           };
           setResult(sessionResult);
 
@@ -380,6 +389,23 @@ export default function PianoPage() {
           {selectedPiece && (
             <p className="flex-1 text-xs text-white/50">{selectedPiece.description}</p>
           )}
+        </section>
+
+        {/* Pre-session intention — the "S" in S;R→N. One line, optional. */}
+        <section className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-4 py-2">
+          <label htmlFor="intention" className="font-mono text-[10px] uppercase tracking-wider text-white/40">
+            bringing
+          </label>
+          <input
+            id="intention"
+            type="text"
+            placeholder="what are you bringing to this piece? (optional)"
+            value={intention}
+            onChange={(e) => setIntention(e.target.value)}
+            disabled={playing}
+            className="min-w-0 flex-1 border-0 border-b border-white/5 bg-transparent px-1 py-0.5 text-sm italic text-white/85 placeholder:text-white/25 focus:border-white/30 focus:outline-none focus:ring-0 disabled:opacity-60"
+            maxLength={240}
+          />
         </section>
 
         <MetronomeBar
