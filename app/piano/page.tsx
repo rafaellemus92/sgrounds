@@ -14,7 +14,8 @@ import TimingStrip, { type TimingPoint } from '@/components/piano/TimingStrip';
 import MetronomeBar from '@/components/piano/MetronomeBar';
 import SessionAnalytics from '@/components/piano/SessionAnalytics';
 import { parseMusicXML, findMatchIndex } from '@/lib/piano/scoreAligner';
-import { liveFrame, kuramotoFromOnsets } from '@/lib/piano/kuramoto';
+import { kuramotoFromOnsets, livePhaseFromOnsets, orderParameter } from '@/lib/piano/kuramoto';
+import { saveSession, type SaveOutcome } from '@/lib/piano/persistence';
 import type {
   KuramotoFrame,
   NoteMatch,
@@ -102,6 +103,7 @@ export default function PianoPage() {
   // ── Session state ────────────────────────────────────────────────────
   const [playing, setPlaying] = useState(false);
   const [result, setResult] = useState<SessionResult | null>(null);
+  const [saveOutcome, setSaveOutcome] = useState<SaveOutcome | null>(null);
   const sessionStartRef = useRef<number>(0);
   const eventsRef = useRef<OnsetEvent[]>([]);
   const matchesRef = useRef<Map<string, NoteMatch>>(new Map());
@@ -125,46 +127,66 @@ export default function PianoPage() {
     kuramotoFrameRef.current = null;
     kuramotoHistoryRef.current = [];
     setResult(null);
+    setSaveOutcome(null);
     sheetRef.current?.resetColors();
   }, []);
 
-  // ── Live Kuramoto: per-hand phase from EMA of onset density ──────────
+  // ── Live Kuramoto: real Hilbert-based phase on a sliding window ──────
   //
-  // A full Hilbert transform on each rAF tick is overkill and laggy. For the
-  // *live* display we use a much simpler and mathematically equivalent
-  // estimator: each hand has an instantaneous oscillator phase that advances
-  // at the expected beat rate, and gets nudged to 0 on each onset (so a tight
-  // rhythm keeps phase pinned near 0). Post-session, SessionAnalytics
-  // recomputes the full Hilbert-based r(t) series for the report.
-  const livePhaseLHRef = useRef(0);
-  const livePhaseRHRef = useRef(0);
-  const lastLiveTickRef = useRef(performance.now() / 1000);
-
+  // For each hand, we take the last ~4 seconds of onsets, smooth into an
+  // onset-density signal, run the FFT-based analytic signal, and read the
+  // instantaneous phase at an index 500ms behind "now" to dodge the
+  // Hilbert's endpoint artifacts. This runs at ~20Hz on the main thread —
+  // two 256-point FFTs per tick is a few hundred microseconds — and gives
+  // a phase estimate consistent with what SessionAnalytics computes
+  // post-session. The display is 500ms behind real-time; that's the price
+  // of a stable estimator.
+  //
+  // The sigma matches the tempo: at faster bpm we expect denser onsets, so
+  // we shrink the Gaussian so neighboring 16ths stay resolved as separate
+  // "spikes" in the density signal.
   useEffect(() => {
     if (!playing) return;
     let raf = 0;
+    let lastTick = 0;
 
-    const beatHz = config.tempoBpm / 60;
-    // Assume sixteenth-note density at tempo for the "natural" oscillator
-    // rate — gives us a smooth phasor without requiring onset-density FFTs.
-    const oscHz = beatHz * 4;
+    // Density/sigma knobs. 16th-note period = 60/(bpm*4). Set sigma to half
+    // that so adjacent 16ths broaden into overlapping humps rather than a
+    // flat ridge, which is what the Hilbert needs to extract a clean phase.
+    const sixteenthSec = 60 / (config.tempoBpm * 4);
+    const sigma = Math.max(0.04, sixteenthSec * 0.5);
+    const windowSec = 4;
+    const dt = 0.025;
+    const marginSec = 0.5;
+    const TICK_MS = 50; // ~20Hz
 
     function tick() {
-      const now = performance.now() / 1000;
-      const dt = now - lastLiveTickRef.current;
-      lastLiveTickRef.current = now;
+      raf = requestAnimationFrame(tick);
+      const now = performance.now();
+      if (now - lastTick < TICK_MS) return;
+      lastTick = now;
 
-      livePhaseLHRef.current = wrap(livePhaseLHRef.current + 2 * Math.PI * oscHz * dt);
-      livePhaseRHRef.current = wrap(livePhaseRHRef.current + 2 * Math.PI * oscHz * dt);
+      const tSession = now / 1000 - sessionStartRef.current;
+      const phaseLH = livePhaseFromOnsets(lhOnsetsRef.current, tSession, {
+        windowSec, dt, sigma, marginSec,
+      });
+      const phaseRH = livePhaseFromOnsets(rhOnsetsRef.current, tSession, {
+        windowSec, dt, sigma, marginSec,
+      });
 
-      const t = now - sessionStartRef.current;
-      const frame = liveFrame(livePhaseLHRef.current, livePhaseRHRef.current, t);
+      const { r, meanPhase } = orderParameter([phaseLH, phaseRH]);
+      const frame: KuramotoFrame = {
+        t: tSession,
+        r,
+        meanPhase,
+        phaseLH: Number.isFinite(phaseLH) ? phaseLH : 0,
+        phaseRH: Number.isFinite(phaseRH) ? phaseRH : 0,
+      };
       kuramotoFrameRef.current = frame;
       kuramotoHistoryRef.current.push(frame);
       if (kuramotoHistoryRef.current.length > 600) {
         kuramotoHistoryRef.current.splice(0, kuramotoHistoryRef.current.length - 600);
       }
-      raf = requestAnimationFrame(tick);
     }
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -182,10 +204,6 @@ export default function PianoPage() {
       eventsRef.current.push(withSessionT);
       if (ev.hand === 'LH') lhOnsetsRef.current.push(tInSession);
       else rhOnsetsRef.current.push(tInSession);
-
-      // Nudge the live phasor for this hand toward 0 (perfect onset).
-      if (ev.hand === 'LH') livePhaseLHRef.current *= 0.3;
-      else livePhaseRHRef.current *= 0.3;
 
       const windowSec = config.timingWindowMs / 1000;
       const idx = findMatchIndex(
@@ -292,7 +310,7 @@ export default function PianoPage() {
         );
 
         if (events.length > 0) {
-          setResult({
+          const sessionResult = {
             startedAt: sessionStartRef.current,
             durationSec: duration,
             config: { ...config },
@@ -300,11 +318,24 @@ export default function PianoPage() {
             matches,
             rSeries,
             accuracyPct: accuracy,
-          });
+          };
+          setResult(sessionResult);
+
+          // Persist the thread: Supabase if the player is signed in,
+          // localStorage otherwise. Fire-and-forget — the UI doesn't block
+          // on the save, and the archive hides it when it lands.
+          if (selectedPiece) {
+            saveSession(sessionResult, {
+              pieceId: selectedPiece.id,
+              pieceTitle: `${selectedPiece.title} — ${selectedPiece.composer}`,
+            })
+              .then((outcome) => setSaveOutcome(outcome))
+              .catch(() => undefined);
+          }
         }
       }
     },
-    [config, resetSession],
+    [config, resetSession, selectedPiece],
   );
 
   // ── UI ───────────────────────────────────────────────────────────────
@@ -321,6 +352,7 @@ export default function PianoPage() {
             </p>
           </div>
           <nav className="flex items-center gap-3 font-mono text-xs text-white/60">
+            <a href="/piano/sessions" className="hover:text-white/90">tapestry →</a>
             <a href="/" className="hover:text-white/90">← sgrounds</a>
           </nav>
         </header>
@@ -411,8 +443,10 @@ export default function PianoPage() {
                 size={240}
               />
               <p className="mt-2 font-mono text-[10px] leading-snug text-white/40">
-                Gold vector = mean of LH + RH phasors. Length = order
-                parameter r. ≥ 0.8 → locked. &lt; 0.4 → drifting.
+                Each hand's phase extracted via Hilbert transform on a 4s
+                sliding window (500ms behind real-time). Gold vector = mean;
+                length = r. ≥ 0.8 → locked. &lt; 0.4 → the Norns' thread
+                frays.
               </p>
             </div>
 
@@ -431,15 +465,10 @@ export default function PianoPage() {
           result={result}
           onClose={() => setResult(null)}
           piecesTitle={`${selectedPiece.title} — ${selectedPiece.composer}`}
+          saveOutcome={saveOutcome}
         />
       )}
     </main>
   );
 }
 
-function wrap(theta: number): number {
-  let t = theta;
-  while (t > Math.PI) t -= 2 * Math.PI;
-  while (t < -Math.PI) t += 2 * Math.PI;
-  return t;
-}

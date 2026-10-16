@@ -22,6 +22,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import type { SessionResult } from '@/lib/piano/types';
+import type { SaveOutcome } from '@/lib/piano/persistence';
 import {
   histogramFromEvents,
   PITCH_CLASS_LABELS,
@@ -32,6 +33,7 @@ export interface SessionAnalyticsProps {
   result: SessionResult;
   onClose: () => void;
   piecesTitle?: string;
+  saveOutcome?: SaveOutcome | null;
 }
 
 const LH_COLOR = '#60a5fa';
@@ -39,7 +41,7 @@ const RH_COLOR = '#f59e0b';
 const GOLD = '#c9a96e';
 const RED = '#ef4444';
 
-export default function SessionAnalytics({ result, onClose, piecesTitle }: SessionAnalyticsProps) {
+export default function SessionAnalytics({ result, onClose, piecesTitle, saveOutcome }: SessionAnalyticsProps) {
   const { histData, psdData, psdSlope, rSeriesData, heatmapData } = useMemo(() => {
     // ── Panel 1: pitch histogram ───────────────────────────────────────
     const h = histogramFromEvents(result.events, result.durationSec);
@@ -114,12 +116,31 @@ export default function SessionAnalytics({ result, onClose, piecesTitle }: Sessi
               <p className="mt-1 text-xs font-mono tracking-wide text-white/50">{piecesTitle}</p>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="rounded border border-white/10 px-3 py-1 font-mono text-xs tracking-wider text-white/70 hover:bg-white/10"
-          >
-            close ✕
-          </button>
+          <div className="flex items-center gap-2">
+            {saveOutcome && (
+              <span className={`font-mono text-[10px] uppercase tracking-wider ${
+                saveOutcome.mode === 'remote' ? 'text-emerald-300' :
+                saveOutcome.mode === 'local' ? 'text-amber-300' :
+                'text-white/40'
+              }`}>
+                {saveOutcome.mode === 'remote' && '● woven into the tapestry'}
+                {saveOutcome.mode === 'local' && '○ held locally — sign in to weave'}
+                {saveOutcome.mode === 'skipped' && 'archive unavailable'}
+              </span>
+            )}
+            <a
+              href="/piano/sessions"
+              className="rounded border border-white/10 px-3 py-1 font-mono text-xs tracking-wider text-white/70 hover:bg-white/10"
+            >
+              tapestry →
+            </a>
+            <button
+              onClick={onClose}
+              className="rounded border border-white/10 px-3 py-1 font-mono text-xs tracking-wider text-white/70 hover:bg-white/10"
+            >
+              close ✕
+            </button>
+          </div>
         </header>
 
         <div className="grid flex-1 grid-cols-1 gap-5 overflow-y-auto p-6 md:grid-cols-2">

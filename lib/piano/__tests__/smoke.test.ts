@@ -31,4 +31,18 @@ describe('bundled scores', () => {
     expect(notes.filter(n => n.hand === 'RH').length).toBeGreaterThan(0);
     expect(notes.filter(n => n.hand === 'LH').length).toBeGreaterThan(0);
   });
+
+  it('chopin-prelude-7.musicxml parses with the expected pitch-class signature of A major', () => {
+    const xml = readFileSync('public/scores/chopin-prelude-7.musicxml', 'utf8');
+    const notes = parseMusicXML(xml, { tempoBpm: 70 });
+    // 7 measures × 6 notes + 2 notes in the final measure = 44.
+    expect(notes.length).toBe(44);
+    // Confirm the key is coming through: every C in the piece should sound
+    // as C♯ (MIDI 61 mod 12 = 1), not natural C (0).
+    const pitchClasses = new Set(notes.map(n => ((n.pitch % 12) + 12) % 12));
+    expect(pitchClasses.has(0)).toBe(false); // no natural C
+    expect(pitchClasses.has(1)).toBe(true);  // C♯ present
+    expect(pitchClasses.has(6)).toBe(true);  // F♯ present
+    expect(pitchClasses.has(8)).toBe(true);  // G♯ present
+  });
 });

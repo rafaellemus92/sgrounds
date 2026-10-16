@@ -87,3 +87,48 @@ export function liveFrame(phaseLH: number, phaseRH: number, t: number): Kuramoto
   const { r, meanPhase } = orderParameter([phaseLH, phaseRH]);
   return { t, r, meanPhase, phaseLH, phaseRH };
 }
+
+// Live Hilbert-based phase for one hand, built on a sliding window of recent
+// onsets. Call this at ~15Hz from the phasor loop. We can't just take the
+// Hilbert phase "at now" because the FFT-based transform has large edge
+// artifacts at the endpoints of a finite window; so we report the phase at
+// `(windowSec - marginSec)` into the window — i.e. `marginSec` behind
+// real-time. 500 ms of display latency buys a stable estimate.
+//
+// Returns NaN when there are too few onsets in the window to produce a
+// meaningful phase; orderParameter treats non-finite entries as "oscillator
+// has no data" and skips them, so the mean vector reflects only hands that
+// are actually playing.
+export function livePhaseFromOnsets(
+  onsets: ArrayLike<number>,
+  now: number,
+  opts: {
+    windowSec?: number;
+    dt?: number;
+    sigma?: number;
+    marginSec?: number;
+    minOnsets?: number;
+  } = {},
+): number {
+  const windowSec = opts.windowSec ?? 4;
+  const dt = opts.dt ?? 0.025;
+  const sigma = opts.sigma ?? 0.1;
+  const marginSec = opts.marginSec ?? 0.5;
+  const minOnsets = opts.minOnsets ?? 2;
+
+  const windowStart = now - windowSec;
+  const local: number[] = [];
+  for (let i = 0; i < onsets.length; i++) {
+    const t = onsets[i];
+    if (t >= windowStart && t <= now) local.push(t - windowStart);
+  }
+  if (local.length < minOnsets) return Number.NaN;
+
+  const density = onsetDensity(local, windowSec, dt, sigma);
+  const phases = instantaneousPhase(density);
+  const reportIdx = Math.max(
+    0,
+    Math.min(phases.length - 1, Math.round((windowSec - marginSec) / dt)),
+  );
+  return phases[reportIdx];
+}

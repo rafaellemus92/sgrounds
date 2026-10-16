@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   kuramotoFromOnsets,
   liveFrame,
+  livePhaseFromOnsets,
   orderParameter,
   orderParameterSeries,
 } from '../kuramoto';
@@ -88,5 +89,33 @@ describe('liveFrame', () => {
     expect(f.t).toBe(5);
     expect(f.phaseLH).toBe(1.2);
     expect(f.phaseRH).toBe(1.2);
+  });
+});
+
+describe('livePhaseFromOnsets', () => {
+  it('returns NaN when fewer than minOnsets fall in the window', () => {
+    const p = livePhaseFromOnsets([0.1], 5, { windowSec: 4, minOnsets: 2 });
+    expect(Number.isNaN(p)).toBe(true);
+  });
+
+  it('returns a finite phase when the window contains enough onsets', () => {
+    const onsets = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
+    const p = livePhaseFromOnsets(onsets, 5.2, { windowSec: 4 });
+    expect(Number.isFinite(p)).toBe(true);
+  });
+
+  it('two hands with identical onset trains in the window give r ≈ 1', () => {
+    const onsets = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
+    const now = 5.3;
+    const pLH = livePhaseFromOnsets(onsets, now, { windowSec: 4 });
+    const pRH = livePhaseFromOnsets(onsets, now, { windowSec: 4 });
+    const { r } = orderParameter([pLH, pRH]);
+    expect(r).toBeCloseTo(1, 6);
+  });
+
+  it('onsets outside the window are ignored', () => {
+    // Both onsets fall OUTSIDE the window — expect NaN.
+    const p = livePhaseFromOnsets([0.0, 0.1], 10, { windowSec: 4 });
+    expect(Number.isNaN(p)).toBe(true);
   });
 });

@@ -17,6 +17,15 @@
       "suggestedTempo": 72,
       "difficulty": 3,
       "description": "Four measures: RH states the subject, LH answers an octave down, both hands converge in scalar counter-motion. Classic two-voice independence study."
+    },
+    {
+      "id": "chopin-prelude-7",
+      "title": "Prelude in A — Mazurka Study",
+      "composer": "after F. Chopin, Op. 28 No. 7",
+      "file": "/scores/chopin-prelude-7.musicxml",
+      "suggestedTempo": 70,
+      "difficulty": 2,
+      "description": "Eight bars in 3/4. RH carries a dotted-rhythm melody; LH walks the mazurka's bass–chord–chord pulse. Phase-lock here means your left hand's three-pulse holds steady under the right's dotted syncopation — the thread the Norns are listening for."
     }
   ]
 }
