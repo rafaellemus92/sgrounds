@@ -1,0 +1,91 @@
+{
+  "source": {
+    "source": "repository_prime_pangram",
+    "generator": "experiments/coupled_prime26_pangram.py",
+    "generator_sha256": "3842cc1048b36721e9ee37d734186684324cb8798f51e4fac83fe078fce2ffb0",
+    "verified": true,
+    "target_sum": 4296,
+    "words": [
+      "UKR",
+      "TEP",
+      "DB",
+      "NMF",
+      "YL",
+      "AQV",
+      "SH",
+      "CWZ",
+      "IJ",
+      "OGX"
+    ],
+    "letters": "UKRTEPDBNMFYLAQVSHCWZIJOGX",
+    "primes": [
+      1187,
+      3109,
+      53,
+      4243,
+      349,
+      3947,
+      293,
+      4003,
+      659,
+      3637
+    ],
+    "pairs": [
+      [
+        1187,
+        3109
+      ],
+      [
+        53,
+        4243
+      ],
+      [
+        349,
+        3947
+      ],
+      [
+        293,
+        4003
+      ],
+      [
+        659,
+        3637
+      ]
+    ],
+    "mapping": "A..Z -> (sin(2*pi*index/26), cos(2*pi*index/26)); periodic linear interpolation",
+    "interpretation": "Arbitrary synthetic symbol-to-waveform mapping; not speech; no physical significance of primes is assumed.",
+    "signal_preprocessing": {
+      "period": 8.0,
+      "samples": 512,
+      "positive_harmonics": 24,
+      "nyquist_excluded": true,
+      "removed_channel_means": [
+        -3.8975824407142716e-05,
+        5.0606925886514833e-05
+      ],
+      "retained_channel_rms_before_normalization": [
+        0.5628439880605806,
+        0.5597075580773994
+      ],
+      "normalization": "zero mean and unit RMS per channel"
+    }
+  },
+  "source_sha256": {
+    "solver.py": "c11b456f53750d023594dee3ec82e6bfe649efe693b26de46279420d8be96792",
+    "signals.py": "6226f80d0065f76cc3589ca1236838766a815d96c8767a1b3ff65abed817d73b",
+    "run_experiment.py": "c09616b86927adb41829dafbc5fdc7ecb5fb3bf74b2602e0d7ff71d3de00720a"
+  },
+  "base_config": {
+    "n": 48,
+    "dt": 0.01,
+    "duration": 16.0,
+    "viscosity": 0.06,
+    "amplitude": 0.8,
+    "feedback": 0.0,
+    "control_cutoff": 2.0,
+    "record_every": 10
+  },
+  "feedback_strength": 0.8,
+  "seed_start": 20261016,
+  "surrogates": 8
+}

@@ -43,3 +43,10 @@ raw results (`search/`) and a copy of the NICU-Module pronounceable-prime
 pangram project with its onset/coda lists and dictionaries (`nicu-pangram/`),
 with a README giving definitions, reproduction commands, runtimes and what is
 still unfinished.
+
+[`regularizing-forcing/`](regularizing-forcing/) reuses the verified pangram
+generator as a reproducible synthetic input to a 2-D Navier--Stokes experiment.
+It compares waveform phases at matched spectra, tests low-mode dissipative
+feedback, and checks exact-solution benchmarks, energy budgets, and refinement.
+Its analytic estimate is standard mathematics; its simulations do not prove
+3-D regularity or assign physical significance to primes or words.
