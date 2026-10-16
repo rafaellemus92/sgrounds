@@ -2,9 +2,9 @@ name: Lean proofs
 
 on:
   push:
-    paths: ["experiments/wyrd/**", ".github/workflows/lean.yml"]
+    paths: ["experiments/wyrd/**", "experiments/wyrd-mathlib/**", ".github/workflows/lean.yml"]
   pull_request:
-    paths: ["experiments/wyrd/**", ".github/workflows/lean.yml"]
+    paths: ["experiments/wyrd/**", "experiments/wyrd-mathlib/**", ".github/workflows/lean.yml"]
   workflow_dispatch:
 
 jobs:
@@ -18,6 +18,23 @@ jobs:
           lake-package-directory: experiments/wyrd
       - name: Audit axioms (no sorry, no native_decide)
         working-directory: experiments/wyrd
+        run: |
+          lake env lean Audit.lean | tee audit.txt
+          if grep -E "sorryAx|ofReduceBool" audit.txt; then
+            echo "::error::A theorem depends on sorry or on trusting compiled code"
+            exit 1
+          fi
+
+  mathlib:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: experiments/wyrd-mathlib
+      - name: Audit axioms (no sorry, no native_decide)
+        working-directory: experiments/wyrd-mathlib
         run: |
           lake env lean Audit.lean | tee audit.txt
           if grep -E "sorryAx|ofReduceBool" audit.txt; then
