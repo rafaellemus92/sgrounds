@@ -1,0 +1,968 @@
+{
+  "schema": 1,
+  "model": "2-D periodic incompressible Navier-Stokes, dimensionless",
+  "status": "numerical calibration; no 3-D or semantic theorem",
+  "source": {
+    "source": "repository_prime_pangram",
+    "generator": "experiments/coupled_prime26_pangram.py",
+    "generator_sha256": "3842cc1048b36721e9ee37d734186684324cb8798f51e4fac83fe078fce2ffb0",
+    "verified": true,
+    "target_sum": 4296,
+    "words": [
+      "UKR",
+      "TEP",
+      "DB",
+      "NMF",
+      "YL",
+      "AQV",
+      "SH",
+      "CWZ",
+      "IJ",
+      "OGX"
+    ],
+    "letters": "UKRTEPDBNMFYLAQVSHCWZIJOGX",
+    "primes": [
+      1187,
+      3109,
+      53,
+      4243,
+      349,
+      3947,
+      293,
+      4003,
+      659,
+      3637
+    ],
+    "pairs": [
+      [
+        1187,
+        3109
+      ],
+      [
+        53,
+        4243
+      ],
+      [
+        349,
+        3947
+      ],
+      [
+        293,
+        4003
+      ],
+      [
+        659,
+        3637
+      ]
+    ],
+    "mapping": "A..Z -> (sin(2*pi*index/26), cos(2*pi*index/26)); periodic linear interpolation",
+    "interpretation": "Arbitrary synthetic symbol-to-waveform mapping; not speech; no physical significance of primes is assumed.",
+    "signal_preprocessing": {
+      "period": 8.0,
+      "samples": 512,
+      "positive_harmonics": 24,
+      "nyquist_excluded": true,
+      "removed_channel_means": [
+        -3.8975824407142716e-05,
+        5.0606925886514833e-05
+      ],
+      "retained_channel_rms_before_normalization": [
+        0.5628439880605806,
+        0.5597075580773994
+      ],
+      "normalization": "zero mean and unit RMS per channel"
+    }
+  },
+  "base_commit": "7df7f7d2282b4ff1763c4829873fb382534d15ce",
+  "python": "3.13.5",
+  "numpy": "2.5.4",
+  "source_sha256": {
+    "solver.py": "c11b456f53750d023594dee3ec82e6bfe649efe693b26de46279420d8be96792",
+    "signals.py": "6226f80d0065f76cc3589ca1236838766a815d96c8767a1b3ff65abed817d73b",
+    "run_experiment.py": "c09616b86927adb41829dafbc5fdc7ecb5fb3bf74b2602e0d7ff71d3de00720a"
+  },
+  "primary_statistic": "time-mean spatial mean of |grad vorticity|^2 (palinstrophy)",
+  "analysis_window": [
+    0.0,
+    16.0
+  ],
+  "includes_initial_transient": true,
+  "maxima_are_over_recorded_samples": true,
+  "seed_start": 20261016,
+  "surrogate_count": 8,
+  "max_spectrum_error": 1.6653345369377348e-16,
+  "max_energy_balance_error": 1.2282870726076922e-07,
+  "max_enstrophy_balance_error": 1.8708922155594165e-07,
+  "max_refinement_change": 4.352592484608845e-08,
+  "max_vorticity_to_bound_ratio": 1.0,
+  "checks": {
+    "spectra_matched": true,
+    "energy_budget": true,
+    "enstrophy_budget": true,
+    "norm_envelope": true,
+    "refinement": true,
+    "nonlinear_active": true,
+    "spectral_tail": true,
+    "source_stable": true
+  },
+  "all_checks_passed": true,
+  "comparison": {
+    "open": {
+      "original_J": 0.5932726228344412,
+      "surrogate_min": 0.4835069858001952,
+      "surrogate_max": 0.6193336159490375,
+      "surrogate_mean": 0.5213153536024833,
+      "surrogates_below_original": 7,
+      "count": 8
+    },
+    "feedback": {
+      "original_J": 0.33523081447757,
+      "surrogate_min": 0.3116560775547388,
+      "surrogate_max": 0.3283363796445533,
+      "surrogate_mean": 0.32097085589065943,
+      "surrogates_below_original": 8,
+      "count": 8
+    }
+  },
+  "cases": [
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.5932726228344412,
+      "max_enstrophy": 0.5251353832772425,
+      "max_energy_balance_error": 1.6693853056859442e-08,
+      "max_enstrophy_balance_error": 2.7283327645732935e-08,
+      "max_tail_fraction": 5.677843752268632e-10,
+      "max_nonlinear_l2": 0.33178217098285867,
+      "input_work": 0.3490533196111823,
+      "feedback_extraction": 0.0,
+      "label": "original_open",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.2205303750233725
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.33523081447757,
+      "max_enstrophy": 0.3975715168484877,
+      "max_energy_balance_error": 1.2276571524942256e-07,
+      "max_enstrophy_balance_error": 1.8702591219471598e-07,
+      "max_tail_fraction": 5.147764275676498e-12,
+      "max_nonlinear_l2": 0.22027770290787782,
+      "input_work": 1.8515472264260466,
+      "feedback_extraction": 1.665122116032631,
+      "label": "original_feedback",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.7643970840144902
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.5440930805337554,
+      "max_enstrophy": 0.7413353062642708,
+      "max_energy_balance_error": 1.6381164265333314e-08,
+      "max_enstrophy_balance_error": 2.6703476069256382e-08,
+      "max_tail_fraction": 9.334372816237255e-11,
+      "max_nonlinear_l2": 0.33539132633982194,
+      "input_work": 0.317317555104,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261016_open",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.109896208974533
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.3233954939203678,
+      "max_enstrophy": 0.39368015774794135,
+      "max_energy_balance_error": 1.227989317453826e-07,
+      "max_enstrophy_balance_error": 1.870892212194053e-07,
+      "max_tail_fraction": 1.7164133684864876e-13,
+      "max_nonlinear_l2": 0.23719665118144762,
+      "input_work": 1.817283451423354,
+      "feedback_extraction": 1.613543236967055,
+      "label": "surrogate_20261016_feedback",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 1.8536866249633022
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.49840695600952106,
+      "max_enstrophy": 0.5649096529671898,
+      "max_energy_balance_error": 1.6603606028259277e-08,
+      "max_enstrophy_balance_error": 2.7157890995083145e-08,
+      "max_tail_fraction": 3.351398807388273e-10,
+      "max_nonlinear_l2": 0.2506497269660795,
+      "input_work": 0.2893094664871406,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261017_open",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 1.8084867500001565
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.32382519021800743,
+      "max_enstrophy": 0.36484682364408216,
+      "max_energy_balance_error": 1.2272547160810388e-07,
+      "max_enstrophy_balance_error": 1.8696481344365745e-07,
+      "max_tail_fraction": 5.355616234342193e-12,
+      "max_nonlinear_l2": 0.18116021077304165,
+      "input_work": 1.8251134241907814,
+      "feedback_extraction": 1.6503388378446169,
+      "label": "surrogate_20261017_feedback",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.167174750007689
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.6193336159490375,
+      "max_enstrophy": 0.6507340852333932,
+      "max_energy_balance_error": 1.6728084396844256e-08,
+      "max_enstrophy_balance_error": 2.731811314833632e-08,
+      "max_tail_fraction": 2.2397629067876794e-08,
+      "max_nonlinear_l2": 0.3461393598848819,
+      "input_work": 0.4457725602589743,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261018_open",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.654948208015412
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.32812702740076777,
+      "max_enstrophy": 0.3452902864084964,
+      "max_energy_balance_error": 1.2263305636250887e-07,
+      "max_enstrophy_balance_error": 1.8675434129700186e-07,
+      "max_tail_fraction": 6.41784177958088e-12,
+      "max_nonlinear_l2": 0.24682401533703416,
+      "input_work": 2.0087520812275597,
+      "feedback_extraction": 1.7157746661232682,
+      "label": "surrogate_20261018_feedback",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.288413291971665
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.4835069858001952,
+      "max_enstrophy": 0.48668038718699763,
+      "max_energy_balance_error": 1.631184341245595e-08,
+      "max_enstrophy_balance_error": 2.6686263181890935e-08,
+      "max_tail_fraction": 5.196515337638095e-11,
+      "max_nonlinear_l2": 0.21047044047852778,
+      "input_work": 0.2798465568537774,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261019_open",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.0384624589933082
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.31311612910105713,
+      "max_enstrophy": 0.2869077008401164,
+      "max_energy_balance_error": 1.2282870726076922e-07,
+      "max_enstrophy_balance_error": 1.870752436988754e-07,
+      "max_tail_fraction": 4.319847761288668e-13,
+      "max_nonlinear_l2": 0.15314863424429032,
+      "input_work": 1.794574281502493,
+      "feedback_extraction": 1.555623201117328,
+      "label": "surrogate_20261019_feedback",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.339990917011164
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.49292673870265136,
+      "max_enstrophy": 0.6294588683043612,
+      "max_energy_balance_error": 1.6022155732361987e-08,
+      "max_enstrophy_balance_error": 2.6358634459128227e-08,
+      "max_tail_fraction": 1.8304399538207622e-11,
+      "max_nonlinear_l2": 0.3328042995703695,
+      "input_work": 0.2717593601470948,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261020_open",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 1.8663257079897448
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.3192602861584934,
+      "max_enstrophy": 0.3671734506573291,
+      "max_energy_balance_error": 1.2280482386550773e-07,
+      "max_enstrophy_balance_error": 1.8702580889453507e-07,
+      "max_tail_fraction": 5.825288056082629e-13,
+      "max_nonlinear_l2": 0.20381372162236894,
+      "input_work": 1.7831779106561145,
+      "feedback_extraction": 1.5615117047694327,
+      "label": "surrogate_20261020_feedback",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 1.7494142090436071
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.5264604361089896,
+      "max_enstrophy": 0.8087592588981029,
+      "max_energy_balance_error": 1.654792564087515e-08,
+      "max_enstrophy_balance_error": 2.7042410133447728e-08,
+      "max_tail_fraction": 1.028289860683369e-10,
+      "max_nonlinear_l2": 0.36048313805655197,
+      "input_work": 0.31875987840304376,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261021_open",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 1.945192417013459
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.3200502631272902,
+      "max_enstrophy": 0.32988156918200595,
+      "max_energy_balance_error": 1.2266817787411066e-07,
+      "max_enstrophy_balance_error": 1.8683698478974553e-07,
+      "max_tail_fraction": 3.9081256252733325e-13,
+      "max_nonlinear_l2": 0.20621239300451769,
+      "input_work": 1.828089624598873,
+      "feedback_extraction": 1.6366908874326458,
+      "label": "surrogate_20261021_feedback",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 1.7477213749662042
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.5000103286974809,
+      "max_enstrophy": 0.8499287844219202,
+      "max_energy_balance_error": 1.663549868951425e-08,
+      "max_enstrophy_balance_error": 2.702975399407337e-08,
+      "max_tail_fraction": 6.870220672990917e-11,
+      "max_nonlinear_l2": 0.3769820695063939,
+      "input_work": 0.2868439583517918,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261022_open",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.280022832972463
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.3116560775547388,
+      "max_enstrophy": 0.41177906275452447,
+      "max_energy_balance_error": 1.2262837053439446e-07,
+      "max_enstrophy_balance_error": 1.868170245861167e-07,
+      "max_tail_fraction": 2.698800441106249e-12,
+      "max_nonlinear_l2": 0.20705386669328757,
+      "input_work": 1.8068531164293786,
+      "feedback_extraction": 1.6144574493927775,
+      "label": "surrogate_20261022_feedback",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.5382556669646874
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.5057846870182355,
+      "max_enstrophy": 0.6455936566534201,
+      "max_energy_balance_error": 1.669143402400347e-08,
+      "max_enstrophy_balance_error": 2.725026152644583e-08,
+      "max_tail_fraction": 1.8089644622226508e-10,
+      "max_nonlinear_l2": 0.29054877268997253,
+      "input_work": 0.2931661610016647,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261023_open",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970382
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 1.8821352919912897
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.3283363796445533,
+      "max_enstrophy": 0.6041073709786704,
+      "max_energy_balance_error": 1.2281715005006862e-07,
+      "max_enstrophy_balance_error": 1.8704925595219857e-07,
+      "max_tail_fraction": 1.5297592481034283e-13,
+      "max_nonlinear_l2": 0.2375780101505395,
+      "input_work": 1.8635877170183166,
+      "feedback_extraction": 1.6806664868916075,
+      "label": "surrogate_20261023_feedback",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970382
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 1.8552320839953609
+    }
+  ],
+  "refinements": [
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.5932726228344409,
+      "max_enstrophy": 0.5251353832772429,
+      "max_energy_balance_error": 1.669385332053741e-08,
+      "max_enstrophy_balance_error": 2.7283327576343996e-08,
+      "max_tail_fraction": 1.0137449634618717e-14,
+      "max_nonlinear_l2": 0.33178217098285856,
+      "input_work": 0.349053319611183,
+      "feedback_extraction": 0.0,
+      "label": "original_open_space_only",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 2.8099445839761756,
+      "relative_J_change": 3.7427077599533063e-16
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.005,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.5932726087872867,
+      "max_enstrophy": 0.5291865603647106,
+      "max_energy_balance_error": 9.186868349386756e-10,
+      "max_enstrophy_balance_error": 1.5172576736666166e-09,
+      "max_tail_fraction": 1.0137450997618022e-14,
+      "max_nonlinear_l2": 0.33700359056627305,
+      "input_work": 0.34905332733146016,
+      "feedback_extraction": 0.0,
+      "label": "original_open_refined",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 5.7909372500143945,
+      "relative_J_change": 2.3677402650290348e-08
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.33523081447756986,
+      "max_enstrophy": 0.39757151684848724,
+      "max_energy_balance_error": 1.2276571503605158e-07,
+      "max_enstrophy_balance_error": 1.8702591217042985e-07,
+      "max_tail_fraction": 2.4538707998450683e-17,
+      "max_nonlinear_l2": 0.22027770290787785,
+      "input_work": 1.8515472264260469,
+      "feedback_extraction": 1.6651221160326306,
+      "label": "original_feedback_space_only",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 3.3176659580203705,
+      "relative_J_change": 4.967725116597721e-16
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.005,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.33523080037091335,
+      "max_enstrophy": 0.39757151446568484,
+      "max_energy_balance_error": 7.539085519064903e-09,
+      "max_enstrophy_balance_error": 1.1487081820471534e-08,
+      "max_tail_fraction": 2.453870255188096e-17,
+      "max_nonlinear_l2": 0.22027770213117845,
+      "input_work": 1.8515472622142972,
+      "feedback_extraction": 1.6651220445038637,
+      "label": "original_feedback_refined",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.678334822597916,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 6.609584999969229,
+      "relative_J_change": 4.208043133419695e-08
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.5440930805337556,
+      "max_enstrophy": 0.7413353062642702,
+      "max_energy_balance_error": 1.638116225652353e-08,
+      "max_enstrophy_balance_error": 2.6703474400452398e-08,
+      "max_tail_fraction": 3.0886568567870813e-15,
+      "max_nonlinear_l2": 0.3353913263398219,
+      "input_work": 0.3173175551040014,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261016_open_space_only",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 3.3584734169999138,
+      "relative_J_change": 4.081004020620983e-16
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.005,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.0,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "mean_palinstrophy": 0.5440930671602022,
+      "max_enstrophy": 0.7413353050868685,
+      "max_energy_balance_error": 8.990574534850637e-10,
+      "max_enstrophy_balance_error": 1.480959157390549e-09,
+      "max_tail_fraction": 3.1755281140145365e-15,
+      "max_nonlinear_l2": 0.3353913253379195,
+      "input_work": 0.3173175631378363,
+      "feedback_extraction": 0.0,
+      "label": "surrogate_20261016_open_refined",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 5.348620750010014,
+      "relative_J_change": 2.4579532364903394e-08
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.01,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.32339549392036776,
+      "max_enstrophy": 0.3936801577479414,
+      "max_energy_balance_error": 1.2279893188762991e-07,
+      "max_enstrophy_balance_error": 1.8708922155594165e-07,
+      "max_tail_fraction": 6.7739203718481855e-19,
+      "max_nonlinear_l2": 0.23719665118144756,
+      "input_work": 1.8172834514233536,
+      "feedback_extraction": 1.613543236967055,
+      "label": "surrogate_20261016_feedback_space_only",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 3.215890583000146,
+      "relative_J_change": 1.7165097311135319e-16
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.005,
+        "duration": 16.0,
+        "viscosity": 0.06,
+        "amplitude": 0.8,
+        "feedback": 0.8,
+        "control_cutoff": 2.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "mean_palinstrophy": 0.32339547984428046,
+      "max_enstrophy": 0.40162219966017176,
+      "max_energy_balance_error": 7.54123880009061e-09,
+      "max_enstrophy_balance_error": 1.14912068298334e-08,
+      "max_tail_fraction": 6.773921252439537e-19,
+      "max_nonlinear_l2": 0.24179106402520345,
+      "input_work": 1.817283487615506,
+      "feedback_extraction": 1.6135431657402792,
+      "label": "surrogate_20261016_feedback_refined",
+      "continuous_forcing_sup_bounds": {
+        "velocity": 5.6783348225979156,
+        "curl": 6.964334937970381
+      },
+      "max_vorticity_to_bound_ratio": 1.0,
+      "wall_seconds": 5.706230291980319,
+      "relative_J_change": 4.352592484608845e-08
+    }
+  ],
+  "refinement_comparisons": [
+    {
+      "case": "original_open",
+      "spatial": 3.7427077599533063e-16,
+      "temporal": 2.3677402276019563e-08,
+      "combined": 2.3677402650290348e-08
+    },
+    {
+      "case": "original_feedback",
+      "spatial": 4.967725116597721e-16,
+      "temporal": 4.208043083742441e-08,
+      "combined": 4.208043133419695e-08
+    },
+    {
+      "case": "surrogate_20261016_open",
+      "spatial": 4.081004020620983e-16,
+      "temporal": 2.4579532773003805e-08,
+      "combined": 2.4579532364903394e-08
+    },
+    {
+      "case": "surrogate_20261016_feedback",
+      "spatial": 1.7165097311135319e-16,
+      "temporal": 4.352592467443747e-08,
+      "combined": 4.352592484608845e-08
+    }
+  ],
+  "surrogate_spectrum_checks": [
+    {
+      "max_channel_magnitude_error": 0.0,
+      "max_cross_spectrum_error": 0.0,
+      "rms": [
+        0.9999999999999994,
+        0.9999999999999997
+      ]
+    },
+    {
+      "max_channel_magnitude_error": 5.551115123125783e-17,
+      "max_cross_spectrum_error": 1.8440363494407353e-17,
+      "rms": [
+        1.0000000000000002,
+        0.9999999999999997
+      ]
+    },
+    {
+      "max_channel_magnitude_error": 1.1102230246251565e-16,
+      "max_cross_spectrum_error": 2.8609792490763984e-17,
+      "rms": [
+        1.0,
+        0.9999999999999994
+      ]
+    },
+    {
+      "max_channel_magnitude_error": 1.1102230246251565e-16,
+      "max_cross_spectrum_error": 1.6365348541700844e-17,
+      "rms": [
+        0.9999999999999998,
+        0.9999999999999996
+      ]
+    },
+    {
+      "max_channel_magnitude_error": 5.551115123125783e-17,
+      "max_cross_spectrum_error": 1.4304896245381992e-17,
+      "rms": [
+        1.0,
+        0.9999999999999996
+      ]
+    },
+    {
+      "max_channel_magnitude_error": 1.1102230246251565e-16,
+      "max_cross_spectrum_error": 2.7809732887839817e-17,
+      "rms": [
+        0.9999999999999999,
+        0.9999999999999999
+      ]
+    },
+    {
+      "max_channel_magnitude_error": 1.6653345369377348e-16,
+      "max_cross_spectrum_error": 2.1942709178604383e-17,
+      "rms": [
+        0.9999999999999999,
+        0.9999999999999998
+      ]
+    },
+    {
+      "max_channel_magnitude_error": 5.551115123125783e-17,
+      "max_cross_spectrum_error": 1.8683543625880677e-17,
+      "rms": [
+        1.0,
+        0.9999999999999998
+      ]
+    },
+    {
+      "max_channel_magnitude_error": 5.551115123125783e-17,
+      "max_cross_spectrum_error": 3.1031676915590914e-17,
+      "rms": [
+        1.0000000000000002,
+        0.9999999999999998
+      ]
+    }
+  ],
+  "interpretation": "Synthetic pangram encoding is arbitrary. Equal spectra preserve RMS and cross spectra but not peaks, nonstationarity, or actual fluid input work. Surrogate rank is descriptive; eight surrogates and one synthetic input do not establish a general advantage. No physical time scale is inferred."
+}

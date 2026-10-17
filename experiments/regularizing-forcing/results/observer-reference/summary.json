@@ -1,0 +1,496 @@
+{
+  "schema": 1,
+  "all_checks_passed": true,
+  "checks": {
+    "reference_unchanged": true,
+    "paired_budgets": true,
+    "paired_error_identity": true,
+    "numerical_envelope": true,
+    "refinement": true,
+    "original_verifier": true,
+    "three_dimensional_identities": true,
+    "source_stable": true
+  },
+  "source_sha256": {
+    "observer.py": "d079cf1985c791d428b8ceb089ff1d395cff806cb727c5541df5842b1b78e5d2",
+    "solver.py": "c11b456f53750d023594dee3ec82e6bfe649efe693b26de46279420d8be96792",
+    "grounding_checks.py": "04880582bba99a1f669d0aedc0f8a18b7fb7d5e12de7aa772009db3464bc9890",
+    "run_observer.py": "e5e3af2d498f09f83e7cb6769354dcd73a0e0b3a94c463ff8bd5aa2dbc927ead",
+    "upstream/grounding/verify_grounding_ns.py": "03989d8f06eb521c5826f91b0dd1ea59e0cac3c7a057e80f0a327f7c115192c6"
+  },
+  "base_config": {
+    "n": 48,
+    "dt": 0.01,
+    "duration": 8,
+    "viscosity": 0.06,
+    "gain": 0.8,
+    "cutoff": 2,
+    "noise": 0.0,
+    "noise_period": 4.0,
+    "record_every": 10
+  },
+  "python": "3.13.5",
+  "numpy": "2.5.4",
+  "reference": "original unforced 2-D Navier-Stokes; zero spatial mean",
+  "observer": "same PDE plus -gain*P_K(V-U)+gain*eta; zero spatial mean",
+  "reference_change_max": 0.0,
+  "max_budget_error": 2.502013041194573e-10,
+  "max_error_identity_residual": 1.3877787807814457e-16,
+  "max_numerical_envelope_excess": 0.0,
+  "max_relative_refinement_change": 8.598166673464023e-10,
+  "refinement_comparisons": [
+    {
+      "case": "K4_gain1",
+      "metric": "final_error_L2",
+      "spatial": 1.2364182550439435e-15,
+      "temporal": 8.572635914995072e-10,
+      "combined": 8.572648279177633e-10
+    },
+    {
+      "case": "K4_gain1",
+      "metric": "final_error_H1_seminorm",
+      "spatial": 1.544939088313357e-15,
+      "temporal": 8.598151224073126e-10,
+      "combined": 8.598166673464023e-10
+    },
+    {
+      "case": "K4_gain1",
+      "metric": "final_reference_energy",
+      "spatial": 4.074543559016783e-15,
+      "temporal": 9.772792726311305e-13,
+      "combined": 9.732047290721098e-13
+    },
+    {
+      "case": "K4_gain1_noise002",
+      "metric": "final_error_L2",
+      "spatial": 0.0,
+      "temporal": 3.127068618237487e-11,
+      "combined": 3.127068618237487e-11
+    },
+    {
+      "case": "K4_gain1_noise002",
+      "metric": "final_error_H1_seminorm",
+      "spatial": 2.938584979642162e-16,
+      "temporal": 3.1246855663052633e-11,
+      "combined": 3.124656180455468e-11
+    },
+    {
+      "case": "K4_gain1_noise002",
+      "metric": "final_reference_energy",
+      "spatial": 4.074543559016783e-15,
+      "temporal": 9.772792726311305e-13,
+      "combined": 9.732047290721098e-13
+    }
+  ],
+  "maxima_are_recorded_samples": true,
+  "upstream_reproduction": {
+    "source_sha256": "03989d8f06eb521c5826f91b0dd1ea59e0cac3c7a057e80f0a327f7c115192c6",
+    "identities": [
+      {
+        "seed": 0,
+        "error_identity_absolute_residual": 3.122502256758253e-17,
+        "vorticity_identity_absolute_residual": 1.3877787807814457e-17,
+        "transport_cancellation_absolute_residual": 1.734723475976807e-18,
+        "maximum_grid_divergence": 7.784740826784066e-15,
+        "coercivity_margin": 0.09933910413483954,
+        "vorticity_stretching": -0.04302522585643122
+      },
+      {
+        "seed": 1,
+        "error_identity_absolute_residual": 2.3418766925686896e-17,
+        "vorticity_identity_absolute_residual": 1.8041124150158794e-16,
+        "transport_cancellation_absolute_residual": 2.6020852139652106e-18,
+        "maximum_grid_divergence": 8.384089556669104e-15,
+        "coercivity_margin": 0.1028061073349533,
+        "vorticity_stretching": 0.021383341173260642
+      },
+      {
+        "seed": 2,
+        "error_identity_absolute_residual": 1.951563910473908e-18,
+        "vorticity_identity_absolute_residual": 1.5959455978986625e-16,
+        "transport_cancellation_absolute_residual": 3.686287386450715e-18,
+        "maximum_grid_divergence": 8.116906699422066e-15,
+        "coercivity_margin": 0.09015593035015493,
+        "vorticity_stretching": 0.0055360763316248465
+      },
+      {
+        "seed": 3,
+        "error_identity_absolute_residual": 2.2551405187698492e-17,
+        "vorticity_identity_absolute_residual": 2.42861286636753e-17,
+        "transport_cancellation_absolute_residual": 3.903127820947816e-18,
+        "maximum_grid_divergence": 1.0197870082361845e-14,
+        "coercivity_margin": 0.09957431355187502,
+        "vorticity_stretching": 0.0035024690707985175
+      },
+      {
+        "seed": 4,
+        "error_identity_absolute_residual": 2.4936649967166602e-17,
+        "vorticity_identity_absolute_residual": 1.1796119636642288e-16,
+        "transport_cancellation_absolute_residual": 4.336808689942018e-19,
+        "maximum_grid_divergence": 7.411741014547429e-15,
+        "coercivity_margin": 0.09364717384259622,
+        "vorticity_stretching": -0.015276771929512718
+      }
+    ],
+    "hidden_shears": [
+      {
+        "mode": 16,
+        "velocity_L2_squared": 1.0,
+        "gradient_L2_squared": 256.0000000000001,
+        "observed_L2": 1.0131287630346664e-16
+      },
+      {
+        "mode": 32,
+        "velocity_L2_squared": 1.0,
+        "gradient_L2_squared": 1024.0000000000002,
+        "observed_L2": 1.6131851189015182e-16
+      },
+      {
+        "mode": 64,
+        "velocity_L2_squared": 1.0000000000000004,
+        "gradient_L2_squared": 4096.000000000002,
+        "observed_L2": 3.418220174453268e-16
+      }
+    ],
+    "exact_tracking": {
+      "viscosity": 0.05,
+      "gain": 1.0,
+      "cutoff": 4,
+      "reference": "U(t,x)=exp(-nu*t) sin(x_2) e_1",
+      "initial_error_modes": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "mode_norm_decay_rates": [
+        1.05,
+        1.2,
+        1.8,
+        3.2,
+        12.8
+      ],
+      "a": 0.8500000000000001,
+      "reference_strain_upper_bound": 0.5,
+      "uniform_guaranteed_norm_decay_rate": 0.3500000000000001,
+      "rk4_maximum_absolute_error": 8.317574407001871e-11,
+      "interpretation": "Exact invariant shear subspace; all solutions smooth."
+    }
+  },
+  "three_dimensional_checks": {
+    "source_sha256": "03989d8f06eb521c5826f91b0dd1ea59e0cac3c7a057e80f0a327f7c115192c6",
+    "n": 24,
+    "count": 5,
+    "rows": [
+      {
+        "seed": 20261016,
+        "error_identity_residual": 2.211772431870429e-17,
+        "vorticity_identity_residual": 1.734723475976807e-16,
+        "transport_residual": 1.5419764230904951e-18,
+        "pressure_work_residual": 4.11193712824132e-18,
+        "parseval_gradient_residual": 8.881784197001252e-16,
+        "divergence_max": 5.720933839977802e-15,
+        "stretching": -0.01774880000385832,
+        "trace_strain_max": 4.9960036108132044e-15,
+        "strain_eigenvalue_relation_excess": -0.001798572718024638
+      },
+      {
+        "seed": 20261018,
+        "error_identity_residual": 4.163336342344337e-17,
+        "vorticity_identity_residual": 2.0122792321330962e-16,
+        "transport_residual": 2.569960705150825e-18,
+        "pressure_work_residual": 5.268419445559192e-18,
+        "parseval_gradient_residual": 1.7763568394002505e-15,
+        "divergence_max": 6.571641513196992e-15,
+        "stretching": -0.020803999986293696,
+        "trace_strain_max": 5.218048215738236e-15,
+        "strain_eigenvalue_relation_excess": -0.0031601758185146878
+      },
+      {
+        "seed": 20261020,
+        "error_identity_residual": 4.5102810375396984e-17,
+        "vorticity_identity_residual": 3.5388358909926865e-16,
+        "transport_residual": 2.569960705150825e-19,
+        "pressure_work_residual": 1.927470528863119e-18,
+        "parseval_gradient_residual": 4.440892098500626e-16,
+        "divergence_max": 6.1527016153117686e-15,
+        "stretching": -0.03028451194749158,
+        "trace_strain_max": 5.329070518200751e-15,
+        "strain_eigenvalue_relation_excess": -0.004667740353090977
+      },
+      {
+        "seed": 20261022,
+        "error_identity_residual": 4.85722573273506e-17,
+        "vorticity_identity_residual": 5.828670879282072e-16,
+        "transport_residual": 7.452886044937394e-18,
+        "pressure_work_residual": 0.0,
+        "parseval_gradient_residual": 4.440892098500626e-16,
+        "divergence_max": 5.636762544384854e-15,
+        "stretching": -0.023522894758595342,
+        "trace_strain_max": 5.079270337660091e-15,
+        "strain_eigenvalue_relation_excess": -0.0046786728341345896
+      },
+      {
+        "seed": 20261024,
+        "error_identity_residual": 3.642919299551295e-17,
+        "vorticity_identity_residual": 1.2663481374630692e-16,
+        "transport_residual": 6.424901762877063e-19,
+        "pressure_work_residual": 2.569960705150825e-18,
+        "parseval_gradient_residual": 1.3322676295501878e-15,
+        "divergence_max": 6.5962996602284734e-15,
+        "stretching": 0.010848051806683483,
+        "trace_strain_max": 4.551914400963142e-15,
+        "strain_eigenvalue_relation_excess": -0.004429957690023745
+      }
+    ],
+    "max_identity_residual": 1.7763568394002505e-15,
+    "passed": true,
+    "interpretation": "3-D instantaneous original-PDE identities; no generic 3-D time evolution"
+  },
+  "cases": [
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 0,
+        "cutoff": 1,
+        "noise": 0,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 0.06,
+      "final_error_L2": 0.2941800379738709,
+      "final_error_H1_seminorm": 0.30020673405925874,
+      "final_reference_energy": 0.00013304584388185137,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 1.0408340855860843e-17,
+      "max_recorded_budget_error": 5.872713426668952e-11,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": -0.2901785258978634,
+      "label": "no_observer_correction",
+      "wall_seconds": 46.903423458046746
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 1,
+        "cutoff": 1,
+        "noise": 0,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 0.12,
+      "final_error_L2": 0.07388162304136604,
+      "final_error_H1_seminorm": 0.10514799139142232,
+      "final_reference_energy": 0.00013304584388185137,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 8.326672684688674e-17,
+      "max_recorded_budget_error": 9.884795759695919e-11,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": -0.23017852589786342,
+      "label": "K1_gain1",
+      "wall_seconds": 23.267067749984562
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 1,
+        "cutoff": 2,
+        "noise": 0,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 0.3,
+      "final_error_L2": 0.0024714100057384807,
+      "final_error_H1_seminorm": 0.00591631142561364,
+      "final_reference_energy": 0.00013304584388185137,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 1.1102230246251565e-16,
+      "max_recorded_budget_error": 1.1566703150833746e-10,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": -0.050178525897863424,
+      "label": "K2_gain1",
+      "wall_seconds": 59.30167395796161
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 0.4,
+        "cutoff": 4,
+        "noise": 0,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 0.46,
+      "final_error_L2": 0.011961942527557444,
+      "final_error_H1_seminorm": 0.01240193208853372,
+      "final_reference_energy": 0.00013304584388185137,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 4.163336342344337e-17,
+      "max_recorded_budget_error": 8.70502281369312e-11,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": 0.10982147410213661,
+      "label": "K4_gain04",
+      "wall_seconds": 38.429289957974106
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 1,
+        "cutoff": 4,
+        "noise": 0,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 1.02,
+      "final_error_L2": 9.865006756980014e-05,
+      "final_error_H1_seminorm": 0.00010526649697909639,
+      "final_reference_energy": 0.00013304584388185137,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 1.3877787807814457e-16,
+      "max_recorded_budget_error": 2.494211781556288e-10,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": 0.6698214741021367,
+      "label": "K4_gain1",
+      "wall_seconds": 16.183958665991668
+    },
+    {
+      "config": {
+        "n": 48,
+        "dt": 0.01,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 1,
+        "cutoff": 4,
+        "noise": 0.02,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 1.02,
+      "final_error_L2": 0.005903061779907469,
+      "final_error_H1_seminorm": 0.005903261222644815,
+      "final_reference_energy": 0.00013304584388185137,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 1.1102230246251565e-16,
+      "max_recorded_budget_error": 2.502013041194573e-10,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": 0.6698214741021367,
+      "label": "K4_gain1_noise002",
+      "wall_seconds": 19.615698209032416
+    }
+  ],
+  "refinements": [
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.01,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 1,
+        "cutoff": 4,
+        "noise": 0,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 1.02,
+      "final_error_L2": 9.865006756980001e-05,
+      "final_error_H1_seminorm": 0.00010526649697909623,
+      "final_reference_energy": 0.00013304584388185191,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 1.1102230246251565e-16,
+      "max_recorded_budget_error": 2.494211504000532e-10,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": 0.6698214741021364,
+      "label": "K4_gain1_space",
+      "wall_seconds": 25.708888082997873
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.005,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 1,
+        "cutoff": 4,
+        "noise": 0,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 1.02,
+      "final_error_L2": 9.86500674852309e-05,
+      "final_error_H1_seminorm": 0.0001052664968885865,
+      "final_reference_energy": 0.0001330458438817219,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 8.326672684688674e-17,
+      "max_recorded_budget_error": 1.5518836216088516e-11,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": 0.6698214741021364,
+      "label": "K4_gain1_space_time",
+      "wall_seconds": 42.35485400003381
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.01,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 1,
+        "cutoff": 4,
+        "noise": 0.02,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 1.02,
+      "final_error_L2": 0.005903061779907469,
+      "final_error_H1_seminorm": 0.005903261222644813,
+      "final_reference_energy": 0.00013304584388185191,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 1.1102230246251565e-16,
+      "max_recorded_budget_error": 2.5020108207485237e-10,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": 0.6698214741021364,
+      "label": "K4_gain1_noise002_space",
+      "wall_seconds": 20.32623570796568
+    },
+    {
+      "config": {
+        "n": 64,
+        "dt": 0.005,
+        "duration": 8,
+        "viscosity": 0.06,
+        "gain": 1,
+        "cutoff": 4,
+        "noise": 0.02,
+        "noise_period": 4.0,
+        "record_every": 10
+      },
+      "alpha": 1.02,
+      "final_error_L2": 0.0059030617800920615,
+      "final_error_H1_seminorm": 0.0059032612228292715,
+      "final_reference_energy": 0.0001330458438817219,
+      "reference_vortex_stretching": "identically zero in this 2-D model",
+      "max_instantaneous_error_identity_residual": 1.3877787807814457e-16,
+      "max_recorded_budget_error": 1.556738071784025e-11,
+      "max_recorded_envelope_excess": 0.0,
+      "sampled_minimum_decay_margin": 0.6698214741021364,
+      "label": "K4_gain1_noise002_space_time",
+      "wall_seconds": 12.112361666979268
+    }
+  ],
+  "interpretation": "Paired mean-zero 2-D time evolution; 3-D instantaneous identities only. The tracking envelope is evaluated numerically along the Galerkin trajectory, not a certified continuum or all-time bound. No observational criterion for arbitrary unforced 3-D solutions has been verified. Noise is bounded in velocity L2."
+}

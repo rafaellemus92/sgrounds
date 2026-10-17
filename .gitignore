@@ -30,3 +30,12 @@ npm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.localT
+
+# Local scientific runtime
+/.venv/
+__pycache__/
+/experiments/regularizing-forcing/runs/
+/experiments/regularizing-forcing/results/**/.matplotlib/
+/experiments/regularizing-forcing/results/**/.run-reservation
+/experiments/regularizing-forcing/results/**/completed_cases.jsonl
+/experiments/regularizing-forcing/results/**/trajectories.csv

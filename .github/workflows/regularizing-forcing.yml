@@ -1,0 +1,31 @@
+name: Forcing experiment checks
+
+on:
+  push:
+    paths:
+      - "experiments/regularizing-forcing/**"
+      - "experiments/coupled_prime26_pangram.py"
+      - ".github/workflows/regularizing-forcing.yml"
+  pull_request:
+    paths:
+      - "experiments/regularizing-forcing/**"
+      - "experiments/coupled_prime26_pangram.py"
+      - ".github/workflows/regularizing-forcing.yml"
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install scientific dependencies
+        run: python -m pip install -r experiments/regularizing-forcing/requirements.txt
+      - name: Exact solution, conservation, input, and surrogate tests
+        run: python -m unittest discover -s experiments/regularizing-forcing -v
+      - name: Short experiment with refinement and budget checks
+        run: python experiments/regularizing-forcing/run_experiment.py --duration 2 --grid 24 --surrogates 2 --out experiments/regularizing-forcing/runs/ci
+      - name: Paired reference and observer with 3-D identity checks
+        run: python experiments/regularizing-forcing/run_observer.py --duration 2 --grid 24 --out experiments/regularizing-forcing/runs/observer-ci
