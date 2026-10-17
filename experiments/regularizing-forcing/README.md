@@ -4,6 +4,19 @@ A first reproducible experiment from the speech, breath, and listening idea.
 It asks whether temporal organization affects the small-scale activity of a
 fluid, and whether explicitly dissipative feedback controls that response.
 
+The follow-up [observation and return experiment](OBSERVABILITY.md) evolves an
+unchanged unforced reference and a separately corrected observer. It reuses
+the supplied grounding verifier and adds checks of tracking, hidden error,
+observation noise, and nonzero 3-D stretching identities. Run it with:
+
+```sh
+.venv/bin/python experiments/regularizing-forcing/run_observer.py
+```
+
+Fresh runs use a new directory under ignored `runs/`. The checked numerical
+baseline is in `results/observer-reference/`. The complete mathematical
+specification and assumptions are in [OBSERVABILITY.md](OBSERVABILITY.md).
+
 The working equation is **2-D periodic incompressible Navier--Stokes** with
 smooth forcing and feedback on low Fourier modes. Smoothness in this dimension
 is already known. The result is a calibration and a way to generate and reject

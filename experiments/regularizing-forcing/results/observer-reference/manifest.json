@@ -1,0 +1,24 @@
+{
+  "source_sha256": {
+    "observer.py": "d079cf1985c791d428b8ceb089ff1d395cff806cb727c5541df5842b1b78e5d2",
+    "solver.py": "c11b456f53750d023594dee3ec82e6bfe649efe693b26de46279420d8be96792",
+    "grounding_checks.py": "04880582bba99a1f669d0aedc0f8a18b7fb7d5e12de7aa772009db3464bc9890",
+    "run_observer.py": "e5e3af2d498f09f83e7cb6769354dcd73a0e0b3a94c463ff8bd5aa2dbc927ead",
+    "upstream/grounding/verify_grounding_ns.py": "03989d8f06eb521c5826f91b0dd1ea59e0cac3c7a057e80f0a327f7c115192c6"
+  },
+  "base_config": {
+    "n": 48,
+    "dt": 0.01,
+    "duration": 8,
+    "viscosity": 0.06,
+    "gain": 0.8,
+    "cutoff": 2,
+    "noise": 0.0,
+    "noise_period": 4.0,
+    "record_every": 10
+  },
+  "python": "3.13.5",
+  "numpy": "2.5.4",
+  "reference": "original unforced 2-D Navier-Stokes; zero spatial mean",
+  "observer": "same PDE plus -gain*P_K(V-U)+gain*eta; zero spatial mean"
+}

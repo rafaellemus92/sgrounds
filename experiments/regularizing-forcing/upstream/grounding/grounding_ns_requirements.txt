@@ -1,0 +1,3 @@
+# Versions used for the accompanying numerical report (Python 3.12).
+numpy==2.3.5
+matplotlib==3.11.2

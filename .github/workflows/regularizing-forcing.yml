@@ -27,3 +27,5 @@ jobs:
         run: python -m unittest discover -s experiments/regularizing-forcing -v
       - name: Short experiment with refinement and budget checks
         run: python experiments/regularizing-forcing/run_experiment.py --duration 2 --grid 24 --surrogates 2 --out experiments/regularizing-forcing/runs/ci
+      - name: Paired reference and observer with 3-D identity checks
+        run: python experiments/regularizing-forcing/run_observer.py --duration 2 --grid 24 --out experiments/regularizing-forcing/runs/observer-ci
