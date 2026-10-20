@@ -118,7 +118,10 @@ Snell's law is proved in Lean as `snell` in
 
 Below 520 px the sphere is 200 px and pinned to the top, and the field is
 scrolled so the sphere, the verse or word, and the field share the space
-above the keyboard.
+above the keyboard. Long verses show as a two-line window that follows the
+caret. On intro and result cards the mode bar (start, opponents) is kept in
+view instead. The page does not scroll at load, since a focus at load opens
+no keyboard.
 
 ## Storage
 

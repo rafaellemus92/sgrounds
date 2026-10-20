@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
-:root{--g:#c9a96e;--bg:#09090a;--red:#e07a6a;--t:rgba(255,255,255,.82);--t2:rgba(255,255,255,.52);--t3:rgba(255,255,255,.42)}
+:root{--g:#c9a96e;--bg:#09090a;--red:#e07a6a;--t:rgba(255,255,255,.82);--t2:rgba(255,255,255,.52);--t3:rgba(255,255,255,.46)}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--t);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 ::selection{background:rgba(201,169,110,.3)}
@@ -34,7 +34,7 @@ canvas{display:block}
 #moodWord.word{font-style:normal;font-size:44px;letter-spacing:.03em}
 #moodWord.word span{color:rgba(255,255,255,.38)}
 #moodWord.rune span{color:rgba(201,169,110,.6)}
-#moodWord.rune span.ok{color:var(--g)}
+#moodWord.rune span.ok{color:var(--g)!important}
 .ok{color:#fff!important}
 .bad{color:var(--red)!important;text-decoration:underline;text-decoration-color:rgba(224,122,106,.6)}
 .cur{box-shadow:inset 1.5px 0 0 var(--g);animation:blink 1.1s infinite}
@@ -99,6 +99,8 @@ textarea::placeholder{color:var(--t3)}
 .m-duel #lrowB{display:flex}
 .m-sprint .stats,.m-sprint .legendWrap,.m-sprint .legendLabels,.m-sprint #target,.m-sprint #ref,.m-sprint #hint{display:none!important}
 .m-sprint textarea{min-height:46px;height:46px;resize:none;padding:10px 16px}
+.m-sprint #moodSub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-duel .legendLabels{margin-left:44px}
 @media (prefers-reduced-motion:reduce){.enter,.cur,.pop,.shake{animation:none}}
 @media (max-width:520px){
   .wrap{padding-top:14px}
@@ -112,7 +114,7 @@ textarea::placeholder{color:var(--t3)}
   textarea{min-height:64px}
   .stats b{font-size:16px}
   .stats span{font-size:9.5px;letter-spacing:.05em}
-  .target{font-size:19px}
+  .target{font-size:19px;max-height:calc(2*1.55em + 30px);overflow:hidden}
   #hint{display:none}
 }
 </style>
@@ -133,7 +135,7 @@ textarea::placeholder{color:var(--t3)}
 
   <main>
     <div class="stage"><canvas id="ring" role="img" aria-label="typing aura: a sphere and rings whose colour follows your typing"></canvas></div>
-    <div class="mood"><div id="moodWord">still</div><div id="moodSub">type to wake the ring</div></div>
+    <div class="mood"><div id="moodWord" aria-atomic="true">still</div><div id="moodSub">type to wake the ring</div></div>
 
     <div class="hud" id="duelHud">
       <div><b>you</b><span id="hA1"></span><br><span id="hA2"></span><div class="meter" title="Loki"><i id="lA"></i></div></div>
@@ -161,7 +163,7 @@ textarea::placeholder{color:var(--t3)}
         <span class="pager"><button id="prevVerse" aria-label="previous verse">‹</button><span class="mono" id="verseCount"></span><button id="nextVerse" aria-label="next verse">›</button></span>
       </div>
 
-      <div id="gameBar" class="subbar hidden" role="status">
+      <div id="gameBar" class="subbar hidden">
         <span class="mono">level <b id="gLevel">1</b></span>
         <span class="mono">score <b id="gScore">0</b></span>
         <span class="mono">best <b id="gBest">0</b></span>
@@ -171,7 +173,7 @@ textarea::placeholder{color:var(--t3)}
         <button id="gStart" class="gold">start</button>
       </div>
 
-      <div id="sprintBar" class="subbar hidden" role="status">
+      <div id="sprintBar" class="subbar hidden">
         <span class="mono">words <b id="pWords">0</b></span>
         <span class="mono">score <b id="pScore">0</b></span>
         <span class="mono">combo <b id="pCombo">×1</b></span>
@@ -445,17 +447,18 @@ let target = null, spans = [], prevVal = '', repeatKey = false, advanceT = 0;
 let scripture = 'bible', verseIdx = 0, lastPick = '';
 let noteS = '', noteT = 0;
 const note = s => { noteS = s; noteT = performance.now() + 1100; };
-const showCard = html => { card.innerHTML = html; card.classList.remove('hidden'); fitPhone(); };
+const showCard = html => { card.innerHTML = html; card.classList.remove('hidden'); fitPhone(); alignPhone(); };
 const hideCard = () => { card.classList.add('hidden'); fitPhone(); };
 // On phones the sphere is pinned to the top. When the keyboard scrolls the field into view, keep the
 // field, and the verse or word above it, clear of the pinned sphere.
 function fitPhone(){
   if (window.innerWidth > 520) { input.style.scrollMarginTop = ''; return; }
-  const anchor = st.mode === 'sprint' ? E.mood : !targetEl.classList.contains('hidden') ? targetEl : input;
+  const intro = !card.classList.contains('hidden') && document.querySelector('#panelType .subbar:not(.hidden)');
+  const anchor = intro || (st.mode === 'sprint' ? E.mood : !targetEl.classList.contains('hidden') ? targetEl : input);
   const above = Math.max(0, input.getBoundingClientRect().top - anchor.getBoundingClientRect().top);
   const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const m = Math.min($('.stage').offsetHeight + 10 + above, vh - input.offsetHeight - 8);
-  input.style.scrollMarginTop = Math.max(0, Math.round(m)) + 'px';
+  const m = $('.stage').offsetHeight + 10 + above;
+  input.style.scrollMarginTop = Math.max(0, Math.round(intro ? m : Math.min(m, vh - input.offsetHeight - 8))) + 'px';
 }
 function alignPhone(){
   if (window.innerWidth > 520 || document.activeElement !== input) return;
@@ -463,7 +466,11 @@ function alignPhone(){
   const y = window.scrollY + input.getBoundingClientRect().top - (parseFloat(input.style.scrollMarginTop) || 0);
   if (Math.abs(y - window.scrollY) > 2) window.scrollTo(0, Math.max(0, y));
 }
-function focusInput(){ input.focus({ preventScroll: window.innerWidth <= 520 }); alignPhone(); }
+let booted = false;
+function focusInput(){
+  if (!booted && window.innerWidth <= 520) return;   // a focus at load opens no phone keyboard; do not scroll for one
+  input.focus({ preventScroll: true }); alignPhone();
+}
 const pick = pool => { let p, n = 0; do { p = pool[Math.floor(Math.random()*pool.length)]; } while (p === lastPick && pool.length > 1 && ++n < 20); lastPick = p; return p; };
 function resetTyping(){ sleep(st); st.keys.length = 0; st.typed = 0; st.errors = 0; st.acc = 1; st.recent.length = 0; st.accR = 1; }
 
@@ -517,6 +524,8 @@ function renderTarget(val){
   const v = norm(val);
   for (let i = 0; i < spans.length; i++)
     spans[i].className = i < v.length ? (same(v[i], target[i]) ? 'ok' : 'bad') : (i === v.length ? 'cur' : '');
+  const c = spans[Math.min(v.length, spans.length - 1)];   // on phones the verse is a two-line window that follows the caret
+  if (c && c.parentNode === targetEl) targetEl.scrollTop += c.getBoundingClientRect().top - targetEl.getBoundingClientRect().top - 15;
 }
 
 // ── Input ────────────────────────────────────────────────────────────────────
@@ -541,16 +550,19 @@ input.addEventListener('beforeinput', e => {
 input.addEventListener('drop', e => { if (target) e.preventDefault(); });
 input.addEventListener('paste', e => { if (target) e.preventDefault(); });
 const caretEnd = () => { if (target && input.selectionStart !== input.value.length) { const n = input.value.length; input.setSelectionRange(n, n); } };
-for (const ev of ['pointerup', 'select', 'keyup', 'focus']) input.addEventListener(ev, caretEnd);
+for (const ev of ['pointerup', 'click', 'select', 'keyup', 'focus']) input.addEventListener(ev, caretEnd);
+document.addEventListener('selectionchange', () => { if (document.activeElement === input) caretEnd(); });
 
 input.addEventListener('input', e => {
   const now = performance.now(), ts = e.timeStamp;
   const t = ts > 0 && ts <= now + 1 ? ts : now;
+  if (sp.count || duel.count) { input.value = prevVal; return; }       // IME text is not cancelable; undo it during the count-in
   let val = input.value;
+  if (st.mode === 'sprint' && target && /\s/.test(val)) input.value = val = val.replace(/\s+/g, '');
   if (st.done) {
     // a completed verse: keep typing and the next verse begins with what you typed
     if (st.mode === 'faith' && val.length > prevVal.length && val.startsWith(prevVal)) {
-      const extra = val.slice(prevVal.length);
+      const extra = val.slice(prevVal.length).replace(/^\s+/, '');
       showVerse(verseIdx + 1);
       input.value = val = extra;
     } else { input.value = prevVal; return; }
@@ -631,13 +643,13 @@ function nextPhrase(){
 function startGame(){
   if (game.running) endGame(true);
   Object.assign(game, { running:true, over:false, level:1, score:0, peak:0 });
-  resetTyping(); hideCard(); $('#gStart').textContent = 'restart';
+  resetTyping(); hideCard(); input.placeholder = ''; $('#gStart').textContent = 'restart';
   updateGameBar(); nextPhrase();
 }
 function endGame(abandon){
   game.running = false; game.over = !abandon;
   if (game.score > game.best) { game.best = game.score; store.set('tmr-best', game.best); }
-  put($('#gTime'), '–'); updateGameBar();
+  put($('#gTime'), '–'); $('#gTime').classList.remove('hot'); updateGameBar();
   if (abandon) return;
   setTarget(null); input.placeholder = 'enter to play again';
   showCard(`<h3>the ring went dark at level ${game.level}</h3><p>score <span class="num">${game.score}</span> · peak <span class="num">${Math.round(game.peak)} wpm</span> · accuracy <span class="num">${Math.round(st.acc*100)}%</span> · best <span class="num">${game.best}</span></p><p>enter to play again</p>`);
@@ -686,7 +698,7 @@ function nextWord(){
 function startSprint(){
   if (sp.on || sp.count) endSprint(true);
   Object.assign(sp, { over:false, words:0, score:0, streak:0, bestStreak:0, peak:0, fuel:sp.cap, queue:[], recent:[], vq:[], drawn:0, sec:[], lane:'', typo:false, ref:'' });
-  resetTyping(); hideCard(); mount(null); E.mood.className = '';
+  resetTyping(); hideCard(); mount(null); E.mood.className = ''; E.mood.setAttribute('aria-live', 'assertive');
   input.placeholder = ''; focusInput();
   $('#pStart').textContent = 'restart'; $('#sVersesL').classList.add('hidden');
   let n = 3;
@@ -718,7 +730,7 @@ function tickSprint(now, dt){
 function endSprint(abandon){
   clearTimeout(sp.countT);
   const was = sp.on; sp.on = false; sp.count = 0;
-  E.mood.className = ''; mount(null);
+  E.mood.className = ''; mount(null); E.mood.textContent = ''; E.mood.removeAttribute('aria-live');
   $('#sVersesL').classList.remove('hidden');
   if (!was) { updateSprintBar(); return; }
   if (sp.score > sp.best) { sp.best = sp.score; sp.ghost = sp.sec.slice(); store.set('tmr-sprint-best', sp.best); store.set('tmr-sprint-ghost', sp.ghost); }
@@ -740,7 +752,8 @@ function sprintSub(now){
   if (now < noteT) parts.push(noteS);
   parts.push('next  ' + sp.queue.slice(0, 2).map(x => x.w).join('  '));
   if (sp.ghost.length) {
-    const sec = Math.floor((now - sp.start)/1000), g = sp.ghost[Math.min(sec, sp.ghost.length - 1)], d = sp.words - g;
+    const f = Math.max(0, (now - sp.start)/1000), i = Math.min(Math.floor(f), sp.ghost.length - 1), j = Math.min(i + 1, sp.ghost.length - 1);
+    const d = sp.words - Math.round(sp.ghost[i] + (sp.ghost[j] - sp.ghost[i])*Math.min(1, f - i));
     parts.push('ghost ' + (d >= 0 ? '+' : '−') + Math.abs(d));
   }
   if (sp.ref) parts.push(sp.ref);
@@ -766,7 +779,7 @@ function startDuel(){
     duel.ivl = 60000/(5*duel.stats.giant); duel.next = duel.start + duel.ivl;
     note('go ;'); updateDuelBar();
   };
-  beat();
+  beat(); updateDuelBar();
 }
 function driveOpp(now){
   if (!duel.on) return;
@@ -856,7 +869,7 @@ function abandonRuns(){
 }
 function setMode(mode){
   if (mode === st.mode) return;
-  abandonRuns();
+  abandonRuns(); noteT = 0;
   st.mode = mode;
   document.body.className = 'm-' + mode;
   for (const b of $('#tabs').children) { const on = b.dataset.mode === mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
@@ -869,7 +882,7 @@ function setMode(mode){
   if (mode === 'faith') { input.placeholder = 'type the verse above'; showVerse(verseIdx); }
   if (mode === 'game') { Object.assign(game, { over:false, level:1, score:0 }); input.placeholder = 'press start or enter'; $('#gStart').textContent = 'start'; put($('#gTime'), '–'); updateGameBar(); }
   if (mode === 'sprint') { sp.over = false; input.placeholder = 'press start or enter'; $('#pStart').textContent = 'start'; updateSprintBar(); }
-  if (mode === 'duel') { Object.assign(opp, mk()); input.placeholder = 'press start or enter'; $('#dStart').textContent = 'start'; updateDuelBar(); }
+  if (mode === 'duel') { Object.assign(opp, mk()); Object.assign(duel, { p:0, loki:[0,0], lokiUntil:[0,0], fired:[0,0], Ta:1, Tb:1 }); input.placeholder = 'press start or enter'; $('#dStart').textContent = 'start'; updateDuelBar(); }
   if (INTRO[mode]) showCard(INTRO[mode]);
   resize(); renderLegend();
   if (mode !== 'about' && mode !== 'faith') focusInput();
@@ -885,15 +898,26 @@ $('#reset').onclick = () => {
 // While the page is hidden the clocks stop; coming back, the ring wakes fresh.
 document.addEventListener('visibilitychange', () => {
   const now = performance.now();
-  if (document.hidden) { hiddenAt = now; return; }
+  if (document.hidden) {
+    hiddenAt = now;
+    // the page may never come back: keep a best reached mid-run (storage only, so the live ghost is untouched)
+    if (game.running && game.score > game.best) store.set('tmr-best', game.score);
+    if (sp.on) {
+      if (sp.score > sp.best) { store.set('tmr-sprint-best', sp.score); store.set('tmr-sprint-ghost', sp.sec); }
+      if (sp.words > sp.far) store.set('tmr-sprint-far', sp.words);
+    }
+    return;
+  }
   if (!hiddenAt) return;
-  const d = now - hiddenAt; hiddenAt = 0; last = now;
-  if (game.running) game.start += d;
-  if (sp.on) sp.start += d;
+  const h0 = hiddenAt; hiddenAt = 0; last = now;
+  // a count-in can finish while hidden: shift each clock only by the hidden time after its run began
+  if (game.running) game.start += now - Math.max(h0, game.start);
+  if (sp.on) sp.start += now - Math.max(h0, sp.start);
   if (duel.on) {
-    duel.start += d; duel.next += d; duel.lokiUntil = duel.lokiUntil.map(x => x + d);
-    if (opp.lastKey != null) opp.lastKey += d;
-    opp.phiT += d; for (const h of opp.hist) h.t += d;
+    const dd = now - Math.max(h0, duel.start);
+    duel.start += dd; duel.next += dd; duel.lokiUntil = duel.lokiUntil.map(x => x + dd);
+    if (opp.lastKey != null) opp.lastKey += dd;
+    opp.phiT += dd; for (const h of opp.hist) h.t += dd;
   }
   sleep(st);
 });
@@ -974,7 +998,7 @@ function drawSolo(c, W, px, now){
   if (sp.on) { const H = hueFor(pace(sp.words)); gauge(c, cx, cx, outer, sp.fuel/sp.cap, Math.PI/2, css(oklch(0.72, maxChroma(0.72, H)*0.9, H)), 3); }
 }
 // Rays from a sender sphere to Bifrost (x = xm), refracted by Snell's law or turned back past the critical angle.
-function rays(c, s, rc, cx, cy, R, xm, dir, W, loki){
+function rays(c, s, rc, cx, cy, R, xm, dir, W, loki, blocked){
   if (s.v < 0.3 && !loki) return;
   const ratio = (rc.v + V0)/(s.v + V0);            // n_sender / n_receiver, so sin θ₂ = ratio · sin θ₁
   const rgb = oklch(s.cur.L, s.cur.C, s.cur.H), I = intensity(s), N = 15, L2 = W*0.32;
@@ -984,7 +1008,7 @@ function rays(c, s, rc, cx, cy, R, xm, dir, W, loki){
     const x0 = cx + dir*R*c1, y0 = cy + R*s1, d = (xm - x0)*dir;
     if (d <= 0) continue;
     const yb = y0 + d*s1/c1, s2 = ratio*s1;
-    if (loki || Math.abs(s2) < 1) {
+    if (!blocked && (loki || Math.abs(s2) < 1)) {
       const t2 = clamp(s2, -0.97, 0.97), c2 = Math.sqrt(1 - t2*t2);
       pt.moveTo(x0, y0); pt.lineTo(xm, yb); pt.lineTo(xm + dir*c2*L2, yb + t2*L2);
     } else {
@@ -1000,8 +1024,9 @@ function drawDuel(c, W, Hh, px, now){
   const frac = duel.on ? clamp(1 - (now - duel.start)/duel.len, 0, 1) : 1, half = Hh*0.4*frac;
   c.lineCap = 'round'; c.lineWidth = 1.5; c.strokeStyle = frac < 0.25 && duel.on ? RED : 'rgba(201,169,110,0.6)';
   c.beginPath(); c.moveTo(xm, cy - half); c.lineTo(xm, cy + half); c.stroke();          // Bifrost, fading with the clock
-  rays(c, st, opp, xa, cy, R, xm, 1, W, duel.on && now < duel.lokiUntil[0]);
-  rays(c, opp, st, xb, cy, R, xm, -1, W, duel.on && now < duel.lokiUntil[1]);
+  const la = duel.on && now < duel.lokiUntil[0], lb = duel.on && now < duel.lokiUntil[1];
+  rays(c, st, opp, xa, cy, R, xm, 1, W, la, lb);
+  rays(c, opp, st, xb, cy, R, xm, -1, W, lb, la);
   const cap = Math.min(RINGS, Math.floor(Math.abs(duel.p)));
   aura(c, st, now, xa, cy, R, gap, px, duel.p < 0 ? opp : null, duel.p < 0 ? cap : 0);
   aura(c, opp, now, xb, cy, R, gap, px, duel.p > 0 ? st : null, duel.p > 0 ? cap : 0);
@@ -1009,6 +1034,7 @@ function drawDuel(c, W, Hh, px, now){
   const y = Math.min(Hh - 6, cy + R*2.05 + W*0.03);
   c.fillText(`you ${st.v.toFixed(1)}`, xa, y); c.fillText(`${oppName()} ${opp.v.toFixed(1)}`, xb, y);
   if (duel.on) { c.fillStyle = G; c.fillText(String(Math.max(0, Math.ceil((duel.len - (now - duel.start))/1000))), xm, cy - Hh*0.4 - 5); }
+  if (duel.count) { c.fillStyle = G; c.font = `italic ${Math.round(Hh*0.24)}px "Instrument Serif", Georgia, serif`; c.fillText(String(duel.count), xm, cy + Hh*0.08); }
 }
 function draw(now){
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, cw, ch);
@@ -1053,7 +1079,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
-setMode('free');
+setMode('free'); booted = true;
 requestAnimationFrame(frame);
 })();
 </script>
