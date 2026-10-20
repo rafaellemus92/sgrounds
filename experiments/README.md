@@ -7,11 +7,12 @@ Side explorations — not part of the app.
 A mood ring for typing: a sphere with seven aura rings whose colour is
 computed in OKLCH from your keystrokes (hue = speed, chroma = rhythm,
 lightness = accuracy, rings = the last two seconds radiating outward).
-"Sync" is the Kuramoto order parameter of a pulse-coupled oscillator that
-the keystrokes entrain. Free typing, a faith tab (KJV Bible, Pickthall
-Qur'an) and a *breakneck* game. Open
-[`typing-mood-ring/index.html`](typing-mood-ring/index.html) in a browser;
-no build step. Details in [its README](typing-mood-ring/README.md).
+"Sync" is the vector strength of a pulse-driven phase oscillator that the
+keystrokes entrain. Tabs: free typing, faith (KJV Bible, Pickthall Qur'an),
+a *breakneck* game, a one-word-at-a-time *sprint*, and a *duel* where two
+typists are optical media and Snell's law decides whose light crosses the
+bridge. Open [`typing-mood-ring/index.html`](typing-mood-ring/index.html)
+in a browser; no build step. Details in [its README](typing-mood-ring/README.md).
 
 ## `coupled_prime26_pangram.py`
 

@@ -7,84 +7,139 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
-:root{--g:#c9a96e;--bg:#09090a;--t:rgba(255,255,255,.82);--t2:rgba(255,255,255,.45);--t3:rgba(255,255,255,.22)}
+:root{--g:#c9a96e;--bg:#09090a;--red:#e07a6a;--t:rgba(255,255,255,.82);--t2:rgba(255,255,255,.52);--t3:rgba(255,255,255,.42)}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--t);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 ::selection{background:rgba(201,169,110,.3)}
 ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
 .wrap{max-width:560px;margin:0 auto;padding:22px 18px 60px}
-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .brand{font-family:'Instrument Serif',serif;font-size:30px;color:#fff;letter-spacing:-.01em}
 .brand b{color:var(--g);font-weight:400}
 .brand em{font-size:15px;color:var(--t2);margin-left:10px}
-.tabs{display:flex;gap:4px}
-button{font:inherit;font-size:13px;color:var(--t2);background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:6px 13px;cursor:pointer;transition:color .2s,border-color .2s}
-button:hover{color:var(--t);border-color:rgba(255,255,255,.2)}
-button.on{color:var(--g);border-color:rgba(201,169,110,.5)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+button{font:inherit;font-size:13px;color:var(--t2);background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:6px 12px;min-height:31px;cursor:pointer;transition:color .2s,border-color .2s}
+button:hover{color:var(--t);border-color:rgba(255,255,255,.22)}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--g);outline-offset:2px}
+button:disabled{opacity:.35;cursor:default}
+button.on{color:var(--g);border-color:rgba(201,169,110,.55)}
 button.gold{color:#09090a;background:var(--g);border-color:var(--g)}
 button.gold:hover{background:#d8b87c}
-.stage{position:relative;display:flex;justify-content:center;margin:10px 0 0}
+main{display:flex;flex-direction:column}
+.stage{display:flex;justify-content:center;margin:10px 0 0;background:var(--bg)}
 canvas{display:block}
-.mood{text-align:center;margin-top:-8px}
-#moodWord{font-family:'Instrument Serif',serif;font-style:italic;font-size:40px;color:#fff;line-height:1}
-#moodSub{font-size:13px;color:var(--t2);margin-top:8px;letter-spacing:.02em;min-height:18px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:22px 0 14px}
-.stats div{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 6px;text-align:center}
+.mood{text-align:center;margin-top:-6px}
+#moodWord{font-family:'Instrument Serif',serif;font-style:italic;font-size:40px;color:#fff;line-height:1.1;min-height:44px}
+#moodSub{font-size:13px;color:var(--t2);margin-top:6px;letter-spacing:.02em;min-height:18px;white-space:pre-wrap}
+#moodWord.word{font-style:normal;font-size:44px;letter-spacing:.03em}
+#moodWord.word span{color:rgba(255,255,255,.38)}
+#moodWord.rune span{color:rgba(201,169,110,.6)}
+#moodWord.rune span.ok{color:var(--g)}
+.ok{color:#fff!important}
+.bad{color:var(--red)!important;text-decoration:underline;text-decoration-color:rgba(224,122,106,.6)}
+.cur{box-shadow:inset 1.5px 0 0 var(--g);animation:blink 1.1s infinite}
+@keyframes blink{50%{box-shadow:none}}
+.pop{animation:pop .14s ease-out}
+@keyframes pop{from{transform:scale(.9);opacity:.4}to{transform:none;opacity:1}}
+.shake{animation:shake .16s linear}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:20px 0 14px}
+.stats div{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 4px;text-align:center}
 .stats b{display:block;font-family:'DM Mono',monospace;font-weight:400;font-size:18px;color:#fff}
-.stats span{display:block;font-size:10.5px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
-.legend{height:6px;border-radius:3px;margin:0 2px}
-.legendLabels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);margin:6px 2px 22px;letter-spacing:.04em}
+.stats span{display:block;font-size:10.5px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;white-space:nowrap}
+.hud{display:none;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start;margin:16px 0 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--t2);line-height:1.6}
+.hud b{display:block;font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:21px;color:#fff;line-height:1.2}
+.hud .r{text-align:right}
+.hud .mid{text-align:center}
+.hud .mid b{font-family:'DM Mono',monospace;font-style:normal;font-size:22px;color:var(--g)}
+.meter{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--g)}
+.hud .r .meter i{margin-left:auto}
+.legendWrap{display:flex;flex-direction:column;gap:5px;margin:0 2px}
+.lrow{display:flex;align-items:center;gap:8px}
+.legend{flex:1;height:6px;border-radius:3px}
+.ltag{display:none;font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);width:34px}
+#lrowB{display:none}
+.legendLabels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);margin:6px 2px 22px;letter-spacing:.03em}
 .subbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--t2)}
 .subbar .sp,.row .sp{flex:1}
-.subbar label{display:flex;align-items:center;gap:6px;cursor:pointer;padding:0 6px}
-.subbar input[type=checkbox]{accent-color:var(--g);margin:0}
-.subbar .mono{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.04em}
-.subbar .mono b{color:var(--g);font-weight:400}
+.subbar label{display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px;min-height:31px}
+.subbar input[type=checkbox]{accent-color:var(--g);margin:0;width:16px;height:16px}
+.mono{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.04em}
+.mono b{color:var(--g);font-weight:400}
+.mono b.hot{color:var(--red)}
+.pager{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .target{font-family:'Instrument Serif',serif;font-size:21px;line-height:1.55;color:var(--t2);padding:14px 16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;min-height:60px;overflow-wrap:anywhere;white-space:pre-wrap}
-.target .ok{color:#fff}
-.target .bad{color:#e07a6a;text-decoration:underline;text-decoration-color:rgba(224,122,106,.6)}
-.target .cur{box-shadow:inset 1.5px 0 0 var(--g);animation:blink 1.1s infinite}
-@keyframes blink{50%{box-shadow:none}}
-.ref{font-family:'DM Mono',monospace;font-size:11px;color:var(--g);letter-spacing:.08em;margin:8px 4px 0;opacity:.8}
-textarea{width:100%;margin-top:12px;font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.5;color:#fff;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;min-height:96px;resize:vertical;outline:none;transition:border-color .3s}
-textarea:focus{border-color:rgba(201,169,110,.45)}
+.ref{font-family:'DM Mono',monospace;font-size:11px;color:var(--g);letter-spacing:.08em;margin:8px 4px 0;opacity:.85}
+textarea{width:100%;margin-top:12px;font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.5;color:#fff;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;min-height:96px;resize:vertical;transition:border-color .3s}
+textarea:focus{border-color:rgba(201,169,110,.5)}
 textarea::placeholder{color:var(--t3)}
 .row{display:flex;gap:8px;margin-top:10px;align-items:center;font-size:12px;color:var(--t3)}
 .row button{white-space:nowrap}
 .card{background:rgba(201,169,110,.05);border:1px solid rgba(201,169,110,.25);border-radius:12px;padding:16px 18px;margin-bottom:12px}
 .card h3{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:22px;margin:0 0 6px;color:#fff}
-.card p{margin:0;font-size:13.5px;color:var(--t2);line-height:1.55}
+.card p{margin:0 0 6px;font-size:13.5px;color:var(--t2);line-height:1.55}
+.card p:last-child{margin:0}
 .card .num{font-family:'DM Mono',monospace;color:var(--g)}
 .about{font-size:14.5px;line-height:1.65;color:var(--t2)}
 .about h2{font-family:'Instrument Serif',serif;font-weight:400;font-style:italic;font-size:26px;color:#fff;margin:26px 0 8px}
 .about p{margin:0 0 12px}
+.about a{color:var(--g)}
 .about code{font-family:'DM Mono',monospace;font-size:12.5px;color:var(--g);background:rgba(255,255,255,.04);padding:1px 5px;border-radius:4px}
-.about pre{font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px;overflow-x:auto;line-height:1.6;margin:0 0 14px}
+.about pre{font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,.72);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px;white-space:pre-wrap;line-height:1.6;margin:0 0 14px}
 .about ul{padding-left:18px;margin:0 0 12px}
 .about li{margin-bottom:5px}
 .about .sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:4px}
 .hidden{display:none!important}
 .enter{animation:slideUp .6s ease both}
 @keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.enter,.target .cur{animation:none}}
-@media (max-width:400px){#moodWord{font-size:34px}.stats b{font-size:16px}.target{font-size:19px}#hint{display:none}}
+.m-duel .stats{display:none}
+.m-duel .hud{display:grid}
+.m-duel .ltag{display:block}
+.m-duel #lrowB{display:flex}
+.m-sprint .stats,.m-sprint .legendWrap,.m-sprint .legendLabels,.m-sprint #target,.m-sprint #ref,.m-sprint #hint{display:none!important}
+.m-sprint textarea{min-height:46px;height:46px;resize:none;padding:10px 16px}
+@media (prefers-reduced-motion:reduce){.enter,.cur,.pop,.shake{animation:none}}
+@media (max-width:520px){
+  .wrap{padding-top:14px}
+  .stage{position:sticky;top:0;z-index:3;padding:6px 0;margin-top:6px}
+  .m-about .stage{position:static}
+  #panelType,#panelAbout{order:1}
+  .stats,.legendWrap,.legendLabels{order:2}
+  .m-duel .hud{order:2}
+  .m-duel .mood{display:none}
+  #moodWord{font-size:34px;min-height:38px}
+  textarea{min-height:64px}
+  .stats b{font-size:16px}
+  .stats span{font-size:9.5px;letter-spacing:.05em}
+  .target{font-size:19px}
+  #hint{display:none}
+}
 </style>
 </head>
-<body>
+<body class="m-free">
 <div class="wrap">
   <header>
     <div class="brand">s<b>;</b><em>typing mood ring</em></div>
-    <nav class="tabs" id="tabs">
-      <button data-mode="free" class="on">free</button>
+    <nav class="tabs" id="tabs" aria-label="modes">
+      <button data-mode="free">free</button>
       <button data-mode="faith">faith</button>
       <button data-mode="game">game</button>
-      <button data-mode="about">?</button>
+      <button data-mode="sprint">sprint</button>
+      <button data-mode="duel">duel</button>
+      <button data-mode="about" aria-label="about">?</button>
     </nav>
   </header>
 
   <main>
-    <div class="stage"><canvas id="ring" aria-label="typing aura"></canvas></div>
+    <div class="stage"><canvas id="ring" role="img" aria-label="typing aura: a sphere and rings whose colour follows your typing"></canvas></div>
     <div class="mood"><div id="moodWord">still</div><div id="moodSub">type to wake the ring</div></div>
+
+    <div class="hud" id="duelHud">
+      <div><b>you</b><span id="hA1"></span><br><span id="hA2"></span><div class="meter" title="Loki"><i id="lA"></i></div></div>
+      <div class="mid"><b id="hT">45</b><span>sec</span></div>
+      <div class="r"><b id="hBn">jötunn</b><span id="hB1"></span><br><span id="hB2"></span><div class="meter" title="Loki"><i id="lB"></i></div></div>
+    </div>
 
     <div class="stats">
       <div><b id="sKps">0.0</b><span>keys / s</span></div>
@@ -92,33 +147,53 @@ textarea::placeholder{color:var(--t3)}
       <div><b id="sSync">—</b><span>sync</span></div>
       <div><b id="sAcc">100%</b><span>accuracy</span></div>
     </div>
-    <div class="legend" id="legend"></div>
+    <div class="legendWrap">
+      <div class="lrow"><span class="ltag">you</span><div class="legend" id="legend"></div></div>
+      <div class="lrow" id="lrowB"><span class="ltag" id="ltagB">them</span><div class="legend" id="legend2"></div></div>
+    </div>
     <div class="legendLabels"><span>still</span><span>calm</span><span>flowing</span><span>quick</span><span>blazing</span><span>breakneck</span></div>
 
     <section id="panelType">
       <div id="faithBar" class="subbar hidden">
-        <button data-scr="bible" class="on">Bible · KJV</button>
-        <button data-scr="quran">Qur'an · Pickthall</button>
+        <button data-scr="bible" class="on" aria-pressed="true">Bible · KJV</button>
+        <button data-scr="quran" aria-pressed="false">Qur'an · Pickthall</button>
         <span class="sp"></span>
-        <button id="prevVerse">‹</button>
-        <span class="mono" id="verseCount"></span>
-        <button id="nextVerse">›</button>
+        <span class="pager"><button id="prevVerse" aria-label="previous verse">‹</button><span class="mono" id="verseCount"></span><button id="nextVerse" aria-label="next verse">›</button></span>
       </div>
 
-      <div id="gameBar" class="subbar hidden">
+      <div id="gameBar" class="subbar hidden" role="status">
         <span class="mono">level <b id="gLevel">1</b></span>
         <span class="mono">score <b id="gScore">0</b></span>
         <span class="mono">best <b id="gBest">0</b></span>
+        <span class="mono">time <b id="gTime">–</b></span>
         <span class="sp"></span>
         <label><input type="checkbox" id="gVerses"> verses</label>
         <button id="gStart" class="gold">start</button>
       </div>
 
-      <div id="gameCard" class="card hidden"></div>
+      <div id="sprintBar" class="subbar hidden" role="status">
+        <span class="mono">words <b id="pWords">0</b></span>
+        <span class="mono">score <b id="pScore">0</b></span>
+        <span class="mono">combo <b id="pCombo">×1</b></span>
+        <span class="mono">pace <b id="pLane">calm</b></span>
+        <span class="sp"></span>
+        <label id="sVersesL"><input type="checkbox" id="sVerses"> verses</label>
+        <button id="pStart" class="gold">start</button>
+      </div>
+
+      <div id="duelBar" class="subbar hidden">
+        <button data-opp="giant" class="on" aria-pressed="true">jötunn <span id="dGiant" class="mono">30</span></button>
+        <button data-opp="ghost" id="oppGhost" aria-pressed="false">urðr</button>
+        <span class="mono">record <b id="dRec">0–0</b></span>
+        <span class="sp"></span>
+        <button id="dStart" class="gold">start</button>
+      </div>
+
+      <div id="gameCard" class="card hidden" aria-live="polite"></div>
       <div id="target" class="target hidden"></div>
       <div id="ref" class="ref hidden"></div>
 
-      <textarea id="input" placeholder="type anything ;" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
+      <textarea id="input" aria-label="typing field" placeholder="type anything ;" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
 
       <div class="row">
         <button id="snap">keep this aura ↓</button>
@@ -134,29 +209,47 @@ textarea::placeholder{color:var(--t3)}
       <p>The pitch is simple: you cannot not watch it. A continuous, honest picture of your own rhythm is the fastest feedback loop there is, and feedback is how you become a speed typer at breakneck speed.</p>
 
       <h2>The colour math</h2>
-      <p>Colours are computed in <code>OKLCH</code>, a perceptually uniform colour space, so equal steps in your typing look like equal steps in colour. Three numbers drive it:</p>
+      <p>Colours are computed in <code>OKLCH</code>, a perceptually uniform colour space: a change in lightness or saturation looks as large as it measures, whatever the hue. Three numbers drive the colour of the sphere, and a fourth, time, drives the rings:</p>
       <ul>
-        <li><b>Hue ← velocity.</b> Keys per second map onto a path from <span class="sw" style="background:#9b7bd6"></span>violet (still) through <span class="sw" style="background:#5b8fe0"></span>blue, <span class="sw" style="background:#4fb98a"></span>green, <span class="sw" style="background:#d8b35a"></span>gold and <span class="sw" style="background:#e07a4a"></span>amber to <span class="sw" style="background:#e05a4a"></span>red (breakneck). Cool is slow, hot is fast, like a thermometer.</li>
-        <li><b>Chroma ← sync.</b> How saturated the colour is comes from how locked your rhythm is. Scattered keystrokes give a greyish, uncertain tone; a steady beat gives a vivid one.</li>
-        <li><b>Lightness ← accuracy.</b> Mistakes dim the sphere. Idle dims it too; it sleeps when you do.</li>
-        <li><b>Rings ← time.</b> Ring <code>k</code> shows the colour from <code>k × 0.33 s</code> ago. The innermost ring is a third of a second behind you; the outermost is a little over two seconds behind. Your past propagates outward, and the small wobble travelling through the rings is the oscillator's phase, delayed ring by ring.</li>
+        <li><b>Hue ← velocity.</b> Keys per second move along a thermometer from <span class="sw" style="background:#9b7bd6"></span>violet (still) through <span class="sw" style="background:#5b8fe0"></span>blue, <span class="sw" style="background:#4fb98a"></span>green, <span class="sw" style="background:#d8b35a"></span>gold and <span class="sw" style="background:#e07a4a"></span>amber to <span class="sw" style="background:#e05a4a"></span>red (breakneck). The scale is stretched through blue and green, where most people type, and compressed at the red end, so the colours line up with the mood words.</li>
+        <li><b>Chroma ← sync.</b> Saturation is measured as a fraction of the most vivid colour the screen can show at that hue and lightness, so a steady beat reaches full colour at every speed. Scattered keystrokes stay greyish.</li>
+        <li><b>Lightness ← accuracy.</b> Over your last twenty characters. One slip dims the sphere a little, a run of them darkens it, and it brightens again as you type cleanly. Idle dims it too; it sleeps when you do.</li>
+        <li><b>Rings ← time.</b> Ring <code>k</code> shows the colour from <code>k × 0.33 s</code> ago. The innermost ring is a third of a second behind you; the outermost a little over two seconds. Your past propagates outward, and the small wobble travelling through the rings is the oscillator's phase, delayed ring by ring.</li>
       </ul>
 
       <h2>The sync math</h2>
-      <p>Inside the sphere runs one oscillator with phase <code>φ</code> and natural frequency <code>ω</code>. Each keystroke is a pulse that kicks it, the same pulse-coupled model Mirollo and Strogatz used for fireflies and Peskin used for the heart's pacemaker cells, and its frequency slowly adapts to your rate:</p>
+      <p>Inside the sphere runs one oscillator with phase <code>φ</code> and natural frequency <code>ω</code>. Each keystroke kicks it. It is a cousin of the pulse-coupled models Mirollo and Strogatz studied for fireflies and Peskin for the heart's pacemaker cells: a phase oscillator with a sinusoidal phase-response curve, entrained by your keystrokes, whose frequency slowly adapts to your rate.</p>
 <pre>between keys     dφ/dt = ω
-on a keystroke   φ ← φ − K·sin φ            K = 0.35
-                 ω ← ω + ε·(2π·v − ω)       ε = 0.25,  v = 1 / interval</pre>
-      <p>Just before each kick the oscillator's phase is recorded. If you type with a steady rhythm the kicks always land at the same phase and the oscillator locks to you. The <b>sync</b> number is the Kuramoto order parameter over the last twelve keystrokes:</p>
+on a keystroke   φ ← φ − K·sin φ
+                 ω ← ω + ε·(2π·f − ω)
+
+K = 0.35   ε = 0.25   f = 1 / interval</pre>
+      <p>The phase is read at the moment of each keystroke, just before the kick. A pause longer than three beats (and at least 0.6 s) is a rest, not a beat: the oscillator waits for you instead of slowing down. After 2.5 s of silence the rhythm starts over. Held-down keys repeat, but repeats are not keystrokes.</p>
+      <p>The <b>sync</b> number is the mean resultant length of those phases over your last twelve keystrokes, the same formula Kuramoto uses for his order parameter:</p>
 <pre>r · e^{iψ} = (1/N) · Σ e^{iφ_j}</pre>
       <p><code>r = 1</code> means perfect lock: you and the ring are one clock. <code>r</code> near 0 means the kicks are scattered. Crickets, fireflies, heart cells, pendulum clocks on a shared beam and typists all do the same thing when they are coupled: they find a beat.</p>
+
+      <h2>Sprint</h2>
+      <p>One word at a time, the way NextWord Sprint began. No spaces: the word clears itself when the last letter lands. The arc around the ring is your fuel, and its colour is the pace you must hold, starting at 1.5 keys per second and rising by 0.05 with every word. Sync multiplies each word, five clean words in a row raise the combo, and a gold rune from the loom is worth double. Your best run comes back as a ghost, and the line under the word counts how far ahead or behind it you are.</p>
+
+      <h2>Duel: Bifrost and Snell's law</h2>
+      <p>In the duel each typist is a medium for light. Your refractive index is your interval in breakneck units, <code>n = interval / 83 ms</code>: light slows in glass because each wavelength takes longer, and you are denser because each letter does. Between the two spheres stands Bifrost, the bridge that lets some light cross and turns the rest back.</p>
+<pre>Snell        n₁ · sin θ₁ = n₂ · sin θ₂
+critical     sin θc = v_slow / v_fast
+through      T = min(1, v_you / v_them)²
+push         dp/dt = g · (I_you·T_you − I_them·T_them)</pre>
+      <p>Where you are faster, all of your light crosses and bends toward the normal, converging on the other sphere. Where you are slower, rays steeper than the critical angle reflect totally and stay on your side. <code>T</code> is the fraction of a glowing sphere's light that escapes, <code>sin²θc</code>, which is the same factor as the n² brightness theorem. <code>I</code> is how bright your light is, <code>(1 + sync)/2</code> times your recent accuracy, so coherence and care count as much as speed. The push <code>p</code> takes the other sphere's rings from the outside in; seven rings or forty-five seconds decides it. Both velocities get a floor of 0.5 keys/s, so two idle typists are a draw and nothing divides by zero.</p>
+      <p><b>The opposite colour wheel.</b> In the duel you own the warm half of the wheel, violet through red to gold as you speed up, and your opponent owns the cool half, green through cyan to blue. At equal speeds your colours are exact complements, 180° apart. Light that crosses Bifrost takes rings in its own colour.</p>
+      <p><b>Loki.</b> Light that turns back is not lost. It charges Loki, and when the meter fills, for two seconds your light ignores the critical angle and theirs cannot reach you: the branch nobody saw coming. Only the side that is losing light charges it.</p>
+      <p><b>Opponents.</b> A jötunn is a giant who types at a steady pace with a human wobble and gets four words a minute faster each time you beat it. Urðr is the keystroke timing of your own last duel, replayed against you: what was, against what is.</p>
+      <p><b>An honest note.</b> Typing speed is a rate, not the speed of light, so the duel is a picture and not a law of typing. The law that does govern two typists is the oscillator one. Two coupled oscillators whose frequencies differ by <code>Δω</code> lock when <code>|Δω| ≤ 2K</code>, at a phase lag where <code>sin ψ = Δω / 2K</code>, the same sine-equals-ratio shape as Snell's law. When <code>|Δω| &gt; 2K</code> there is no locked solution and the phases slip past each other: that is its total internal reflection. Snell's law itself is proved in Lean in this repository, as <code>snell</code> in <a href="../wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean">wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean</a>.</p>
 
       <h2>The wager</h2>
       <p>Typing is a two-oscillator system. One is in your head and produces the next letter; one is in your hands and executes it. The hypothesis this toy makes visible is that the velocity of thought shows up as phase coherence in the keystrokes, and that a continuous picture of that coherence, a colour you cannot help but watch, trains the two oscillators to lock faster. Breakneck speed is not more force. It is better coupling.</p>
       <p>In the language of sgrounds the rings are <i>wyrd</i>: the thread already spun, radiating outward from the moment you are in. The semicolon holds the two oscillators together without collapsing either.</p>
 
       <h2>The texts</h2>
-      <p>The faith tab uses public-domain translations: the King James Version (1611) for the Bible and Marmaduke Pickthall's <i>The Meaning of the Glorious Koran</i> (1930) for the Qur'an. The game draws from pangrams and a few lines about synchrony, or from the verses if you tick the box.</p>
+      <p>The faith tab uses public-domain translations: the King James Version of 1611 for the Bible (public domain everywhere except the United Kingdom, where it remains under Crown letters patent) and Marmaduke Pickthall's <i>The Meaning of the Glorious Koran</i> (1930) for the Qur'an. The game draws from pangrams and a few lines about synchrony, or from the verses if you tick the box. Sprint words are a hand-picked list of common English words; the runes come from the sgrounds lore.</p>
     </section>
   </main>
 </div>
@@ -169,6 +262,13 @@ const clamp = (x,a,b) => Math.max(a, Math.min(b, x));
 const lerp = (a,b,t) => a + (b-a)*t;
 const TAU = Math.PI*2;
 const wrap = p => { p = (p + Math.PI) % TAU; if (p < 0) p += TAU; return p - Math.PI; };
+const RM = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const G = '#c9a96e', RED = '#e07a6a';
+const store = {
+  get(k, fb){ try { const r = localStorage.getItem(k); return r == null ? fb : JSON.parse(r); } catch { return fb; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const put = (el, s) => { if (el.textContent !== s) el.textContent = s; };
 
 // ── Colour math: OKLCH → sRGB (Björn Ottosson's OKLab matrices) ──────────────
 function oklabToLinear(L,a,b){
@@ -184,7 +284,7 @@ function oklabToLinear(L,a,b){
 }
 const inGamut = rgb => rgb.every(c => c >= -0.0005 && c <= 1.0005);
 const gamma = c => { c = clamp(c,0,1); return c <= 0.0031308 ? 12.92*c : 1.055*Math.pow(c,1/2.4) - 0.055; };
-// Returns [r,g,b] 0–255. If the colour is outside sRGB, chroma is reduced until it fits (hue and lightness kept).
+// [r,g,b] 0–255. Out-of-gamut colours keep hue and lightness and lose chroma until they fit.
 function oklch(L,C,H){
   const h = H*Math.PI/180, ca = Math.cos(h), sa = Math.sin(h);
   let rgb = oklabToLinear(L, C*ca, C*sa);
@@ -196,6 +296,13 @@ function oklch(L,C,H){
     }
   }
   return rgb.map(c => Math.round(gamma(c)*255));
+}
+// The most vivid in-gamut chroma at this lightness and hue (the in-gamut chromas form an interval [0, max]).
+function maxChroma(L, H){
+  const h = H*Math.PI/180, ca = Math.cos(h), sa = Math.sin(h);
+  let lo = 0, hi = 0.4;
+  for (let i = 0; i < 12; i++) { const m = (lo+hi)/2; if (inGamut(oklabToLinear(L, m*ca, m*sa))) lo = m; else hi = m; }
+  return lo;
 }
 const css = (rgb,a=1) => `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
 
@@ -211,10 +318,15 @@ function hueFor(v){
 }
 const MOODS = [[1,'still'],[2.5,'calm'],[4.5,'flowing'],[6.5,'quick'],[8.5,'blazing'],[Infinity,'breakneck']];
 const moodFor = v => MOODS.find(m => v < m[0])[1];
+// Duel: each side owns half of the wheel, and speed is the thermometer within it.
+// At equal speeds the two hues are exactly 180° apart.
+const uOf = v => (300 - hueFor(v))/275;
+const HUE_YOU = v => (300 + 150*uOf(v)) % 360;   // violet → magenta → red → orange → gold
+const HUE_THEM = v => (120 + 150*uOf(v)) % 360;  // green → cyan → blue
 
 // ── Texts ────────────────────────────────────────────────────────────────────
 const VERSES = {
-  bible: { label: 'Bible · KJV', credit: 'King James Version (1611), public domain', items: [
+  bible: { label: 'Bible · KJV', items: [
     { ref: 'Genesis 1:1', text: 'In the beginning God created the heaven and the earth.' },
     { ref: 'Genesis 1:3', text: 'And God said, Let there be light: and there was light.' },
     { ref: 'Psalm 23:1', text: 'The LORD is my shepherd; I shall not want.' },
@@ -234,10 +346,10 @@ const VERSES = {
     { ref: '1 Corinthians 13:4', text: 'Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up,' },
     { ref: 'Philippians 4:13', text: 'I can do all things through Christ which strengtheneth me.' },
   ]},
-  quran: { label: 'Qur\'an · Pickthall', credit: 'Marmaduke Pickthall, The Meaning of the Glorious Koran (1930), public domain', items: [
+  quran: { label: 'Qur\'an · Pickthall', items: [
     { ref: 'Al-Fatihah 1:1', text: 'In the name of Allah, the Beneficent, the Merciful.' },
     { ref: 'Al-Fatihah 1:2-4', text: 'Praise be to Allah, Lord of the Worlds, The Beneficent, the Merciful. Owner of the Day of Judgment,' },
-    { ref: 'Al-Fatihah 1:5-7', text: 'Thee (alone) we worship; Thee (alone) we ask for help. Show us the straight path, The path of those whom Thou hast favoured; Not the (path) of those who earn Thine anger nor of those who go astray.' },
+    { ref: 'Al-Fatihah 1:5-7', text: 'Thee (alone) we worship; Thee (alone) we ask for help. Show us the straight path, The path of those whom Thou hast favoured; Not (the path) of those who earn Thine anger nor of those who go astray.' },
     { ref: 'Al-Baqarah 2:152', text: 'Therefore remember Me, I will remember you. Give thanks to Me, and reject not Me.' },
     { ref: 'Al-Baqarah 2:186', text: 'And when My servants question thee concerning Me, then surely I am nigh. I answer the prayer of the suppliant when he crieth unto Me. So let them hear My call and let them trust in Me, in order that they may be led aright.' },
     { ref: 'Al-Baqarah 2:255 (opening)', text: 'Allah! There is no God save Him, the Alive, the Eternal. Neither slumber nor sleep overtaketh Him.' },
@@ -251,6 +363,7 @@ const VERSES = {
     { ref: 'Al-Ikhlas 112:1-4', text: 'Say: He is Allah, the One! Allah, the eternally Besought of all! He begetteth not nor was begotten. And there is none comparable unto Him.' },
   ]},
 };
+const ALL_VERSES = VERSES.bible.items.concat(VERSES.quran.items);
 const PHRASES = [
   'The quick brown fox jumps over the lazy dog.',
   'Pack my box with five dozen liquor jugs.',
@@ -268,84 +381,225 @@ const PHRASES = [
   'The lighthouse does not chase ships; it keeps a steady beat.',
   'Breakneck speed is not more force. It is better coupling.',
 ];
+// Sprint words: common English words, hand-picked. Tiers are drawn by length.
+const WORDS = [...new Set(`about above across act add after again air all almost alone along also always among and angry animal answer any apple area arm around arrive art ask autumn away baby back bad bag ball band bank base basket battle beach bear beauty become bed before begin behind bell best better between beyond big bird black blanket blue boat body bone book born both bottle bottom box boy branch brave bread break breath bridge bright bring broken brother brown build busy but buy cake call calm camp candle capital captain car card care careful carry castle cat catch cause center chair chance change cheese chicken child choose circle city class clean clear clever climb clock close cloud coast coffee cold color come common corner cotton could count country course cover cow create cross crowd crown cup current dance danger dark daughter day deep desert detail dinner direct doctor dog door double down dragon draw dream dress drink drive drop during each early earth east easy eat edge effort egg eight either eleven empty end enjoy enough enter equal escape even evening ever every exact example eye face fact fair fall family famous far farm farmer fast father feather feel field fifteen fill final find fine finger finish fire first fish five flat flight floor flower fly follow food foot forest forget form forward four free fresh friend from front fruit full fun funny garden gate gentle get gift girl give glad glass gold golden good grass gray great green ground group grow guess guitar hair half hall hammer hand happen happy harbor hard harvest hat have head health hear heart heat heavy help here hidden high hill history hold hole holiday home honest hope horse hot hour house huge human hundred idea inch inside island jacket job join journey joy jump just keep key kind king kitchen kite knee know ladder lake lamp land lantern large last late laugh lead learn leave left lesson letter level library light like line lion listen little live long look loud love low lucky machine magic main make many map market master matter meadow meal measure meet melody middle mile milk mind minute mirror moment money month moon morning mother motion mountain mouse mouth move music name narrow nature near neck need nest never new next nice night nine noise north nose note nothing notice number ocean office often old once open orange order other outside over owner page paint pair palace paper parent park part party pass past path pattern peace pencil people perfect person piano pick picture piece place plain planet plant play please pocket poem point poor potato power present pretty prize promise pull puzzle quick quiet quite rabbit race rain rainbow raise reach read ready real reason record red remember repeat rest rhythm rice rich ride right ring rise river road rock rocket roof room root rope rose round row rule run safe sail sailor salt same sand save say school science sea season seat second secret seed seem send sense seven shadow shape share sharp sheep shelf shell shine ship shoe shore short shoulder show side sign signal silent silver simple sing sister sit six size skill sky sleep slow small smile smooth snow soft soil song soon sound south space speak special speed spell spend spirit spoon sport spring square stand star start station stay step stick still stone stop store storm story straight strange stream street strong student study sugar summer sun supper sure surprise sweet swim symbol table tail take talk tall teacher team tell temple ten test thank thick thin thing think third thread three through thunder ticket tiger time tiny today together tomorrow tonight tool top touch toward tower town toy track trade train travel tree trip trouble true trust truth try turn turtle twelve twenty two uncle under until upon usual valley value very village violin visit voice voyage wait walk wall wander warm wash watch water wave way wear weather week weight welcome well west wheel where while whisper white whole wide wild will wind window winter wise wish with without woman wonder wood word work world write yard year yellow young zero`.split(/\s+/))].filter(w => /^[a-z]{3,8}$/.test(w));
+const W5 = WORDS.filter(w => w.length <= 5), W6 = WORDS.filter(w => w.length <= 6);
+const RUNES = 'wyrd norn urd verdandi skuld loki yggdrasil bifrost loom shuttle thread tapestry lighthouse beacon rhyme echo source receiver branch trunk semicolon firefly cricket pendulum pulse beat lock sync coupling breakneck'.split(' ');
 
-// ── State ────────────────────────────────────────────────────────────────────
-const st = {
-  mode: 'free',
-  v: 0,                 // velocity, keys/s (1000 / smoothed interval)
-  iki: null,            // smoothed inter-key interval, ms
-  omega: TAU*4,         // oscillator natural frequency, rad/s
-  phi: 0,               // oscillator phase, (−π, π]
-  phases: [],           // oscillator phase at each of the last N keystrokes
-  r: 0,                 // displayed order parameter (smoothed)
-  lastKey: null, keys: [],
-  typed: 0, errors: 0, acc: 1,
-  hist: [],             // colour history for the rings
-  flash: 0, done: false,
-};
-const game = { running: false, over: false, level: 1, score: 0, best: 0, peak: 0, budget: 0, start: 0 };
-try { game.best = +localStorage.getItem('tmr-best') || 0; } catch {}
+// ── Oscillator: one per typist ───────────────────────────────────────────────
+const K = 0.35, EPS = 0.25, NPH = 12, RESET = 2500, V0 = 0.5, RINGS = 7, DELAY = 330;
+const mk = () => ({ v:0, iki:null, omega:TAU*4, phi:0, phiT:0, phases:[], r:0, lastKey:null, flash:0, hist:[], accR:1,
+                    cur:{ t:0, L:0.5, C:0.02, H:300, q:0.12, phi:0, r:0 } });
+const st = Object.assign(mk(), { mode:null, keys:[], typed:0, errors:0, acc:1, recent:[], done:false });
+const opp = mk();
 
-let target = null, prevVal = '', scripture = 'bible', verseIdx = 0, lastPhrase = '';
-
-const input = $('#input'), targetEl = $('#target'), refEl = $('#ref');
-const cvs = $('#ring'), ctx = cvs.getContext('2d');
-let dpr = 1, size = 360;
-
-// ── Keystroke → oscillator ───────────────────────────────────────────────────
-function keystroke(now){
-  if (st.lastKey != null) {
-    const iki = now - st.lastKey;
-    if (iki < 2500) {
-      st.iki = st.iki == null ? iki : st.iki + 0.3*(iki - st.iki);   // smooth the interval, not the rate: velocity is keys per unit time
-      st.v = 1000/st.iki;
-      const vi = 1000/iki;
-      st.phases.push(st.phi); if (st.phases.length > 12) st.phases.shift();
-      st.phi = wrap(st.phi - 0.35*Math.sin(st.phi));            // pulse coupling: kick toward φ = 0
-      st.omega = clamp(st.omega + 0.25*(TAU*vi - st.omega), TAU*0.5, TAU*16); // frequency adaptation
-    } else { st.phases.length = 0; st.v = 0; st.iki = null; }
-  }
-  st.lastKey = now; st.keys.push(now);
+// The phase is a function of time: φ(t) = φ0 + ω·(t − t0). Reading it at the keystroke's own timestamp
+// (not at the last animation frame) keeps the sync reading independent of the frame rate.
+function advance(o, t){ o.phi = wrap(o.phi + o.omega*(t - o.phiT)/1000); o.phiT = t; }
+function keystroke(o, t){
+  if (o.lastKey == null) { o.phi = 0; o.phiT = t; o.lastKey = t; return; }
+  const iki = t - o.lastKey;
+  o.lastKey = t;
+  if (iki >= RESET) { o.phases.length = 0; o.v = 0; o.iki = null; o.phi = 0; o.phiT = t; return; }
+  if (o.iki != null && iki > Math.max(600, 3*o.iki)) { o.phi = 0; o.phiT = t; return; }   // a rest, not a beat
+  advance(o, t);
+  o.iki = o.iki == null ? iki : o.iki + 0.3*(iki - o.iki);   // smooth the interval, not the rate
+  o.v = 1000/Math.max(1, o.iki);
+  o.phases.push(o.phi); if (o.phases.length > NPH) o.phases.shift();
+  o.phi = wrap(o.phi - K*Math.sin(o.phi));                                        // pulse coupling: kick toward φ = 0
+  o.omega = clamp(o.omega + EPS*(TAU*1000/Math.max(1, iki) - o.omega), TAU*0.5, TAU*25); // frequency adaptation
 }
+function sleep(o){ o.v = 0; o.iki = null; o.phases.length = 0; o.r = 0; o.lastKey = null; }
+function tick(o, now, dt, hue){
+  advance(o, now);
+  const idle = o.lastKey == null ? Infinity : now - o.lastKey;
+  if (idle > 700) o.v *= Math.exp(-dt/0.7);
+  if (o.v < 0.02) { o.v = 0; o.iki = null; }
+  if (idle > RESET) o.phases.length = 0;
+  let r = 0;
+  if (o.phases.length >= 3) { let x = 0, y = 0; for (const p of o.phases) { x += Math.cos(p); y += Math.sin(p); } r = Math.hypot(x, y)/o.phases.length; }
+  o.r += (r - o.r) * Math.min(1, dt*4);
+  const a = clamp(o.v/3, 0, 1);
+  const H = hue(o.v);
+  const L = clamp(0.5 + 0.22*a - 0.24*clamp((1 - o.accR)/0.15, 0, 1) + 0.06*o.flash, 0.3, 0.8);
+  const q = 0.12 + 0.13*a + 0.75*o.r*a;
+  const C = maxChroma(L, H)*q;
+  o.flash *= Math.exp(-dt/0.5);
+  o.cur = { t: now, L, C, H, q, phi: o.phi, r: o.r };
+  o.hist.push(o.cur);
+  while (o.hist.length && now - o.hist[0].t > 4000) o.hist.shift();
+  return o.cur;
+}
+const intensity = o => (0.5 + 0.5*o.r) * o.accR;
+// Fraction of a glowing sphere's light that escapes into the other medium: 1 if the sender is faster,
+// otherwise sin²θc = (v_sender / v_receiver)².
+const transmit = (vs, vr) => Math.min(1, vs/vr) ** 2;
 
-input.addEventListener('input', () => {
-  if (st.done) { input.value = prevVal; return; }
-  const val = input.value, now = performance.now();
-  if (val.length > prevVal.length) {
-    const added = val.length - prevVal.length;
-    if (added === 1) keystroke(now);
-    if (target) { for (let i = prevVal.length; i < val.length; i++) { st.typed++; if (val[i] !== target[i]) st.errors++; } }
-    else st.typed += added;
-  }
-  prevVal = val;
-  st.acc = st.typed ? 1 - st.errors/st.typed : 1;
-  if (target) { renderTarget(val); if (val === target) complete(); }
-});
-input.addEventListener('keydown', e => { if (target && e.key === 'Enter') e.preventDefault(); });
-input.addEventListener('paste', e => { if (target) e.preventDefault(); });
+// ── Elements & shared state ──────────────────────────────────────────────────
+const input = $('#input'), targetEl = $('#target'), refEl = $('#ref'), card = $('#gameCard');
+const E = { kps:$('#sKps'), wpm:$('#sWpm'), sync:$('#sSync'), acc:$('#sAcc'), mood:$('#moodWord'), sub:$('#moodSub'),
+            hT:$('#hT'), hA1:$('#hA1'), hA2:$('#hA2'), hB1:$('#hB1'), hB2:$('#hB2'), hBn:$('#hBn'), lA:$('#lA'), lB:$('#lB') };
+const cvs = $('#ring'), ctx = cvs.getContext('2d');
+let dpr = 1, cw = 360, ch = 360, last = performance.now(), hiddenAt = 0;
+let target = null, spans = [], prevVal = '', repeatKey = false, advanceT = 0;
+let scripture = 'bible', verseIdx = 0, lastPick = '';
+let noteS = '', noteT = 0;
+const note = s => { noteS = s; noteT = performance.now() + 1100; };
+const showCard = html => { card.innerHTML = html; card.classList.remove('hidden'); fitPhone(); };
+const hideCard = () => { card.classList.add('hidden'); fitPhone(); };
+// On phones the sphere is pinned to the top. When the keyboard scrolls the field into view, keep the
+// field, and the verse or word above it, clear of the pinned sphere.
+function fitPhone(){
+  if (window.innerWidth > 520) { input.style.scrollMarginTop = ''; return; }
+  const anchor = st.mode === 'sprint' ? E.mood : !targetEl.classList.contains('hidden') ? targetEl : input;
+  const above = Math.max(0, input.getBoundingClientRect().top - anchor.getBoundingClientRect().top);
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const m = Math.min($('.stage').offsetHeight + 10 + above, vh - input.offsetHeight - 8);
+  input.style.scrollMarginTop = Math.max(0, Math.round(m)) + 'px';
+}
+function alignPhone(){
+  if (window.innerWidth > 520 || document.activeElement !== input) return;
+  fitPhone();
+  const y = window.scrollY + input.getBoundingClientRect().top - (parseFloat(input.style.scrollMarginTop) || 0);
+  if (Math.abs(y - window.scrollY) > 2) window.scrollTo(0, Math.max(0, y));
+}
+function focusInput(){ input.focus({ preventScroll: window.innerWidth <= 520 }); alignPhone(); }
+const pick = pool => { let p, n = 0; do { p = pool[Math.floor(Math.random()*pool.length)]; } while (p === lastPick && pool.length > 1 && ++n < 20); lastPick = p; return p; };
+function resetTyping(){ sleep(st); st.keys.length = 0; st.typed = 0; st.errors = 0; st.acc = 1; st.recent.length = 0; st.accR = 1; }
+
+const game = { running:false, over:false, level:1, score:0, best:0, peak:0, budget:0, start:0 };
+game.best = Number(store.get('tmr-best', 0)) || 0;
+
+const ghostOk = a => Array.isArray(a) && a.length <= 1000 && a.every(x => Number.isInteger(x) && x >= 0 && x <= 100000);
+const sp = { on:false, over:false, count:0, countT:0, fuel:6000, cap:6000, words:0, score:0, streak:0, bestStreak:0, peak:0,
+             start:0, rune:false, typo:false, queue:[], recent:[], vq:[], vref:'', ref:'', drawn:0, sec:[], lane:'',
+             best: Number(store.get('tmr-sprint-best', 0)) || 0, far: Number(store.get('tmr-sprint-far', 0)) || 0, ghost: [] };
+{ const g = store.get('tmr-sprint-ghost', []); sp.ghost = ghostOk(g) ? g : []; }
+const pace = w => 1.5 + 0.05*w;                                   // break-even keys/s at word w
+const combo = () => Math.min(4, 1 + 0.5*Math.floor(sp.streak/5));
+
+function loadGhost(){
+  const g = store.get('tmr-ghost', null);
+  if (!g || g.v !== 1 || !Array.isArray(g.d) || g.d.length < 20 || g.d.length > 6000) return null;
+  let prev = 0;
+  for (const x of g.d) { if (!Number.isInteger(x) || x < prev || x > 600000) return null; prev = x; }
+  return { d: g.d, acc: typeof g.acc === 'number' && g.acc >= 0 && g.acc <= 1 ? g.acc : 0.95 };
+}
+const duel = { on:false, count:0, countT:0, kind:'giant', start:0, len:45000, p:0, loki:[0,0], lokiUntil:[0,0], fired:[0,0],
+               rec:[], si:0, base:0, next:0, ivl:0, Ta:1, Tb:1, peak:0, ghost:loadGhost(), stats:{ w:0, l:0, d:0, giant:30 } };
+{ const s = store.get('tmr-duel', null);
+  if (s && typeof s === 'object') for (const k of ['w','l','d','giant']) if (Number.isFinite(s[k])) duel.stats[k] = s[k];
+  duel.stats.giant = clamp(Math.round(duel.stats.giant), 15, 160); }
+const G_DUEL = 0.9, LOKI_K = 0.33;
+const oppName = () => duel.kind === 'ghost' ? 'urðr' : 'jötunn';
 
 // ── Target text ──────────────────────────────────────────────────────────────
-let spans = [];
-function setTarget(text, ref){
-  target = text; st.done = false; input.value = ''; prevVal = ''; input.readOnly = false;
-  if (!text) { targetEl.classList.add('hidden'); refEl.classList.add('hidden'); return; }
-  targetEl.innerHTML = ''; spans = [];
-  for (const ch of text) { const s = document.createElement('span'); s.textContent = ch; targetEl.appendChild(s); spans.push(s); }
-  targetEl.classList.remove('hidden'); targetEl.classList.remove('enter'); void targetEl.offsetWidth; targetEl.classList.add('enter');
-  refEl.textContent = ref || ''; refEl.classList.toggle('hidden', !ref);
+const norm = s => s.replace(/[‘’ʼ]/g, "'").replace(/[“”]/g, '"').replace(/ /g, ' ');
+const same = (a, b) => a === b || (st.mode === 'sprint' && a != null && b != null && a.toLowerCase() === b.toLowerCase());
+const matches = val => { const v = norm(val); return st.mode === 'sprint' ? v.toLowerCase() === target.toLowerCase() : v === target; };
+function mount(text, el){
+  target = text || null; spans = []; prevVal = ''; input.value = ''; st.done = false;
+  if (!target) return;
+  el.textContent = '';
+  for (const ch of target) { const s = document.createElement('span'); s.textContent = ch; el.appendChild(s); spans.push(s); }
   renderTarget('');
 }
+function setTarget(text, ref){
+  clearTimeout(advanceT);
+  mount(text, targetEl);
+  if (!text) { targetEl.classList.add('hidden'); refEl.classList.add('hidden'); input.removeAttribute('aria-describedby'); fitPhone(); return; }
+  targetEl.classList.remove('hidden', 'enter'); void targetEl.offsetWidth; targetEl.classList.add('enter');
+  refEl.textContent = ref || ''; refEl.classList.toggle('hidden', !ref);
+  input.setAttribute('aria-describedby', ref ? 'target ref' : 'target');
+  fitPhone();
+}
 function renderTarget(val){
+  const v = norm(val);
   for (let i = 0; i < spans.length; i++)
-    spans[i].className = i < val.length ? (val[i] === target[i] ? 'ok' : 'bad') : (i === val.length ? 'cur' : '');
+    spans[i].className = i < v.length ? (same(v[i], target[i]) ? 'ok' : 'bad') : (i === v.length ? 'cur' : '');
+}
+
+// ── Input ────────────────────────────────────────────────────────────────────
+const BLOCK = new Set(['insertFromDrop','insertFromPaste','insertFromPasteAsQuotation','insertFromYank','insertReplacementText','insertLink','insertTranspose']);
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    const m = st.mode;
+    if (m === 'game' && !game.running) { e.preventDefault(); startGame(); return; }
+    if (m === 'sprint' && !sp.on && !sp.count) { e.preventDefault(); startSprint(); return; }
+    if (m === 'duel' && !duel.on && !duel.count) { e.preventDefault(); startDuel(); return; }
+    if (target) e.preventDefault();
+  }
+  if (target && /^(Arrow|Home$|End$|Page)/.test(e.key)) e.preventDefault();   // the caret stays at the end
+  repeatKey = e.repeat && e.key.length === 1;                                  // auto-repeat is not a keystroke
+});
+input.addEventListener('beforeinput', e => {
+  if (sp.count || duel.count) { e.preventDefault(); return; }
+  if (!target) return;
+  if (BLOCK.has(e.inputType)) { e.preventDefault(); return; }                  // only typing counts
+  if (st.mode === 'sprint' && e.data && /^\s+$/.test(e.data)) e.preventDefault(); // no spaces in sprint
+});
+input.addEventListener('drop', e => { if (target) e.preventDefault(); });
+input.addEventListener('paste', e => { if (target) e.preventDefault(); });
+const caretEnd = () => { if (target && input.selectionStart !== input.value.length) { const n = input.value.length; input.setSelectionRange(n, n); } };
+for (const ev of ['pointerup', 'select', 'keyup', 'focus']) input.addEventListener(ev, caretEnd);
+
+input.addEventListener('input', e => {
+  const now = performance.now(), ts = e.timeStamp;
+  const t = ts > 0 && ts <= now + 1 ? ts : now;
+  let val = input.value;
+  if (st.done) {
+    // a completed verse: keep typing and the next verse begins with what you typed
+    if (st.mode === 'faith' && val.length > prevVal.length && val.startsWith(prevVal)) {
+      const extra = val.slice(prevVal.length);
+      showVerse(verseIdx + 1);
+      input.value = val = extra;
+    } else { input.value = prevVal; return; }
+  }
+  handle(val, t, e.inputType, e.data);
+});
+function handle(val, t, type, data){
+  const pv = prevVal, n = Math.min(pv.length, val.length);
+  let p = 0; while (p < n && pv[p] === val[p]) p++;
+  const grew = val.length - pv.length;
+  let key = false;
+  if (type === 'insertText') key = data != null && [...data].length === 1;
+  else if (type === 'insertCompositionText') key = val !== pv && grew >= 0 && grew <= 1;
+  else if (!type) key = grew === 1;
+  if (repeatKey) { key = false; repeatKey = false; }
+  if (key) {
+    keystroke(st, t); st.keys.push(t);
+    if (duel.on) duel.rec.push(Math.max(0, Math.round(t - duel.start)));
+  }
+  if (target) {
+    const v = norm(val);
+    for (let i = p; i < v.length; i++) {
+      const ok = same(v[i], target[i]);
+      st.typed++; st.recent.push(ok ? 1 : 0); if (st.recent.length > 20) st.recent.shift();
+      if (!ok) { st.errors++; onTypo(); }
+    }
+  } else if (grew > 0) st.typed += grew;
+  prevVal = val;
+  st.acc = st.typed ? 1 - st.errors/st.typed : 1;
+  st.accR = st.recent.length ? st.recent.reduce((a, b) => a + b, 0)/st.recent.length : 1;
+  if (target) { renderTarget(val); if (matches(val)) complete(); }
+}
+function onTypo(){
+  if (st.mode !== 'sprint' || !sp.on) return;
+  if (!sp.typo && sp.streak >= 5) note('streak broken');
+  sp.typo = true; sp.streak = 0;
+  E.mood.classList.remove('shake'); void E.mood.offsetWidth; E.mood.classList.add('shake');
+  updateSprintBar();
 }
 function complete(){
-  st.done = true; st.flash = 1; input.readOnly = true;
-  if (st.mode === 'faith') setTimeout(() => { if (st.mode === 'faith') showVerse(verseIdx + 1); }, 1200);
-  if (st.mode === 'game') {
+  st.flash = 1;
+  if (st.mode === 'faith') {
+    st.done = true;
+    advanceT = setTimeout(() => { if (st.mode === 'faith' && st.done) showVerse(verseIdx + 1); }, 1200);
+  } else if (st.mode === 'game') {
     game.score += Math.round(target.length * (1 + st.r) * (0.5 + st.acc/2) * game.level);
     game.level++; updateGameBar(); nextPhrase();
-  }
+  } else if (st.mode === 'sprint') sprintHit();
+  else if (st.mode === 'duel') setTarget(pick(PHRASES), null);
 }
 
 // ── Faith ────────────────────────────────────────────────────────────────────
@@ -354,172 +608,450 @@ function showVerse(i){
   verseIdx = ((i % items.length) + items.length) % items.length;
   const v = items[verseIdx];
   setTarget(v.text, `${v.ref} · ${VERSES[scripture].label}`);
-  $('#verseCount').textContent = `${verseIdx+1} / ${items.length}`;
-  input.focus();
+  put($('#verseCount'), `${verseIdx+1} / ${items.length}`);
+  focusInput();
 }
 $('#prevVerse').onclick = () => showVerse(verseIdx - 1);
 $('#nextVerse').onclick = () => showVerse(verseIdx + 1);
-for (const b of $('#faithBar').querySelectorAll('[data-scr]')) b.onclick = () => {
+for (const b of document.querySelectorAll('[data-scr]')) b.onclick = () => {
   scripture = b.dataset.scr;
-  for (const o of $('#faithBar').querySelectorAll('[data-scr]')) o.classList.toggle('on', o === b);
+  for (const o of document.querySelectorAll('[data-scr]')) { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', o === b); }
   showVerse(0);
 };
 
 // ── Game ─────────────────────────────────────────────────────────────────────
-function pick(pool){ let p; do { p = pool[Math.floor(Math.random()*pool.length)]; } while (p === lastPhrase && pool.length > 1); lastPhrase = p; return p; }
 function nextPhrase(){
-  const pool = $('#gVerses').checked ? VERSES.bible.items.concat(VERSES.quran.items).map(v => v.text) : PHRASES;
-  const text = pick(pool);
+  const text = pick($('#gVerses').checked ? ALL_VERSES.map(v => v.text) : PHRASES);
   setTarget(text, null);
   const wpmTarget = 20 * Math.pow(1.12, game.level - 1);           // level 10 ≈ 55 wpm, level 15 ≈ 98 wpm
   game.budget = (text.length/5)/wpmTarget*60*1000*1.3 + 1500;
   game.start = performance.now();
-  input.focus();
+  focusInput();
 }
 function startGame(){
-  game.running = true; game.over = false; game.level = 1; game.score = 0; game.peak = 0;
-  st.typed = 0; st.errors = 0; st.acc = 1;
-  $('#gameCard').classList.add('hidden'); $('#gStart').textContent = 'restart';
+  if (game.running) endGame(true);
+  Object.assign(game, { running:true, over:false, level:1, score:0, peak:0 });
+  resetTyping(); hideCard(); $('#gStart').textContent = 'restart';
   updateGameBar(); nextPhrase();
 }
-function endGame(){
-  game.running = false; game.over = true; setTarget(null);
-  input.placeholder = 'press start';
-  if (game.score > game.best) { game.best = game.score; try { localStorage.setItem('tmr-best', String(game.best)); } catch {} }
-  updateGameBar();
-  showGameCard(`<h3>the ring went dark at level ${game.level}</h3><p>score <span class="num">${game.score}</span> · peak <span class="num">${Math.round(game.peak)} wpm</span> · accuracy <span class="num">${Math.round(st.acc*100)}%</span> · best <span class="num">${game.best}</span></p>`);
+function endGame(abandon){
+  game.running = false; game.over = !abandon;
+  if (game.score > game.best) { game.best = game.score; store.set('tmr-best', game.best); }
+  put($('#gTime'), '–'); updateGameBar();
+  if (abandon) return;
+  setTarget(null); input.placeholder = 'enter to play again';
+  showCard(`<h3>the ring went dark at level ${game.level}</h3><p>score <span class="num">${game.score}</span> · peak <span class="num">${Math.round(game.peak)} wpm</span> · accuracy <span class="num">${Math.round(st.acc*100)}%</span> · best <span class="num">${game.best}</span></p><p>enter to play again</p>`);
 }
-function showGameCard(html){ const c = $('#gameCard'); c.innerHTML = html; c.classList.remove('hidden'); }
-function updateGameBar(){ $('#gLevel').textContent = game.level; $('#gScore').textContent = game.score; $('#gBest').textContent = game.best; }
-function tickGame(now){ if (game.budget - (now - game.start) <= 0) endGame(); }
-$('#gStart').onclick = startGame;
+function updateGameBar(){ put($('#gLevel'), String(game.level)); put($('#gScore'), String(game.score)); put($('#gBest'), String(game.best)); }
+function tickGame(now){
+  const rem = game.budget - (now - game.start);
+  const el = $('#gTime'); put(el, Math.max(0, Math.ceil(rem/1000)) + 's'); el.classList.toggle('hot', rem < game.budget*0.25);
+  if (rem <= 0) endGame();
+}
+$('#gStart').onclick = () => startGame();
 
-// ── Modes ────────────────────────────────────────────────────────────────────
-function setMode(mode){
-  st.mode = mode;
-  for (const b of $('#tabs').children) b.classList.toggle('on', b.dataset.mode === mode);
-  $('#panelType').classList.toggle('hidden', mode === 'about');
-  $('#panelAbout').classList.toggle('hidden', mode !== 'about');
-  $('#faithBar').classList.toggle('hidden', mode !== 'faith');
-  $('#gameBar').classList.toggle('hidden', mode !== 'game');
-  $('#gameCard').classList.add('hidden');
-  if (game.running) { game.running = false; game.over = false; }
-  st.typed = 0; st.errors = 0; st.acc = 1;
-  if (mode === 'free') { setTarget(null); input.placeholder = 'type anything ;'; input.focus(); }
-  if (mode === 'faith') { input.placeholder = 'type the verse above'; showVerse(verseIdx); }
-  if (mode === 'game') {
-    setTarget(null); input.placeholder = 'press start'; $('#gStart').textContent = 'start'; updateGameBar();
-    showGameCard('<h3>breakneck</h3><p>Type each line before the gold ring runs out. Every level asks for more speed; sync and accuracy multiply your score. The ring remembers your best.</p>');
+// ── Sprint ───────────────────────────────────────────────────────────────────
+function fresh(pool){
+  let w, n = 0;
+  do { w = pool[Math.floor(Math.random()*pool.length)]; } while (sp.recent.includes(w) && ++n < 20);
+  sp.recent.push(w); if (sp.recent.length > 12) sp.recent.shift();
+  return w;
+}
+function drawWord(){
+  sp.drawn++;
+  if ($('#sVerses').checked) {
+    if (!sp.vq.length) {
+      const v = ALL_VERSES[Math.floor(Math.random()*ALL_VERSES.length)];
+      sp.vq = v.text.split(/\s+/).map(w => w.replace(/[^A-Za-z']/g, '')).filter(w => /[A-Za-z]/.test(w));
+      sp.vref = v.ref;
+    }
+    return { w: sp.vq.shift(), rune: false, ref: sp.vref };
+  }
+  const n = sp.drawn;
+  if (n > 10 && Math.random() < 0.1) return { w: fresh(RUNES), rune: true };
+  const pool = n <= 20 ? W5 : n <= 60 ? W6 : WORDS;
+  let w = fresh(pool);
+  if (n > 80) { const w2 = fresh(pool); if (w2.length > w.length) w = w2; }
+  return { w, rune: false };
+}
+function nextWord(){
+  while (sp.queue.length < 3) sp.queue.push(drawWord());
+  const cur = sp.queue.shift();
+  sp.rune = cur.rune; sp.typo = false; sp.ref = cur.ref || '';
+  E.mood.className = 'word' + (cur.rune ? ' rune' : '');
+  mount(cur.w, E.mood);
+  if (!RM.matches) { void E.mood.offsetWidth; E.mood.classList.add('pop'); }
+  updateSprintBar();
+}
+function startSprint(){
+  if (sp.on || sp.count) endSprint(true);
+  Object.assign(sp, { over:false, words:0, score:0, streak:0, bestStreak:0, peak:0, fuel:sp.cap, queue:[], recent:[], vq:[], drawn:0, sec:[], lane:'', typo:false, ref:'' });
+  resetTyping(); hideCard(); mount(null); E.mood.className = '';
+  input.placeholder = ''; focusInput();
+  $('#pStart').textContent = 'restart'; $('#sVersesL').classList.add('hidden');
+  let n = 3;
+  const beat = () => {
+    if (st.mode !== 'sprint') return;
+    if (n > 0) { sp.count = n--; st.flash = 0.8; sp.countT = setTimeout(beat, 500); return; }
+    sp.count = 0; sp.on = true; sp.start = performance.now(); sp.lane = moodFor(pace(0));
+    nextWord();
+  };
+  beat();
+}
+function sprintHit(){
+  const len = target.length, mult = combo();
+  sp.score += Math.round(len * (1 + st.r) * mult * (sp.rune ? 2 : 1));
+  sp.words++;
+  if (!sp.typo) { sp.streak++; sp.bestStreak = Math.max(sp.bestStreak, sp.streak); if (combo() > mult) note(`combo ×${combo()}`); }
+  if (sp.rune) note('✦ rune');
+  sp.fuel = Math.min(sp.cap, sp.fuel + len*1000/pace(sp.words));
+  st.flash = st.r > 0.8 ? 1 : 0.6;
+  const lane = moodFor(pace(sp.words)); if (lane !== sp.lane) { sp.lane = lane; note('→ ' + lane); }
+  nextWord();
+}
+function tickSprint(now, dt){
+  sp.fuel -= dt*1000;
+  const sec = Math.floor((now - sp.start)/1000);
+  while (sp.sec.length <= sec && sp.sec.length < 1000) sp.sec.push(sp.words);
+  if (sp.fuel <= 0) { sp.fuel = 0; endSprint(); }
+}
+function endSprint(abandon){
+  clearTimeout(sp.countT);
+  const was = sp.on; sp.on = false; sp.count = 0;
+  E.mood.className = ''; mount(null);
+  $('#sVersesL').classList.remove('hidden');
+  if (!was) { updateSprintBar(); return; }
+  if (sp.score > sp.best) { sp.best = sp.score; sp.ghost = sp.sec.slice(); store.set('tmr-sprint-best', sp.best); store.set('tmr-sprint-ghost', sp.ghost); }
+  if (sp.words > sp.far) { sp.far = sp.words; store.set('tmr-sprint-far', sp.far); }
+  updateSprintBar();
+  if (abandon) return;
+  sp.over = true; input.placeholder = 'enter to run again';
+  showCard(`<h3>the ring went dark at word ${sp.words}</h3><p>score <span class="num">${sp.score}</span> · reached <span class="num">${moodFor(pace(sp.words))}</span> · peak <span class="num">${Math.round(sp.peak)} wpm</span> · streak <span class="num">${sp.bestStreak}</span> · accuracy <span class="num">${Math.round(st.acc*100)}%</span></p><p>best <span class="num">${sp.best}</span> · farthest <span class="num">${sp.far} words</span> · enter to run again</p>`);
+}
+function updateSprintBar(){
+  put($('#pWords'), String(sp.words)); put($('#pScore'), String(sp.score));
+  const c = $('#pCombo'); put(c, '×' + combo()); c.classList.toggle('hot', sp.on && sp.typo);
+  put($('#pLane'), moodFor(pace(sp.words)));
+}
+function sprintSub(now){
+  if (sp.count) return 'ready ;';
+  if (!sp.on) return sp.over ? 'enter to run again' : 'press start or enter';
+  const parts = [];
+  if (now < noteT) parts.push(noteS);
+  parts.push('next  ' + sp.queue.slice(0, 2).map(x => x.w).join('  '));
+  if (sp.ghost.length) {
+    const sec = Math.floor((now - sp.start)/1000), g = sp.ghost[Math.min(sec, sp.ghost.length - 1)], d = sp.words - g;
+    parts.push('ghost ' + (d >= 0 ? '+' : '−') + Math.abs(d));
+  }
+  if (sp.ref) parts.push(sp.ref);
+  return parts.join(' · ');
+}
+$('#pStart').onclick = () => startSprint();
+
+// ── Duel ─────────────────────────────────────────────────────────────────────
+function startDuel(){
+  if (duel.on || duel.count) endDuel(true);
+  if (duel.kind === 'ghost' && !duel.ghost) duel.kind = 'giant';
+  Object.assign(opp, mk()); resetTyping(); hideCard();
+  Object.assign(duel, { p:0, loki:[0,0], lokiUntil:[0,0], fired:[0,0], rec:[], si:0, base:0, Ta:1, Tb:1, peak:0 });
+  opp.accR = duel.kind === 'ghost' ? duel.ghost.acc : 0.97;
+  setTarget(pick(PHRASES), null);
+  input.placeholder = ''; focusInput();
+  $('#dStart').textContent = 'restart'; updateDuelBar();
+  let n = 3;
+  const beat = () => {
+    if (st.mode !== 'duel') return;
+    if (n > 0) { duel.count = n--; st.flash = 0.8; opp.flash = 0.8; duel.countT = setTimeout(beat, 500); return; }
+    duel.count = 0; duel.on = true; duel.start = performance.now();
+    duel.ivl = 60000/(5*duel.stats.giant); duel.next = duel.start + duel.ivl;
+    note('go ;'); updateDuelBar();
+  };
+  beat();
+}
+function driveOpp(now){
+  if (!duel.on) return;
+  if (duel.kind === 'giant') {
+    while (duel.next <= now) { keystroke(opp, duel.next); duel.next += Math.max(25, duel.ivl + (Math.random()*2 - 1)*35); }
+    return;
+  }
+  const d = duel.ghost.d, loop = d[d.length - 1] + 400;
+  for (;;) {
+    if (duel.si >= d.length) { duel.si = 0; duel.base += loop; }
+    const t = duel.start + duel.base + d[duel.si];
+    if (t > now) break;
+    keystroke(opp, t); duel.si++;
   }
 }
-for (const b of $('#tabs').children) b.onclick = () => setMode(b.dataset.mode);
+function chargeLoki(i, amt, now){
+  duel.loki[i] += LOKI_K*amt;
+  if (duel.loki[i] < 1) return;
+  duel.loki[i] = 0; duel.lokiUntil[i] = now + 2000; duel.fired[i]++;
+  note(i === 0 ? 'Loki ✦ your light finds a branch' : `Loki ✦ the ${oppName()} finds a branch`);
+}
+function tickDuel(now, dt){
+  dt = Math.min(dt, 0.25);
+  const va = st.v + V0, vb = opp.v + V0, Ia = intensity(st), Ib = intensity(opp);
+  const la = now < duel.lokiUntil[0], lb = now < duel.lokiUntil[1];
+  let Ta = transmit(va, vb), Tb = transmit(vb, va);
+  if (la) { Ta = 1; Tb = 0; } else if (lb) { Ta = 0; Tb = 1; }
+  duel.Ta = Ta; duel.Tb = Tb;
+  duel.p = clamp(duel.p + G_DUEL*(Ia*Ta - Ib*Tb)*dt, -RINGS, RINGS);
+  if (!la && !lb) { chargeLoki(0, Ia*(1 - Ta)*dt, now); chargeLoki(1, Ib*(1 - Tb)*dt, now); }
+  if (Math.abs(duel.p) >= RINGS || now - duel.start >= duel.len) endDuel();
+}
+function endDuel(abandon){
+  clearTimeout(duel.countT);
+  const was = duel.on, counting = duel.count; duel.on = false; duel.count = 0;
+  if (!was) { if (counting) setTarget(null); updateDuelBar(); return; }
+  setTarget(null);
+  if (abandon) { updateDuelBar(); return; }
+  const p = duel.p, sweep = Math.abs(p) >= RINGS, res = p > 0.5 ? 'w' : p < -0.5 ? 'l' : 'd', who = oppName();
+  const before = duel.stats.giant;
+  duel.stats[res]++;
+  if (duel.kind === 'giant') duel.stats.giant = clamp(before + (res === 'w' ? 4 : res === 'l' ? -3 : 0), 15, 160);
+  store.set('tmr-duel', duel.stats);
+  const secs = Math.max(1, Math.min(duel.len, performance.now() - duel.start)/1000);
+  if (duel.rec.length >= 20) { duel.ghost = { d: duel.rec.slice(), acc: st.acc }; store.set('tmr-ghost', { v:1, d: duel.ghost.d, acc: st.acc, at: new Date().toISOString().slice(0,10) }); }
+  const head = res === 'w' ? (sweep ? 'all seven rings are yours' : 'Bifrost leans your way')
+             : res === 'l' ? (sweep ? `the ${who} took every ring` : `Bifrost leans to the ${who}`) : 'the bridge held';
+  const loki = duel.fired[0] ? ` · Loki <span class="num">×${duel.fired[0]}</span>` : '';
+  const next = duel.kind === 'giant' ? ` · next jötunn <span class="num">${duel.stats.giant} wpm</span>` : '';
+  showCard(`<h3>${head}</h3><p>margin <span class="num">${p >= 0 ? '+' : '−'}${Math.abs(p).toFixed(1)} rings</span> · <span class="num">${Math.round(duel.rec.length/5/(secs/60))} wpm</span> · sync <span class="num">${Math.round(st.r*100)}%</span> · accuracy <span class="num">${Math.round(st.acc*100)}%</span>${loki}</p><p>record <span class="num">${recText()}</span>${next} · enter to duel again</p>`);
+  input.placeholder = 'enter to duel again';
+  updateDuelBar();
+}
+const recText = () => `${duel.stats.w}–${duel.stats.l}` + (duel.stats.d ? `–${duel.stats.d}` : '');
+function updateDuelBar(){
+  put($('#dGiant'), String(duel.stats.giant)); put($('#dRec'), recText());
+  const busy = duel.on || duel.count > 0;
+  for (const b of document.querySelectorAll('[data-opp]')) {
+    const on = b.dataset.opp === duel.kind; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+    b.disabled = busy || (b.dataset.opp === 'ghost' && !duel.ghost);
+  }
+  put($('#ltagB'), oppName().slice(0, 6));
+}
+for (const b of document.querySelectorAll('[data-opp]')) b.onclick = () => { duel.kind = b.dataset.opp; updateDuelBar(); focusInput(); };
+$('#dStart').onclick = () => startDuel();
+function updateHud(now){
+  put(E.hT, String(duel.on ? Math.max(0, Math.ceil((duel.len - (now - duel.start))/1000)) : Math.round(duel.len/1000)));
+  const line = o => `${o.v.toFixed(1)} k/s · sync ${o.phases.length >= 3 ? Math.round(o.r*100) + '%' : '—'}`;
+  put(E.hA1, line(st)); put(E.hB1, line(opp)); put(E.hBn, oppName());
+  put(E.hA2, `light through ${Math.round(duel.Ta*100)}%`); put(E.hB2, `light through ${Math.round(duel.Tb*100)}%`);
+  const wa = Math.round(duel.loki[0]*100) + '%', wb = Math.round(duel.loki[1]*100) + '%';
+  if (E.lA.style.width !== wa) E.lA.style.width = wa;
+  if (E.lB.style.width !== wb) E.lB.style.width = wb;
+}
 
+// ── Modes ────────────────────────────────────────────────────────────────────
+const INTRO = {
+  game: '<h3>breakneck</h3><p>Type each line before the gold ring runs out. Every level asks for more speed; sync and accuracy multiply your score. The ring remembers your best.</p><p>press start or enter</p>',
+  sprint: '<h3>sprint ;</h3><p>One word at a time, no spaces: the word clears itself when the last letter lands. The arc around the ring is your fuel, and its colour is the pace you must hold; it climbs with every word. Sync multiplies each word, clean streaks raise the combo, gold runes count double.</p><p>press start or enter</p>',
+  duel: '<h3>Bifrost ;</h3><p>Two spheres, one bridge. Each typist is a medium for light: type faster and your glass thins. Where you are faster your light crosses and takes the other sphere\'s rings, outermost first; where you are slower it turns back to you. A steady beat makes your light coherent, mistakes dim it. Seven rings or forty-five seconds. Light that turns back charges Loki.</p><p>press start or enter</p>',
+};
+function abandonRuns(){
+  clearTimeout(advanceT);
+  if (game.running) endGame(true);
+  if (sp.on || sp.count) endSprint(true);
+  if (duel.on || duel.count) endDuel(true);
+}
+function setMode(mode){
+  if (mode === st.mode) return;
+  abandonRuns();
+  st.mode = mode;
+  document.body.className = 'm-' + mode;
+  for (const b of $('#tabs').children) { const on = b.dataset.mode === mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
+  $('#panelType').classList.toggle('hidden', mode === 'about');
+  $('#panelAbout').classList.toggle('hidden', mode !== 'about');
+  for (const [id, m] of [['#faithBar','faith'],['#gameBar','game'],['#sprintBar','sprint'],['#duelBar','duel']]) $(id).classList.toggle('hidden', mode !== m);
+  hideCard(); resetTyping(); E.mood.className = ''; setTarget(null);
+  put($('#hint'), mode === 'duel' ? 'your light crosses where you are faster; where you are slower it comes back to you' : 'hue is speed · colour depth is rhythm · brightness is accuracy');
+  if (mode === 'free') input.placeholder = 'type anything ;';
+  if (mode === 'faith') { input.placeholder = 'type the verse above'; showVerse(verseIdx); }
+  if (mode === 'game') { Object.assign(game, { over:false, level:1, score:0 }); input.placeholder = 'press start or enter'; $('#gStart').textContent = 'start'; put($('#gTime'), '–'); updateGameBar(); }
+  if (mode === 'sprint') { sp.over = false; input.placeholder = 'press start or enter'; $('#pStart').textContent = 'start'; updateSprintBar(); }
+  if (mode === 'duel') { Object.assign(opp, mk()); input.placeholder = 'press start or enter'; $('#dStart').textContent = 'start'; updateDuelBar(); }
+  if (INTRO[mode]) showCard(INTRO[mode]);
+  resize(); renderLegend();
+  if (mode !== 'about' && mode !== 'faith') focusInput();
+}
+for (const b of $('#tabs').children) b.onclick = () => setMode(b.dataset.mode);
 $('#reset').onclick = () => {
-  st.v = 0; st.iki = null; st.phases.length = 0; st.r = 0; st.lastKey = null; st.keys.length = 0; st.typed = 0; st.errors = 0; st.acc = 1;
-  if (st.mode === 'game') { game.running = false; game.over = false; setMode('game'); }
-  else { setTarget(target, refEl.textContent); input.focus(); }
+  const m = st.mode;
+  if (m === 'game' || m === 'sprint' || m === 'duel') { st.mode = null; setMode(m); return; }
+  resetTyping();
+  if (m === 'faith') showVerse(verseIdx); else { setTarget(null); focusInput(); }
 };
 
+// While the page is hidden the clocks stop; coming back, the ring wakes fresh.
+document.addEventListener('visibilitychange', () => {
+  const now = performance.now();
+  if (document.hidden) { hiddenAt = now; return; }
+  if (!hiddenAt) return;
+  const d = now - hiddenAt; hiddenAt = 0; last = now;
+  if (game.running) game.start += d;
+  if (sp.on) sp.start += d;
+  if (duel.on) {
+    duel.start += d; duel.next += d; duel.lokiUntil = duel.lokiUntil.map(x => x + d);
+    if (opp.lastKey != null) opp.lastKey += d;
+    opp.phiT += d; for (const h of opp.hist) h.t += d;
+  }
+  sleep(st);
+});
+
 // ── Snapshot ─────────────────────────────────────────────────────────────────
-$('#snap').onclick = () => {
-  const s = 720, o = document.createElement('canvas'); o.width = s; o.height = s + 190;
+$('#snap').onclick = async () => {
+  try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]); } catch {}
+  const W = 720, isDuel = st.mode === 'duel', Hh = isDuel ? Math.round(W*0.62) : W;
+  const o = document.createElement('canvas'); o.width = W; o.height = Hh + 190;
   const c = o.getContext('2d');
   c.fillStyle = '#09090a'; c.fillRect(0, 0, o.width, o.height);
-  c.drawImage(cvs, 0, 0, s, s);
+  const now = performance.now();
+  if (isDuel) drawDuel(c, W, Hh, 1, now); else drawSolo(c, W, 1, now);
   c.textAlign = 'center';
   c.fillStyle = '#fff'; c.font = 'italic 60px "Instrument Serif", Georgia, serif';
-  c.fillText($('#moodWord').textContent, s/2, s + 30);
+  c.fillText(isDuel ? `you ; ${oppName()}` : E.mood.textContent, W/2, Hh + 30);
   c.fillStyle = 'rgba(255,255,255,.55)'; c.font = '22px "DM Mono", monospace';
-  c.fillText(`${$('#sKps').textContent} keys/s · ${$('#sWpm').textContent} wpm · sync ${$('#sSync').textContent} · ${$('#sAcc').textContent}`, s/2, s + 84);
+  c.fillText(isDuel ? `${st.v.toFixed(1)} k/s vs ${opp.v.toFixed(1)} k/s · margin ${duel.p >= 0 ? '+' : '−'}${Math.abs(duel.p).toFixed(1)} rings`
+                    : `${E.kps.textContent} keys/s · ${E.wpm.textContent} wpm · sync ${E.sync.textContent} · ${E.acc.textContent}`, W/2, Hh + 84);
   const date = new Date().toISOString().slice(0,10);
-  c.fillStyle = '#c9a96e'; c.fillText(`s; typing mood ring · ${date}`, s/2, s + 136);
+  c.fillStyle = G; c.fillText(`s; typing mood ring · ${date}`, W/2, Hh + 136);
   const a = document.createElement('a'); a.download = `aura-${date}.png`; a.href = o.toDataURL('image/png'); a.click();
 };
 
 // ── Render ───────────────────────────────────────────────────────────────────
 function resize(){
   dpr = Math.min(2, window.devicePixelRatio || 1);
-  size = Math.min(360, $('.wrap').clientWidth - 36);
-  cvs.width = size*dpr; cvs.height = size*dpr; cvs.style.width = cvs.style.height = size + 'px';
+  const avail = Math.max(200, $('.wrap').clientWidth - 36), phone = window.innerWidth <= 520;
+  if (st.mode === 'duel') { cw = Math.min(524, avail); ch = Math.round(cw*0.62); }
+  else { cw = ch = Math.min(phone ? 200 : 360, avail); }
+  cvs.width = Math.round(cw*dpr); cvs.height = Math.round(ch*dpr); cvs.style.width = cw + 'px'; cvs.style.height = ch + 'px';
+  fitPhone();
 }
-window.addEventListener('resize', resize); resize();
-
-function sample(now, delay){
-  const h = st.hist, t = now - delay;
+window.addEventListener('resize', resize);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', alignPhone);
+input.addEventListener('focus', () => setTimeout(alignPhone, 350));
+window.addEventListener('load', alignPhone);
+if (document.fonts) document.fonts.ready.then(alignPhone);
+function renderLegend(){
+  const grad = f => 'linear-gradient(90deg,' + Array.from({length: 23}, (_, i) => { const H = f(i*0.5); return css(oklch(0.7, maxChroma(0.7, H)*0.9, H)); }).join(',') + ')';
+  $('#legend').style.background = grad(st.mode === 'duel' ? HUE_YOU : hueFor);
+  $('#legend2').style.background = grad(HUE_THEM);
+}
+function sample(o, now, delay){
+  const h = o.hist, t = now - delay;
   for (let i = h.length - 1; i >= 0; i--) if (h[i].t <= t) return h[i];
-  return h[0];
+  return h.length ? h[0] : o.cur;
 }
-const RINGS = 7, DELAY = 330;
-function draw(now, cur){
-  const W = size, cx = W/2, cy = W/2, R = W*0.19, gap = W*0.028;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, W);
+// The sphere and its seven rings. `captor` paints the outer `captured` rings in its own colour (the duel).
+function aura(c, o, now, cx, cy, R, gap, px, captor, captured){
+  const m = RM.matches ? 0 : 1;
   for (let k = RINGS; k >= 1; k--) {
-    const s = sample(now, k*DELAY), rgb = oklch(s.L, s.C, s.H);
-    const wobble = Math.cos(s.phi) * gap*0.3 * st.r;                 // the phase, delayed ring by ring: a wave travelling outward
-    const rad = R + gap*0.9 + (k-1)*gap + wobble;
-    const alpha = lerp(0.6, 0.12, (k-1)/(RINGS-1)) * lerp(0.55, 1, clamp(s.C/0.2, 0, 1));
-    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, TAU);
-    ctx.lineWidth = gap*0.62; ctx.strokeStyle = css(rgb, alpha);
-    ctx.shadowBlur = 14; ctx.shadowColor = css(rgb, alpha*0.9);
-    ctx.stroke();
+    const src = captor && k > RINGS - captured ? captor : o;
+    const s = sample(src, now, k*DELAY), rgb = oklch(s.L, s.C, s.H);
+    const rad = R + gap*0.9 + (k-1)*gap + m*Math.cos(s.phi)*gap*0.3*src.r;   // the phase, delayed ring by ring
+    const alpha = lerp(0.6, 0.12, (k-1)/(RINGS-1)) * lerp(0.55, 1, s.q);
+    c.beginPath(); c.arc(cx, cy, Math.max(0, rad), 0, TAU);
+    c.lineWidth = gap*1.6; c.strokeStyle = css(rgb, alpha*0.22); c.stroke();   // halo, without a blur pass
+    c.lineWidth = gap*0.62; c.strokeStyle = css(rgb, alpha); c.stroke();
   }
-  ctx.shadowBlur = 0;
-  // the sphere
-  const c = oklch(cur.L, cur.C, cur.H), hi = oklch(clamp(cur.L+0.22, 0, 1), cur.C*0.55, cur.H), lo = oklch(clamp(cur.L-0.28, 0, 1), cur.C*0.9, cur.H);
-  const Rp = R * (1 + 0.012*Math.sin(now/1300) + 0.035*Math.cos(st.phi)*st.r);
-  const g = ctx.createRadialGradient(cx - Rp*0.35, cy - Rp*0.4, Rp*0.05, cx, cy, Rp);
-  g.addColorStop(0, css(hi)); g.addColorStop(0.55, css(c)); g.addColorStop(1, css(lo));
-  ctx.beginPath(); ctx.arc(cx, cy, Rp, 0, TAU); ctx.fillStyle = g;
-  ctx.shadowBlur = 44*clamp(cur.C/0.2, 0.25, 1); ctx.shadowColor = css(c, 0.8); ctx.fill(); ctx.shadowBlur = 0;
-  // game timer
-  if (game.running) {
-    const frac = clamp(1 - (now - game.start)/game.budget, 0, 1);
-    ctx.beginPath(); ctx.arc(cx, cy, R + gap*0.9 + RINGS*gap + gap*0.5, -Math.PI/2, -Math.PI/2 + TAU*frac);
-    ctx.strokeStyle = frac < 0.25 ? '#e07a6a' : '#c9a96e'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.stroke();
+  const cur = o.cur, col = oklch(cur.L, cur.C, cur.H);
+  const hi = oklch(clamp(cur.L+0.22, 0, 1), cur.C*0.55, cur.H), lo = oklch(clamp(cur.L-0.28, 0, 1), cur.C*0.9, cur.H);
+  const Rp = R * (1 + m*(0.012*Math.sin(now/1300) + 0.035*Math.cos(o.phi)*o.r));
+  const g = c.createRadialGradient(cx - Rp*0.35, cy - Rp*0.4, Rp*0.05, cx, cy, Rp);
+  g.addColorStop(0, css(hi)); g.addColorStop(0.55, css(col)); g.addColorStop(1, css(lo));
+  c.beginPath(); c.arc(cx, cy, Rp, 0, TAU); c.fillStyle = g;
+  c.shadowBlur = R*0.65*clamp(cur.q, 0.25, 1)*px; c.shadowColor = css(col, 0.8); c.fill(); c.shadowBlur = 0;
+}
+function gauge(c, cx, cy, rad, frac, a0, col, lw){
+  frac = clamp(frac, 0, 1);
+  c.beginPath(); c.arc(cx, cy, rad, a0, a0 + TAU*frac);
+  c.strokeStyle = frac < 0.25 ? RED : col; c.lineWidth = lw; c.lineCap = 'round'; c.stroke();
+}
+function drawSolo(c, W, px, now){
+  const cx = W/2, R = W*0.19, gap = W*0.028, outer = R + gap*0.9 + RINGS*gap + gap*0.5;
+  aura(c, st, now, cx, cx, R, gap, px);
+  if (game.running) gauge(c, cx, cx, outer, 1 - (now - game.start)/game.budget, -Math.PI/2, G, 2);
+  if (sp.on) { const H = hueFor(pace(sp.words)); gauge(c, cx, cx, outer, sp.fuel/sp.cap, Math.PI/2, css(oklch(0.72, maxChroma(0.72, H)*0.9, H)), 3); }
+}
+// Rays from a sender sphere to Bifrost (x = xm), refracted by Snell's law or turned back past the critical angle.
+function rays(c, s, rc, cx, cy, R, xm, dir, W, loki){
+  if (s.v < 0.3 && !loki) return;
+  const ratio = (rc.v + V0)/(s.v + V0);            // n_sender / n_receiver, so sin θ₂ = ratio · sin θ₁
+  const rgb = oklch(s.cur.L, s.cur.C, s.cur.H), I = intensity(s), N = 15, L2 = W*0.32;
+  const pt = new Path2D(), pr = new Path2D();
+  for (let i = 0; i < N; i++) {
+    const s1 = (((i + 0.5)/N)*2 - 1)*0.96, c1 = Math.sqrt(1 - s1*s1);
+    const x0 = cx + dir*R*c1, y0 = cy + R*s1, d = (xm - x0)*dir;
+    if (d <= 0) continue;
+    const yb = y0 + d*s1/c1, s2 = ratio*s1;
+    if (loki || Math.abs(s2) < 1) {
+      const t2 = clamp(s2, -0.97, 0.97), c2 = Math.sqrt(1 - t2*t2);
+      pt.moveTo(x0, y0); pt.lineTo(xm, yb); pt.lineTo(xm + dir*c2*L2, yb + t2*L2);
+    } else {
+      pr.moveTo(x0, y0); pr.lineTo(xm, yb); pr.lineTo(xm - dir*c1*W*0.1, yb + s1*W*0.1);
+    }
   }
+  c.lineWidth = 1;
+  c.strokeStyle = css(rgb, loki ? 0.5 : 0.1 + 0.3*I); c.stroke(pt);
+  c.strokeStyle = css(rgb, 0.1); c.stroke(pr);
+}
+function drawDuel(c, W, Hh, px, now){
+  const cy = Hh/2, R = W*0.085, gap = R*0.147, xa = W*0.22, xb = W*0.78, xm = W/2;
+  const frac = duel.on ? clamp(1 - (now - duel.start)/duel.len, 0, 1) : 1, half = Hh*0.4*frac;
+  c.lineCap = 'round'; c.lineWidth = 1.5; c.strokeStyle = frac < 0.25 && duel.on ? RED : 'rgba(201,169,110,0.6)';
+  c.beginPath(); c.moveTo(xm, cy - half); c.lineTo(xm, cy + half); c.stroke();          // Bifrost, fading with the clock
+  rays(c, st, opp, xa, cy, R, xm, 1, W, duel.on && now < duel.lokiUntil[0]);
+  rays(c, opp, st, xb, cy, R, xm, -1, W, duel.on && now < duel.lokiUntil[1]);
+  const cap = Math.min(RINGS, Math.floor(Math.abs(duel.p)));
+  aura(c, st, now, xa, cy, R, gap, px, duel.p < 0 ? opp : null, duel.p < 0 ? cap : 0);
+  aura(c, opp, now, xb, cy, R, gap, px, duel.p > 0 ? st : null, duel.p > 0 ? cap : 0);
+  c.font = `${Math.max(10, Math.round(W*0.024))}px "DM Mono", monospace`; c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,0.5)';
+  const y = Math.min(Hh - 6, cy + R*2.05 + W*0.03);
+  c.fillText(`you ${st.v.toFixed(1)}`, xa, y); c.fillText(`${oppName()} ${opp.v.toFixed(1)}`, xb, y);
+  if (duel.on) { c.fillStyle = G; c.fillText(String(Math.max(0, Math.ceil((duel.len - (now - duel.start))/1000))), xm, cy - Hh*0.4 - 5); }
+}
+function draw(now){
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, cw, ch);
+  if (st.mode === 'duel') drawDuel(ctx, cw, ch, dpr, now); else drawSolo(ctx, cw, dpr, now);
 }
 
 function updateStats(now){
   while (st.keys.length && now - st.keys[0] > 10000) st.keys.shift();
   const n = st.keys.length;
   const wpm = n >= 2 ? (n/5) / (Math.max(2000, now - st.keys[0])/60000) : 0;
-  if (game.running && wpm > game.peak) game.peak = wpm;
-  const active = st.v > 0.05;
-  $('#sKps').textContent = st.v.toFixed(1);
-  $('#sWpm').textContent = Math.round(wpm);
-  $('#sSync').textContent = active && st.phases.length >= 3 ? Math.round(st.r*100) + '%' : '—';
-  $('#sAcc').textContent = Math.round(st.acc*100) + '%';
-  $('#moodWord').textContent = moodFor(st.v);
-  $('#moodSub').textContent = st.done && st.mode === 'faith' ? '✦ complete' : !active ? 'type to wake the ring'
-    : st.phases.length < 3 ? 'listening…' : st.r > 0.8 ? 'locked in' : st.r > 0.55 ? 'finding the beat' : st.r > 0.3 ? 'drifting' : 'scattered';
+  if (game.running) game.peak = Math.max(game.peak, wpm);
+  if (sp.on) sp.peak = Math.max(sp.peak, wpm);
+  const idle = st.lastKey == null ? Infinity : now - st.lastKey;
+  const active = st.v > 0.05 && idle < RESET, synced = active && st.phases.length >= 3;
+  put(E.kps, st.v.toFixed(1)); put(E.wpm, String(Math.round(wpm)));
+  put(E.sync, synced ? Math.round(st.r*100) + '%' : '—'); put(E.acc, Math.round(st.acc*100) + '%');
+  const counting = sp.count || duel.count;
+  if (counting) put(E.mood, String(counting));
+  else if (!(st.mode === 'sprint' && sp.on)) put(E.mood, moodFor(st.v));
+  let sub;
+  if (st.mode === 'sprint') sub = sprintSub(now);
+  else if (st.mode === 'faith' && st.done) sub = 'complete ;';
+  else if (now < noteT) sub = noteS;
+  else if (!active) sub = 'type to wake the ring';
+  else if (st.phases.length < 3) sub = 'listening…';
+  else sub = st.r > 0.8 ? 'locked in' : st.r > 0.55 ? 'finding the beat' : st.r > 0.3 ? 'drifting' : 'scattered';
+  put(E.sub, sub);
+  if (st.mode === 'duel') updateHud(now);
 }
 
-let last = performance.now();
 function frame(now){
-  const dt = Math.min(0.05, (now - last)/1000); last = now;
-  st.phi = wrap(st.phi + st.omega*dt);
-  const idle = st.lastKey == null ? Infinity : now - st.lastKey;
-  if (idle > 700) st.v *= Math.exp(-dt/0.7);
-  if (st.v < 0.02) { st.v = 0; st.iki = null; }
-  let r = 0;
-  if (st.phases.length >= 3) { let x = 0, y = 0; for (const p of st.phases) { x += Math.cos(p); y += Math.sin(p); } r = Math.hypot(x, y)/st.phases.length; }
-  st.r += ((idle > 2500 ? 0 : r) - st.r) * Math.min(1, dt*4);
-  const activity = clamp(st.v/3, 0, 1);
-  const H = hueFor(st.v);
-  const C = 0.03 + 0.04*activity + 0.16*st.r*activity;
-  const L = clamp(0.5 + 0.22*activity - 0.22*(1 - st.acc) + 0.06*st.flash, 0.3, 0.86);
-  st.flash *= Math.exp(-dt/0.5);
-  st.hist.push({ t: now, L, C, H, phi: st.phi });
-  while (st.hist.length && now - st.hist[0].t > 4000) st.hist.shift();
-  draw(now, { L, C, H });
-  updateStats(now);
+  const dt = Math.max(0, (now - last)/1000); last = now;
+  if (st.mode === 'duel') {
+    driveOpp(now);
+    tick(st, now, dt, HUE_YOU); tick(opp, now, dt, HUE_THEM);
+    if (duel.on) tickDuel(now, dt);
+  } else tick(st, now, dt, hueFor);
   if (game.running) tickGame(now);
+  if (sp.on) tickSprint(now, dt);
+  draw(now);
+  updateStats(now);
   requestAnimationFrame(frame);
 }
-
-// legend strip
-$('#legend').style.background = 'linear-gradient(90deg,' + Array.from({length: 23}, (_, i) => css(oklch(0.7, 0.17, hueFor(i*0.5)))).join(',') + ')';
-$('#moodWord').style.color = '#fff';
 
 setMode('free');
 requestAnimationFrame(frame);
