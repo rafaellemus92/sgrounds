@@ -47,10 +47,11 @@ theorem three_prime : IsPrime 3 := primeB_sound (by decide)
 
 theorem thirtyseven_prime : IsPrime 37 := primeB_sound (by decide)
 
-/-- **The division algorithm reads `250 = 3 · 71 + 37`**, and the quotient, the
-divisor and the remainder are all prime. -/
-theorem three_primes : 250 = 3 * 71 + 37 ∧ IsPrime 3 ∧ IsPrime 71 ∧ IsPrime 37 :=
-  ⟨rfl, three_prime, key_prime, thirtyseven_prime⟩
+/-- **The division algorithm reads `250 = 3 · 71 + 37`**: quotient 3, remainder 37,
+and the quotient, the divisor and the remainder are all prime. -/
+theorem three_primes :
+    250 = 3 * 71 + 37 ∧ 250 / 71 = 3 ∧ 250 % 71 = 37 ∧ IsPrime 3 ∧ IsPrime 71 ∧ IsPrime 37 :=
+  ⟨rfl, by decide, by decide, three_prime, key_prime, thirtyseven_prime⟩
 
 /-! ## Locking is divisibility -/
 
@@ -72,7 +73,7 @@ theorem lock_iff_dvd (T : Nat) : Locked T 250 37 ↔ T ∣ 213 :=
   locked_iff_dvd (by decide)
 
 /-- The divisors of 213 are 1, 3, 71 and 213. Any divisor is at most 213, and the
-kernel checks every candidate below that. -/
+kernel checks every candidate up to and including 213. -/
 theorem dvd_213 (T : Nat) : T ∣ 213 ↔ T = 1 ∨ T = 3 ∨ T = 71 ∨ T = 213 := by
   constructor
   · intro h
@@ -119,32 +120,19 @@ theorem not_on_the_line : 250 ≠ 37 ∧ ∀ T, 213 < T → ¬ Locked T 250 37 :
 
 /-! ## Two prime cycles lock together: the Chinese remainder theorem for 3 and 71 -/
 
-/-- Among the phases of the 213-cycle, the pair (phase on 3, phase on 71)
-determines the phase. The kernel checks all `213 × 213` pairs. -/
-theorem crt_finite :
-    ∀ a, a < 213 → ∀ b, b < 213 → a % 3 = b % 3 → a % 71 = b % 71 → a = b := by
-  decide +kernel
-
 /-- **Locked on 213 iff locked on 3 and on 71.** Two coprime cycles lock jointly
-exactly when each locks on its own. -/
+exactly when each locks on its own. With the moduli fixed this is linear
+arithmetic over the whole numbers, which `omega` settles. -/
 theorem crt_213 (n m : Nat) : Locked 213 n m ↔ Locked 3 n m ∧ Locked 71 n m := by
   unfold Locked phase
-  have h3n := Nat.mod_mod_of_dvd n (⟨71, rfl⟩ : 3 ∣ 213)
-  have h3m := Nat.mod_mod_of_dvd m (⟨71, rfl⟩ : 3 ∣ 213)
-  have h71n := Nat.mod_mod_of_dvd n (⟨3, rfl⟩ : 71 ∣ 213)
-  have h71m := Nat.mod_mod_of_dvd m (⟨3, rfl⟩ : 71 ∣ 213)
-  constructor
-  · intro h
-    exact ⟨by rw [← h3n, ← h3m, h], by rw [← h71n, ← h71m, h]⟩
-  · rintro ⟨h3, h71⟩
-    exact crt_finite _ (Nat.mod_lt n (by decide)) _ (Nat.mod_lt m (by decide))
-      (by rw [h3n, h3m]; exact h3) (by rw [h71n, h71m]; exact h71)
+  omega
 
 /-! ## The stroboscope -/
 
-/-- **A stroboscope flashing 71 times per turn cannot tell 250 from 37.**
-Whatever the multiplier `k`, the ticks `250 k` and `37 k` show the same phase
-on the 71-cycle, because `250 k − 37 k = 71 · 3 k`. -/
+/-- **A stroboscope flashing 71 times per second sees a wheel turning 250 times
+per second as one turning 37 times per second.** At every flash `k` the ticks
+`250 k` and `37 k` show the same phase on the 71-cycle, because
+`250 k − 37 k = 71 · 3 k`. -/
 theorem strobe (k : Nat) : Locked 71 (250 * k) (37 * k) :=
   (locked_iff_dvd (Nat.mul_le_mul_right k (by decide))).mpr ⟨3 * k, by omega⟩
 
@@ -152,9 +140,13 @@ theorem strobe (k : Nat) : Locked 71 (250 * k) (37 * k) :=
 
 /-- **Any two numbers at distance at least 2 lock on some prime cycle**: a prime
 factor of their difference. 250 and 37 are one instance; theirs are 3 and 71. -/
-theorem exists_prime_lock {n m : Nat} (h : m + 2 ≤ n) : ∃ p, IsPrime p ∧ Locked p n m := by
-  obtain ⟨p, hp, hpd⟩ := exists_prime_dvd (n - m) (by omega)
-  exact ⟨p, hp, (locked_iff_dvd (by omega)).mpr hpd⟩
+theorem exists_prime_lock {n m : Nat} (h : m + 2 ≤ n ∨ n + 2 ≤ m) :
+    ∃ p, IsPrime p ∧ Locked p n m := by
+  rcases h with h | h
+  · obtain ⟨p, hp, hpd⟩ := exists_prime_dvd (n - m) (by omega)
+    exact ⟨p, hp, (locked_iff_dvd (by omega)).mpr hpd⟩
+  · obtain ⟨p, hp, hpd⟩ := exists_prime_dvd (m - n) (by omega)
+    exact ⟨p, hp, ((locked_iff_dvd (by omega)).mpr hpd).symm⟩
 
 /-- **Neighbours never lock**: no prime cycle shows `n + 1` and `n` as the same
 phase, since the only divisor of 1 is 1. -/

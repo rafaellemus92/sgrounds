@@ -88,15 +88,37 @@ said in Mathlib's words, and the oscillator becomes a real one.
 | `prime_keys'` | For a prime `p`, `(250 : ZMod p) = 37` iff `p = 3` or `p = 71` |
 | `exists_prime_lock'` | Any two numbers at distance ≥ 2 are equal in `ZMod p` for some prime `p` |
 | `ring_lock`, `field_lock` | **In any ring**, `250 = 37` iff the characteristic divides 213; in a field, iff it is 3 or 71 |
-| `real_ne` | `(250 : ℝ) ≠ 37`: characteristic 0 does not divide 213 |
+| `int_ne`, `real_ne` | `(250 : ℤ) ≠ 37` and `(250 : ℝ) ≠ 37`: characteristic 0 does not divide 213 |
 | `crt_lock` | **Chinese remainder**: coprime cycles lock jointly iff each locks |
-| `osc_eq_iff` | **Phase lock is congruence**: `exp (2πi n / T) = exp (2πi m / T)` iff `T ∣ n − m` |
+| `osc_eq_iff` | **Phase lock is congruence**: for `T ≠ 0`, `exp (2πi n / T) = exp (2πi m / T)` iff `T ∣ n − m` |
 | `osc_lock`, `strobe'` | The period-71 oscillator cannot tell 250 from 37, nor `250 k` from `37 k` |
 | `osc_ne_of_gt` | Every oscillator of period above 213 can |
 | `sin_lock`, `cos_lock` | `sin (2π · 250/71) = sin (2π · 37/71)`, and the same for `cos` |
 
 Nothing here makes `250 = 37` in `ℕ`, `ℤ` or `ℝ`: the equality lives on the
-cycle, and `Wyrd.not_on_the_line` says it lives nowhere else.
+cycles 1, 3, 71 and 213 and on no other (`lock_periods'`), and
+`Wyrd.not_on_the_line`, `int_ne` and `real_ne` say it is not on the line.
+
+### Why 71 is the key (`WyrdMathlib/Key.lean`)
+
+| Theorem | Statement |
+|---|---|
+| `vonMangoldt_lock_sum`, `log_gap` | **Chebyshev**: `∑ Λ T` over the lock periods is `log (n − m)`; for 250 and 37, `Λ 3 + Λ 71 = log 213` (the terms at 1 and 213 vanish) |
+| `one_key_iff`, `two_keys` | A gap has exactly one prime key iff it is a prime power; 213 has two |
+| `lucas_71`, `orderOf_seven` | **Lucas's certificate**: `7⁷⁰ = 1` and `7³⁵, 7¹⁴, 7¹⁰ ≠ 1` in `ZMod 71` prove `Nat.Prime 71`, and 7 generates |
+| `pow_lock_71`, `pow_lock_37` | Multiplicatively the key refuses: `a²⁵⁰ = a³⁷` in `ZMod 71` only for `a ∈ {0, 1}`; in `ZMod 37` for nonzero `a` iff `a³ = 1` |
+| `strobe_iff` | A sampler at rate `T` gets identical samples from the 250 Hz and 37 Hz tones iff `T ∣ 213` |
+| `osc_213_eq` | The 213-oscillator is the product of the 3- and 71-oscillators: `1/213 = 2/3 − 47/71` |
+| `rotation_eq`, `rotation_period` | On `ℝ/ℤ`, rotating by `250/71` and by `37/71` is one map, with orbits of exactly 71 points |
+| `exists_prime_in_phase` | **Dirichlet**: for every `n` there is a prime `p > n` with `(p : ZMod 213) = 37` |
+| `dirichletCharacter_lock` | Every Dirichlet character modulo 71 has `χ 250 = χ 37` |
+| `adler_37` | The averaged phase equation of `SharedAir/Locking.lean` at detuning `2π · 37` has an equilibrium iff `k ≥ 2π · 37`, a stable one iff `k > 2π · 37` |
+
+Chebyshev's identity, Lucas's test and Dirichlet's theorem are Mathlib's;
+the Millennium problems are inspiration only, and nothing here is conditional
+on the Riemann Hypothesis or decides anything about P versus NP: Lucas's
+certificate is quick to check, while listing every prime key of a general pair
+means factoring the gap.
 
 ## Running it
 

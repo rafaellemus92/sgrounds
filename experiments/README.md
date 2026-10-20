@@ -57,24 +57,31 @@ the key appears.
 The script prints four sections: the lock (the periods are the divisors of
 213, the prime keys are 3 and 71, and `250 = 3 · 71 + 37` with all three
 prime); oscillators (a 71-cycle drawn in ASCII, the sine wave, a stroboscope
-at 71 flashes per turn that cannot tell `250 k` from `37 k`, and a 250 Hz tone
-that sampled at 71 Hz gives the samples of a 37 Hz tone); the Chinese
+flashing 71 times per second that sees a wheel turning 250 times per second as
+one turning 37 times per second, and a 250 Hz tone that sampled at 71 Hz gives
+the samples of a 37 Hz tone); the Chinese
 remainder theorem (locked on 213 iff locked on 3 and on 71, every pair
-checked); and Riemann's oscillators, where the phases `γ · log x` of the first
+checked); Riemann's oscillators, where the phases `γ · log x` of the first
 100 zeta zeros lock near π at prime powers, 3, 37 and 71 among them, and not at
-`213 = 3 · 71`. From 2 to 100 there are 35 prime powers; of the 35 integers in
-that range where the lock is strongest, 33 are prime powers.
+`213 = 3 · 71` (from 2 to 100 there are 35 prime powers; of the 35 integers in
+that range where the lock is strongest, 33 are prime powers); and why 71 is
+the key: summed over the lock periods the von Mangoldt function gives
+`log 213`, and only the two prime keys contribute (Chebyshev); Lucas's
+certificate `7⁷⁰ = 1`, `7³⁵, 7¹⁴, 7¹⁰ ≠ 1 (mod 71)` proves 71 prime; and the
+primes `37, 463, 1741, …` sit in phase with 37 on the 213-cycle (Dirichlet).
 
 ```
-python3 experiments/phase_lock_250_37.py           # all four sections
+python3 experiments/phase_lock_250_37.py           # all five sections
 python3 experiments/phase_lock_250_37.py --check   # assertions only
 ```
 
-Sections 1–3 are theorems, machine-checked in [`wyrd/Wyrd/Lock.lean`](wyrd/Wyrd/Lock.lean)
+Sections 1–3 and 5 are theorems, machine-checked in [`wyrd/Wyrd/Lock.lean`](wyrd/Wyrd/Lock.lean)
 (core Lean) and [`wyrd-mathlib/WyrdMathlib/Lock.lean`](wyrd-mathlib/WyrdMathlib/Lock.lean)
-(Mathlib: `ZMod`, `Nat.ModEq`, the Chinese remainder theorem, the complex
-exponential, and `ring_lock`: in any ring `250 = 37` iff the characteristic
-divides 213). Section 4 is numerical evidence about a truncated sum, not a
+and [`Key.lean`](wyrd-mathlib/WyrdMathlib/Key.lean) (Mathlib: `ZMod`,
+`Nat.ModEq`, the Chinese remainder theorem, the complex exponential,
+`ring_lock`, which says that in any ring `250 = 37` iff the characteristic
+divides 213, Chebyshev's identity, Lucas's test and Dirichlet's theorem).
+Section 4 is numerical evidence about a truncated sum, not a
 proof; the zeros were computed with `mpmath.zetazero` and are embedded so the
 script needs only the standard library. Nothing anywhere makes `250 = 37` in
 the integers: `not_on_the_line` proves the opposite, and that no cycle longer

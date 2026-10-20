@@ -26,13 +26,15 @@ with Mathlib's vocabulary and adds the parts that need real analysis:
 * `ring_lock`, `field_lock` — in **any** ring, `250 = 37` iff the characteristic divides
   213; in a field, iff the characteristic is 3 or 71;
 * `crt_lock` — coprime cycles lock jointly iff each locks (the Chinese remainder theorem);
-* `osc_eq_iff` — the sinusoidal oscillator `t ↦ exp (2π i t / T)` shows two integer
-  ticks at the same point of the unit circle iff `T` divides their difference, so the
+* `osc_eq_iff` — for `T ≠ 0`, the sinusoidal oscillator `t ↦ exp (2π i t / T)` shows two
+  integer ticks at the same point of the unit circle iff `T` divides their difference
+  (at `T = 0` the map is constant), so the
   period-71 oscillator cannot tell 250 from 37 (`osc_lock`), nor `250 k` from `37 k`
   for any `k` (`strobe'`), while every oscillator of period above 213 can (`osc_ne_of_gt`).
 
-Nothing here makes `250 = 37` in `ℕ`, `ℤ` or `ℝ`: `Wyrd.not_on_the_line` and `real_ne`
-say so, and `ring_lock` says why (their characteristic, 0, does not divide 213).
+Nothing here makes `250 = 37` in `ℕ`, `ℤ` or `ℝ`: `Wyrd.not_on_the_line` (`ℕ`), `int_ne`
+(`ℤ`) and `real_ne` (`ℝ`) say so, and for the rings `ℤ` and `ℝ` `ring_lock` says why: their
+characteristic, 0, does not divide 213.
 -/
 
 namespace Wyrd.Lock
@@ -94,9 +96,13 @@ example (p : ℕ) (hp : IsPrime p) : (250 : ZMod p) = 37 ↔ p = 3 ∨ p = 71 :=
   prime_keys' p ((isPrime_iff p).mp hp)
 
 /-- **Any two numbers at distance at least 2 are equal in `ZMod p` for some prime `p`.** -/
-theorem exists_prime_lock' {n m : ℕ} (h : m + 2 ≤ n) : ∃ p, p.Prime ∧ (n : ZMod p) = m := by
-  obtain ⟨p, hp, hpd⟩ := Nat.exists_prime_and_dvd (show n - m ≠ 1 by omega)
-  exact ⟨p, hp, (locked_iff_zmod p n m).mp ((locked_iff_dvd (by omega)).mpr hpd)⟩
+theorem exists_prime_lock' {n m : ℕ} (h : m + 2 ≤ n ∨ n + 2 ≤ m) :
+    ∃ p, p.Prime ∧ (n : ZMod p) = m := by
+  rcases h with h | h
+  · obtain ⟨p, hp, hpd⟩ := Nat.exists_prime_and_dvd (show n - m ≠ 1 by omega)
+    exact ⟨p, hp, (locked_iff_zmod p n m).mp ((locked_iff_dvd (by omega)).mpr hpd)⟩
+  · obtain ⟨p, hp, hpd⟩ := Nat.exists_prime_and_dvd (show m - n ≠ 1 by omega)
+    exact ⟨p, hp, ((locked_iff_zmod p m n).mp ((locked_iff_dvd (by omega)).mpr hpd)).symm⟩
 
 /-! ## Every ring at once -/
 
@@ -125,7 +131,10 @@ example : (250 : ZMod 71) = 37 := by
   rw [ring_lock, ZMod.ringChar_zmod_n]
   norm_num
 
-/-- **On the real line, `250 ≠ 37`**: `ℝ` has characteristic 0, which does not divide 213. -/
+/-- **On the integer line, `250 ≠ 37`**: `ℤ` has characteristic 0, which does not divide 213. -/
+theorem int_ne : (250 : ℤ) ≠ 37 := by norm_num
+
+/-- **On the real line, `250 ≠ 37`**, for the same reason. -/
 theorem real_ne : (250 : ℝ) ≠ 37 := by norm_num
 
 /-! ## Chinese remainder: coprime cycles lock jointly iff each locks -/
@@ -146,8 +155,8 @@ theorem crt_213' (n m : ℕ) : Locked 213 n m ↔ Locked 3 n m ∧ Locked 71 n m
 the unit circle, `exp (2π i n / T)`. -/
 noncomputable def osc (T : ℕ) (n : ℤ) : ℂ := exp (2 * π * I * n / T)
 
-/-- **Phase lock is congruence.** Two ticks of the period-`T` oscillator land on the same
-point of the circle iff `T` divides their difference. -/
+/-- **Phase lock is congruence.** For `T ≠ 0`, two ticks of the period-`T` oscillator land
+on the same point of the circle iff `T` divides their difference. -/
 theorem osc_eq_iff {T : ℕ} (hT : T ≠ 0) (n m : ℤ) : osc T n = osc T m ↔ (T : ℤ) ∣ n - m := by
   unfold osc
   have hT' : (T : ℂ) ≠ 0 := by exact_mod_cast hT

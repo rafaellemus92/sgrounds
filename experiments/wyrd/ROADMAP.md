@@ -44,8 +44,11 @@ Goals in rough order of difficulty. ✅ = proved, ⬜ = open.
 - ✅ 250 = 37 on the 71-cycle (`Wyrd/Lock.lean`, `../wyrd-mathlib/WyrdMathlib/Lock.lean`):
   phase lock is divisibility, the only prime keys are the prime factors 3 and
   71 of `250 − 37 = 213`, two coprime cycles lock jointly iff each locks
-  (Chinese remainder), and the period-`T` complex exponential shows two integer
-  ticks at the same point iff `T` divides their difference.
+  (Chinese remainder), and for `T ≥ 1` the period-`T` complex exponential shows two
+  integer ticks at the same point iff `T` divides their difference. `Key.lean` adds why:
+  Chebyshev's `∑ Λ = log 213` over the lock periods, Lucas's certificate for 71,
+  the multiplicative refusal, sampling and rotation statements, and Dirichlet's
+  infinitely many primes in phase with 37 on the 213-cycle.
 - ⬜ Riemann's oscillators. `../phase_lock_250_37.py` shows the phases of the
   first 100 zeta zeros locking near π at prime powers, but no theorem here says
   so: stating the explicit formula needs Mathlib's zeta function, and saying

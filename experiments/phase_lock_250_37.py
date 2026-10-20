@@ -15,24 +15,34 @@ Four sections, printed in order:
   4. riemann (illustration only)  the first 100 zeros of the zeta function as
                        oscillators in log x: their phases lock near pi at prime
                        powers such as 3, 37 and 71, and not at 213 = 3 * 71
+  5. why 71 is the key the prime keys carry log 213 (Chebyshev), Lucas's
+                       certificate that 71 is prime, the multiplicative refusal,
+                       and primes in phase with 37 on the 213-cycle (Dirichlet)
 
-Sections 1-3 are theorems, machine-checked in wyrd/Wyrd/Lock.lean (core Lean)
-and wyrd-mathlib/WyrdMathlib/Lock.lean (Mathlib). Section 4 is numerical
-evidence about a truncated sum, not a proof of anything.
+Sections 1-3 and 5 are theorems, machine-checked in wyrd/Wyrd/Lock.lean (core
+Lean) and wyrd-mathlib/WyrdMathlib/Lock.lean and Key.lean (Mathlib). Section 4
+is numerical evidence about a truncated sum, not a proof of anything.
 
 Run (standard library only):
 
-    python3 experiments/phase_lock_250_37.py           # print all four sections
+    python3 experiments/phase_lock_250_37.py           # print all five sections
     python3 experiments/phase_lock_250_37.py --check   # assertions only
 """
 
 import cmath
+import contextlib
 import io
 import math
 import sys
 
 A, B = 250, 37
 D = A - B  # 213
+
+
+def check(cond, what):
+    """A check that `python3 -O` cannot strip, unlike `assert`."""
+    if not cond:
+        raise SystemExit(f"check failed: {what}")
 
 
 # ---------------------------------------------------------------- arithmetic
@@ -65,8 +75,11 @@ def locked(T, n, m):
 
 
 def lock_periods(a, b):
-    """Every T on which a and b coincide. A lock period divides |a - b|, so
-    it is at most |a - b|: the search below is complete, not a sample."""
+    """Every T on which the distinct ticks a and b coincide. A lock period
+    divides |a - b|, so it is at most |a - b|: the search below is complete,
+    not a sample. (Equal ticks coincide on every T, so they are refused.)"""
+    if a == b:
+        raise ValueError("equal ticks lock on every period")
     d = abs(a - b)
     return [T for T in range(1, d + 1) if locked(T, a, b)]
 
@@ -90,7 +103,7 @@ def section_lock():
     print(f"   {A} = {q} * 71 + {r}   (quotient, divisor and remainder all prime: "
           f"{is_prime(q)}, {is_prime(71)}, {is_prime(r)})")
     print(f"   on the line: {A} == {B} is {A == B}; on the 71-cycle: {A % 71} == {B % 71} is {A % 71 == B % 71}")
-    assert periods == [1, 3, 71, 213] and keys == [3, 71] and (q, r) == (3, 37)
+    check(periods == [1, 3, 71, 213] and keys == [3, 71] and (q, r) == (3, 37), "the lock")
     print()
 
 
@@ -126,8 +139,8 @@ def section_oscillators():
     alias = max(abs(math.sin(2 * math.pi * A * k / 71) - math.sin(2 * math.pi * B * k / 71))
                 for k in range(71))
     print(f"   aliasing: 250 Hz sampled at 71 Hz vs 37 Hz, largest sample gap: {alias:.1e}")
-    assert gap < 1e-12 and strobe and alias < 1e-9
-    assert not locked(70, A, B)
+    check(gap < 1e-12 and strobe and alias < 1e-9, "oscillators")
+    check(not locked(70, A, B), "the 70-cycle does not lock")
     print()
 
 
@@ -140,7 +153,7 @@ def section_crt():
     print(f"   for all n, m < 213: locked on 213 iff locked on 3 and on 71: {ok}")
     print(f"   {A} % 3 = {A % 3}, {B} % 3 = {B % 3};  {A} % 71 = {A % 71}, {B} % 71 = {B % 71};"
           f"  {A} % 213 = {A % 213}, {B} % 213 = {B % 213}")
-    assert ok
+    check(ok, "chinese remainder")
     print()
 
 
@@ -220,26 +233,77 @@ def section_riemann():
     print(f"   mean lock at pi: prime powers {mean_pp:+.3f}, other integers {mean_other:+.3f}")
     print("   The truncated sum blurs each jump over a width of about x / 40 at this N,")
     print("   so neighbours of a prime inherit some of its lock; nothing here is exact.")
-    assert abs(ZETA_ZEROS[0] - 14.134725141735) < 1e-9
-    assert mean_pp > mean_other
+    # the table: 100 zeros, strictly increasing, and the first one as published in
+    # Odlyzko's tables, 14.134725141734693790...
+    check(len(ZETA_ZEROS) == 100 and all(a < b for a, b in zip(ZETA_ZEROS, ZETA_ZEROS[1:])),
+          "zeta zero table")
+    check(abs(ZETA_ZEROS[0] - 14.13472514173469) < 1e-11, "first zeta zero")
+    check(mean_pp > mean_other, "prime powers lock more than other integers")
+    print()
+
+
+# ---------------------------------------------------------------- 5. why 71 is the key
+
+def von_mangoldt(n):
+    """log p if n is a power of the prime p, else 0 (as a (p, k) pair; 0 means none)."""
+    f = prime_factors(n)
+    return math.log(f[0]) if f and len(set(f)) == 1 else 0.0
+
+
+def lucas_certificate(p, g):
+    """Lucas's test: g^(p-1) = 1 and g^((p-1)/q) != 1 mod p for every prime q | p-1.
+    Returns the list of (q, g^((p-1)/q) mod p) checked; prime iff all != 1."""
+    checks = [(q, pow(g, (p - 1) // q, p)) for q in sorted(set(prime_factors(p - 1)))]
+    return pow(g, p - 1, p) == 1 and all(r != 1 for _, r in checks), checks
+
+
+def section_key():
+    print("5. WHY 71 IS THE KEY")
+    # Chebyshev: sum of Lambda over the lock periods is log of the gap
+    terms = [(T, von_mangoldt(T)) for T in divisors(D)]
+    total = sum(v for _, v in terms)
+    print("   Chebyshev: sum of Lambda(T) over the lock periods T | 213")
+    for T, v in terms:
+        print(f"      Lambda({T:>3}) = {v:.6f}" + ("   (prime)" if is_prime(T) else "   (not a prime power)"))
+    print(f"      sum = {total:.6f} = log 213 = {math.log(D):.6f};  log 3 + log 71 = {math.log(3) + math.log(71):.6f}")
+    # Lucas certificate for 71 with witness 7
+    ok, checks = lucas_certificate(71, 7)
+    print("   Lucas certificate for 71, witness 7: 7^70 mod 71 =", pow(7, 70, 71),
+          "; 7^(70/q) mod 71 for q | 70:", checks, "->", "prime" if ok else "not proved")
+    order = next(k for k in range(1, 71) if pow(7, k, 71) == 1)
+    print(f"   order of 7 in (Z/71)^x = {order}; 7^250 = {pow(7, 250, 71)}, 7^37 = {pow(7, 37, 71)} mod 71: the witness's own oscillator does not lock")
+    # multiplicatively the key refuses
+    lock71 = [a for a in range(71) if pow(a, 250, 71) == pow(a, 37, 71)]
+    lock37 = [a for a in range(37) if pow(a, 250, 37) == pow(a, 37, 37)]
+    print(f"   a^250 = a^37 in Z/71 exactly for a in {lock71}  (gcd(213, 70) = {math.gcd(213, 70)})")
+    print(f"   a^250 = a^37 in Z/37 exactly for a in {lock37}  (gcd(213, 36) = {math.gcd(213, 36)}: 0 and the cube roots of 1)")
+    # Dirichlet: primes in phase with 37 on the 213-cycle
+    in_phase = [p for p in range(2, 5000) if is_prime(p) and p % 213 == 37]
+    print(f"   primes below 5000 with p = 37 mod 213 (so p = 250 there too): {in_phase}")
+    check(abs(total - math.log(D)) < 1e-12 and ok and order == 70, "why 71 is the key")
+    check(lock71 == [0, 1] and lock37 == [0, 1, 10, 26] and in_phase[:3] == [37, 463, 1741],
+          "multiplicative refusal and primes in phase")
     print()
 
 
 # ---------------------------------------------------------------- main
 
+def run_sections():
+    section_lock()
+    section_oscillators()
+    section_crt()
+    section_riemann()
+    section_key()
+
+
 def main(argv):
-    check = "--check" in argv
-    if check:
-        sys.stdout = io.StringIO()  # run every section for its assertions, silently
-    try:
-        section_lock()
-        section_oscillators()
-        section_crt()
-        section_riemann()
-    finally:
-        sys.stdout = sys.__stdout__
-    if check:
+    if "--check" in argv:
+        # run every section for its checks, silently; a failed check exits nonzero
+        with contextlib.redirect_stdout(io.StringIO()):
+            run_sections()
         print("all checks passed")
+    else:
+        run_sections()
 
 
 if __name__ == "__main__":

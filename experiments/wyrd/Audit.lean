@@ -20,6 +20,8 @@ axioms (`propext`, `Classical.choice`, `Quot.sound`) — never `sorryAx`
 #print axioms Wyrd.key_prime
 #print axioms Wyrd.three_primes
 #print axioms Wyrd.locked_iff_dvd
+#print axioms Wyrd.lock_iff_dvd
+#print axioms Wyrd.dvd_213
 #print axioms Wyrd.lock_periods
 #print axioms Wyrd.prime_keys
 #print axioms Wyrd.not_on_the_line
