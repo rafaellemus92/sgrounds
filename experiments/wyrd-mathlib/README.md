@@ -72,6 +72,32 @@ Intrauterine Growth Aberration* (abdominalkey.com).
 | `water_fraction_falls` | Losing extracellular water after birth lowers the body's water fraction |
 | `more_water_less_fat` | At equal fat-free-mass hydration, more water means less fat, consistent with term SGA (more water) and LGA (more fat) infants |
 
+## 250 = 37 on the 71-cycle (`WyrdMathlib/Lock.lean`)
+
+The core-Lean proof in [`../wyrd`](../wyrd) (`Wyrd/Lock.lean`) shows that 250
+and 37 show the same phase on the 71-cycle, that 71 is prime, and that 3 and
+71 are the only prime cycles on which they coincide. Here the same facts are
+said in Mathlib's words, and the oscillator becomes a real one.
+
+| Theorem | Statement |
+|---|---|
+| `zmod_lock`, `key_prime'` | In the ring `ZMod 71`, `250 = 37`; and `Nat.Prime 71` |
+| `locked_iff_modEq`, `locked_iff_zmod` | Our `Locked` is `Nat.ModEq`, and equality of casts in `ZMod` |
+| `lock_periods'` | `(250 : ZMod T) = 37` iff `T ∈ Nat.divisors 213 = {1, 3, 71, 213}` |
+| `prime_lock_iff` | **General**: for a prime `p` and `m < n`, `n ≡ m [MOD p]` iff `p ∈ (n − m).primeFactors` |
+| `prime_keys'` | For a prime `p`, `(250 : ZMod p) = 37` iff `p = 3` or `p = 71` |
+| `exists_prime_lock'` | Any two numbers at distance ≥ 2 are equal in `ZMod p` for some prime `p` |
+| `ring_lock`, `field_lock` | **In any ring**, `250 = 37` iff the characteristic divides 213; in a field, iff it is 3 or 71 |
+| `real_ne` | `(250 : ℝ) ≠ 37`: characteristic 0 does not divide 213 |
+| `crt_lock` | **Chinese remainder**: coprime cycles lock jointly iff each locks |
+| `osc_eq_iff` | **Phase lock is congruence**: `exp (2πi n / T) = exp (2πi m / T)` iff `T ∣ n − m` |
+| `osc_lock`, `strobe'` | The period-71 oscillator cannot tell 250 from 37, nor `250 k` from `37 k` |
+| `osc_ne_of_gt` | Every oscillator of period above 213 can |
+| `sin_lock`, `cos_lock` | `sin (2π · 250/71) = sin (2π · 37/71)`, and the same for `cos` |
+
+Nothing here makes `250 = 37` in `ℕ`, `ℤ` or `ℝ`: the equality lives on the
+cycle, and `Wyrd.not_on_the_line` says it lives nowhere else.
+
 ## Running it
 
 ```sh

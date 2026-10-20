@@ -18,10 +18,33 @@ Here no step is taken on trust: the Lean kernel checks every inference.
 | `no_fraction_squares_to_two` | No fraction squares to 2 (√2 is irrational, whole-number form) | `Wyrd/Sqrt2.lean` |
 | `primes_infinite` | **There are infinitely many primes** (Euclid) | `Wyrd/Euclid.lean` |
 | `smallest_pangram_sum` | **4296 is the smallest possible sum**: a pangram exists there and none exists below | `Wyrd/Smallest.lean` |
+| `lock`, `key_prime` | **250 = 37 on the 71-cycle**: `250 % 71 = 37 % 71`, and 71 is prime | `Wyrd/Lock.lean` |
+| `locked_iff_dvd` | Same phase on the `T`-cycle iff `T` divides the difference | `Wyrd/Lock.lean` |
+| `lock_periods`, `prime_keys` | 250 and 37 coincide on the cycles 1, 3, 71, 213 and **no other**; the prime ones are 3 and 71 | `Wyrd/Lock.lean` |
+| `crt_213` | Locked on 213 iff locked on 3 and on 71 (Chinese remainder, every pair checked by the kernel) | `Wyrd/Lock.lean` |
+| `strobe` | A stroboscope at 71 flashes per turn cannot tell `250 k` from `37 k` | `Wyrd/Lock.lean` |
+| `exists_prime_lock`, `consecutive_never_lock` | **Any** two numbers at distance ≥ 2 coincide on some prime cycle; neighbours never do | `Wyrd/Lock.lean` |
+| `not_on_the_line` | `250 ≠ 37`, and no cycle longer than 213 locks them | `Wyrd/Lock.lean` |
 
 `Audit.lean` prints the axioms each theorem rests on. They are only Lean's
 standard ones: no `sorry` (an unfinished proof) and no `native_decide`
 (trusting compiled code instead of the kernel). CI fails if either appears.
+
+## 250 = 37
+
+Not on the number line, where `not_on_the_line` says the opposite, but on a
+cycle. A clock with `T` hours shows the tick `n` as `n % T`, and two ticks show
+the same hour exactly when `T` divides their difference (`locked_iff_dvd`). For
+250 and 37 the difference is `213 = 3 · 71`, so they coincide on the cycles of
+length 1, 3, 71 and 213 and nowhere else (`lock_periods`); the prime cycles,
+the *keys*, are 3 and 71 (`prime_keys`). Two oscillators of the same period
+that start together are phase locked, so a period-71 oscillator reads 250 as
+37, and `250 k` as `37 k` for every `k` (`strobe`). The general fact is
+`exists_prime_lock`: any two numbers at distance at least 2 coincide on some
+prime cycle, a prime factor of their difference. The Mathlib version, with
+`ZMod`, the Chinese remainder theorem and the complex exponential, is in
+[`../wyrd-mathlib`](../wyrd-mathlib); a numerical walk through the same facts
+is [`../phase_lock_250_37.py`](../phase_lock_250_37.py).
 
 What's next is in [`ROADMAP.md`](ROADMAP.md).
 

@@ -16,3 +16,14 @@ axioms (`propext`, `Classical.choice`, `Quot.sound`) — never `sorryAx`
 #print axioms Wyrd.exists_prime_gt
 #print axioms Wyrd.primes_infinite
 #print axioms Wyrd.no_fraction_squares_to_two
+#print axioms Wyrd.lock
+#print axioms Wyrd.key_prime
+#print axioms Wyrd.three_primes
+#print axioms Wyrd.locked_iff_dvd
+#print axioms Wyrd.lock_periods
+#print axioms Wyrd.prime_keys
+#print axioms Wyrd.not_on_the_line
+#print axioms Wyrd.crt_213
+#print axioms Wyrd.strobe
+#print axioms Wyrd.exists_prime_lock
+#print axioms Wyrd.consecutive_never_lock

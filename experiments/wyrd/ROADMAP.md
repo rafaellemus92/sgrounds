@@ -41,6 +41,15 @@ Goals in rough order of difficulty. ✅ = proved, ⬜ = open.
   free-water deficit derived from Edelman's relation, and the newborn transition.
 - ⬜ Body water over time: a model of the postnatal diuresis (ECW contraction
   as a function of days and gestational age) with proved bounds.
+- ✅ 250 = 37 on the 71-cycle (`Wyrd/Lock.lean`, `../wyrd-mathlib/WyrdMathlib/Lock.lean`):
+  phase lock is divisibility, the only prime keys are the prime factors 3 and
+  71 of `250 − 37 = 213`, two coprime cycles lock jointly iff each locks
+  (Chinese remainder), and the period-`T` complex exponential shows two integer
+  ticks at the same point iff `T` divides their difference.
+- ⬜ Riemann's oscillators. `../phase_lock_250_37.py` shows the phases of the
+  first 100 zeta zeros locking near π at prime powers, but no theorem here says
+  so: stating the explicit formula needs Mathlib's zeta function, and saying
+  how much a truncated sum of zeros can miss needs its error term.
 - ⬜ Goldbach for even `N` up to some bound. It is a finite check, so this
   is doable. The full conjecture is open and won't be settled here, but
   formalising *exactly* what is known is honest work.
