@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>s; typing mood ring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--g:#c9a96e;--bg:#09090a;--t:rgba(255,255,255,.82);--t2:rgba(255,255,255,.45);--t3:rgba(255,255,255,.22)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--t);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(201,169,110,.3)}
+::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+.wrap{max-width:560px;margin:0 auto;padding:22px 18px 60px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-family:'Instrument Serif',serif;font-size:30px;color:#fff;letter-spacing:-.01em}
+.brand b{color:var(--g);font-weight:400}
+.brand em{font-size:15px;color:var(--t2);margin-left:10px}
+.tabs{display:flex;gap:4px}
+button{font:inherit;font-size:13px;color:var(--t2);background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:6px 13px;cursor:pointer;transition:color .2s,border-color .2s}
+button:hover{color:var(--t);border-color:rgba(255,255,255,.2)}
+button.on{color:var(--g);border-color:rgba(201,169,110,.5)}
+button.gold{color:#09090a;background:var(--g);border-color:var(--g)}
+button.gold:hover{background:#d8b87c}
+.stage{position:relative;display:flex;justify-content:center;margin:10px 0 0}
+canvas{display:block}
+.mood{text-align:center;margin-top:-8px}
+#moodWord{font-family:'Instrument Serif',serif;font-style:italic;font-size:40px;color:#fff;line-height:1}
+#moodSub{font-size:13px;color:var(--t2);margin-top:8px;letter-spacing:.02em;min-height:18px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:22px 0 14px}
+.stats div{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 6px;text-align:center}
+.stats b{display:block;font-family:'DM Mono',monospace;font-weight:400;font-size:18px;color:#fff}
+.stats span{display:block;font-size:10.5px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
+.legend{height:6px;border-radius:3px;margin:0 2px}
+.legendLabels{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);margin:6px 2px 22px;letter-spacing:.04em}
+.subbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--t2)}
+.subbar .sp,.row .sp{flex:1}
+.subbar label{display:flex;align-items:center;gap:6px;cursor:pointer;padding:0 6px}
+.subbar input[type=checkbox]{accent-color:var(--g);margin:0}
+.subbar .mono{font-family:'DM Mono',monospace;font-size:11.5px;letter-spacing:.04em}
+.subbar .mono b{color:var(--g);font-weight:400}
+.target{font-family:'Instrument Serif',serif;font-size:21px;line-height:1.55;color:var(--t2);padding:14px 16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;min-height:60px;overflow-wrap:anywhere;white-space:pre-wrap}
+.target .ok{color:#fff}
+.target .bad{color:#e07a6a;text-decoration:underline;text-decoration-color:rgba(224,122,106,.6)}
+.target .cur{box-shadow:inset 1.5px 0 0 var(--g);animation:blink 1.1s infinite}
+@keyframes blink{50%{box-shadow:none}}
+.ref{font-family:'DM Mono',monospace;font-size:11px;color:var(--g);letter-spacing:.08em;margin:8px 4px 0;opacity:.8}
+textarea{width:100%;margin-top:12px;font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.5;color:#fff;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;min-height:96px;resize:vertical;outline:none;transition:border-color .3s}
+textarea:focus{border-color:rgba(201,169,110,.45)}
+textarea::placeholder{color:var(--t3)}
+.row{display:flex;gap:8px;margin-top:10px;align-items:center;font-size:12px;color:var(--t3)}
+.row button{white-space:nowrap}
+.card{background:rgba(201,169,110,.05);border:1px solid rgba(201,169,110,.25);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.card h3{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:22px;margin:0 0 6px;color:#fff}
+.card p{margin:0;font-size:13.5px;color:var(--t2);line-height:1.55}
+.card .num{font-family:'DM Mono',monospace;color:var(--g)}
+.about{font-size:14.5px;line-height:1.65;color:var(--t2)}
+.about h2{font-family:'Instrument Serif',serif;font-weight:400;font-style:italic;font-size:26px;color:#fff;margin:26px 0 8px}
+.about p{margin:0 0 12px}
+.about code{font-family:'DM Mono',monospace;font-size:12.5px;color:var(--g);background:rgba(255,255,255,.04);padding:1px 5px;border-radius:4px}
+.about pre{font-family:'DM Mono',monospace;font-size:12.5px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px;overflow-x:auto;line-height:1.6;margin:0 0 14px}
+.about ul{padding-left:18px;margin:0 0 12px}
+.about li{margin-bottom:5px}
+.about .sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:4px}
+.hidden{display:none!important}
+.enter{animation:slideUp .6s ease both}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.enter,.target .cur{animation:none}}
+@media (max-width:400px){#moodWord{font-size:34px}.stats b{font-size:16px}.target{font-size:19px}#hint{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">s<b>;</b><em>typing mood ring</em></div>
+    <nav class="tabs" id="tabs">
+      <button data-mode="free" class="on">free</button>
+      <button data-mode="faith">faith</button>
+      <button data-mode="game">game</button>
+      <button data-mode="about">?</button>
+    </nav>
+  </header>
+
+  <main>
+    <div class="stage"><canvas id="ring" aria-label="typing aura"></canvas></div>
+    <div class="mood"><div id="moodWord">still</div><div id="moodSub">type to wake the ring</div></div>
+
+    <div class="stats">
+      <div><b id="sKps">0.0</b><span>keys / s</span></div>
+      <div><b id="sWpm">0</b><span>wpm</span></div>
+      <div><b id="sSync">—</b><span>sync</span></div>
+      <div><b id="sAcc">100%</b><span>accuracy</span></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="legendLabels"><span>still</span><span>calm</span><span>flowing</span><span>quick</span><span>blazing</span><span>breakneck</span></div>
+
+    <section id="panelType">
+      <div id="faithBar" class="subbar hidden">
+        <button data-scr="bible" class="on">Bible · KJV</button>
+        <button data-scr="quran">Qur'an · Pickthall</button>
+        <span class="sp"></span>
+        <button id="prevVerse">‹</button>
+        <span class="mono" id="verseCount"></span>
+        <button id="nextVerse">›</button>
+      </div>
+
+      <div id="gameBar" class="subbar hidden">
+        <span class="mono">level <b id="gLevel">1</b></span>
+        <span class="mono">score <b id="gScore">0</b></span>
+        <span class="mono">best <b id="gBest">0</b></span>
+        <span class="sp"></span>
+        <label><input type="checkbox" id="gVerses"> verses</label>
+        <button id="gStart" class="gold">start</button>
+      </div>
+
+      <div id="gameCard" class="card hidden"></div>
+      <div id="target" class="target hidden"></div>
+      <div id="ref" class="ref hidden"></div>
+
+      <textarea id="input" placeholder="type anything ;" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
+
+      <div class="row">
+        <button id="snap">keep this aura ↓</button>
+        <button id="reset">reset</button>
+        <span class="sp"></span>
+        <span id="hint">hue is speed · colour depth is rhythm · brightness is accuracy</span>
+      </div>
+    </section>
+
+    <section id="panelAbout" class="about hidden">
+      <h2>A mood ring for typing</h2>
+      <p>A classic mood ring reads the temperature of your finger. This one reads the temperature of your typing. Every keystroke is a pulse; the sphere turns the pulses into colour, and the rings carry the last few seconds of you outward like ripples on water. Type steadily and the colour deepens. Rush and it heats up. Stall and it cools back to violet.</p>
+      <p>The pitch is simple: you cannot not watch it. A continuous, honest picture of your own rhythm is the fastest feedback loop there is, and feedback is how you become a speed typer at breakneck speed.</p>
+
+      <h2>The colour math</h2>
+      <p>Colours are computed in <code>OKLCH</code>, a perceptually uniform colour space, so equal steps in your typing look like equal steps in colour. Three numbers drive it:</p>
+      <ul>
+        <li><b>Hue ← velocity.</b> Keys per second map onto a path from <span class="sw" style="background:#9b7bd6"></span>violet (still) through <span class="sw" style="background:#5b8fe0"></span>blue, <span class="sw" style="background:#4fb98a"></span>green, <span class="sw" style="background:#d8b35a"></span>gold and <span class="sw" style="background:#e07a4a"></span>amber to <span class="sw" style="background:#e05a4a"></span>red (breakneck). Cool is slow, hot is fast, like a thermometer.</li>
+        <li><b>Chroma ← sync.</b> How saturated the colour is comes from how locked your rhythm is. Scattered keystrokes give a greyish, uncertain tone; a steady beat gives a vivid one.</li>
+        <li><b>Lightness ← accuracy.</b> Mistakes dim the sphere. Idle dims it too; it sleeps when you do.</li>
+        <li><b>Rings ← time.</b> Ring <code>k</code> shows the colour from <code>k × 0.33 s</code> ago. The innermost ring is a third of a second behind you; the outermost is a little over two seconds behind. Your past propagates outward, and the small wobble travelling through the rings is the oscillator's phase, delayed ring by ring.</li>
+      </ul>
+
+      <h2>The sync math</h2>
+      <p>Inside the sphere runs one oscillator with phase <code>φ</code> and natural frequency <code>ω</code>. Each keystroke is a pulse that kicks it, the same pulse-coupled model Mirollo and Strogatz used for fireflies and Peskin used for the heart's pacemaker cells, and its frequency slowly adapts to your rate:</p>
+<pre>between keys     dφ/dt = ω
+on a keystroke   φ ← φ − K·sin φ            K = 0.35
+                 ω ← ω + ε·(2π·v − ω)       ε = 0.25,  v = 1 / interval</pre>
+      <p>Just before each kick the oscillator's phase is recorded. If you type with a steady rhythm the kicks always land at the same phase and the oscillator locks to you. The <b>sync</b> number is the Kuramoto order parameter over the last twelve keystrokes:</p>
+<pre>r · e^{iψ} = (1/N) · Σ e^{iφ_j}</pre>
+      <p><code>r = 1</code> means perfect lock: you and the ring are one clock. <code>r</code> near 0 means the kicks are scattered. Crickets, fireflies, heart cells, pendulum clocks on a shared beam and typists all do the same thing when they are coupled: they find a beat.</p>
+
+      <h2>The wager</h2>
+      <p>Typing is a two-oscillator system. One is in your head and produces the next letter; one is in your hands and executes it. The hypothesis this toy makes visible is that the velocity of thought shows up as phase coherence in the keystrokes, and that a continuous picture of that coherence, a colour you cannot help but watch, trains the two oscillators to lock faster. Breakneck speed is not more force. It is better coupling.</p>
+      <p>In the language of sgrounds the rings are <i>wyrd</i>: the thread already spun, radiating outward from the moment you are in. The semicolon holds the two oscillators together without collapsing either.</p>
+
+      <h2>The texts</h2>
+      <p>The faith tab uses public-domain translations: the King James Version (1611) for the Bible and Marmaduke Pickthall's <i>The Meaning of the Glorious Koran</i> (1930) for the Qur'an. The game draws from pangrams and a few lines about synchrony, or from the verses if you tick the box.</p>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const clamp = (x,a,b) => Math.max(a, Math.min(b, x));
+const lerp = (a,b,t) => a + (b-a)*t;
+const TAU = Math.PI*2;
+const wrap = p => { p = (p + Math.PI) % TAU; if (p < 0) p += TAU; return p - Math.PI; };
+
+// ── Colour math: OKLCH → sRGB (Björn Ottosson's OKLab matrices) ──────────────
+function oklabToLinear(L,a,b){
+  const l_ = L + 0.3963377774*a + 0.2158037573*b;
+  const m_ = L - 0.1055613458*a - 0.0638541728*b;
+  const s_ = L - 0.0894841775*a - 1.2914855480*b;
+  const l = l_*l_*l_, m = m_*m_*m_, s = s_*s_*s_;
+  return [
+     4.0767416621*l - 3.3077115913*m + 0.2309699292*s,
+    -1.2684380046*l + 2.6097574011*m - 0.3413193965*s,
+    -0.0041960863*l - 0.7034186147*m + 1.7076147010*s,
+  ];
+}
+const inGamut = rgb => rgb.every(c => c >= -0.0005 && c <= 1.0005);
+const gamma = c => { c = clamp(c,0,1); return c <= 0.0031308 ? 12.92*c : 1.055*Math.pow(c,1/2.4) - 0.055; };
+// Returns [r,g,b] 0–255. If the colour is outside sRGB, chroma is reduced until it fits (hue and lightness kept).
+function oklch(L,C,H){
+  const h = H*Math.PI/180, ca = Math.cos(h), sa = Math.sin(h);
+  let rgb = oklabToLinear(L, C*ca, C*sa);
+  if (!inGamut(rgb)) {
+    let lo = 0, hi = C; rgb = oklabToLinear(L, 0, 0);
+    for (let i = 0; i < 14; i++) {
+      const mid = (lo+hi)/2, t = oklabToLinear(L, mid*ca, mid*sa);
+      if (inGamut(t)) { lo = mid; rgb = t; } else hi = mid;
+    }
+  }
+  return rgb.map(c => Math.round(gamma(c)*255));
+}
+const css = (rgb,a=1) => `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
+
+// velocity (keys/s) → OKLCH hue. Cool is slow, hot is fast.
+const HUE_STOPS = [[0,300],[1.5,270],[3,222],[4.5,150],[6,100],[7.5,65],[9,38],[11,25]];
+function hueFor(v){
+  if (v <= 0) return HUE_STOPS[0][1];
+  for (let i = 1; i < HUE_STOPS.length; i++) {
+    const [v0,h0] = HUE_STOPS[i-1], [v1,h1] = HUE_STOPS[i];
+    if (v <= v1) return lerp(h0, h1, (v-v0)/(v1-v0));
+  }
+  return HUE_STOPS[HUE_STOPS.length-1][1];
+}
+const MOODS = [[1,'still'],[2.5,'calm'],[4.5,'flowing'],[6.5,'quick'],[8.5,'blazing'],[Infinity,'breakneck']];
+const moodFor = v => MOODS.find(m => v < m[0])[1];
+
+// ── Texts ────────────────────────────────────────────────────────────────────
+const VERSES = {
+  bible: { label: 'Bible · KJV', credit: 'King James Version (1611), public domain', items: [
+    { ref: 'Genesis 1:1', text: 'In the beginning God created the heaven and the earth.' },
+    { ref: 'Genesis 1:3', text: 'And God said, Let there be light: and there was light.' },
+    { ref: 'Psalm 23:1', text: 'The LORD is my shepherd; I shall not want.' },
+    { ref: 'Psalm 23:2-3', text: 'He maketh me to lie down in green pastures: he leadeth me beside the still waters. He restoreth my soul: he leadeth me in the paths of righteousness for his name\'s sake.' },
+    { ref: 'Psalm 46:10', text: 'Be still, and know that I am God: I will be exalted among the heathen, I will be exalted in the earth.' },
+    { ref: 'Psalm 90:12', text: 'So teach us to number our days, that we may apply our hearts unto wisdom.' },
+    { ref: 'Psalm 119:105', text: 'Thy word is a lamp unto my feet, and a light unto my path.' },
+    { ref: 'Psalm 139:14', text: 'I will praise thee; for I am fearfully and wonderfully made: marvellous are thy works; and that my soul knoweth right well.' },
+    { ref: 'Proverbs 3:5-6', text: 'Trust in the LORD with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths.' },
+    { ref: 'Ecclesiastes 3:1', text: 'To every thing there is a season, and a time to every purpose under the heaven:' },
+    { ref: 'Isaiah 40:31', text: 'But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.' },
+    { ref: 'Micah 6:8', text: 'He hath shewed thee, O man, what is good; and what doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?' },
+    { ref: 'Matthew 11:28', text: 'Come unto me, all ye that labour and are heavy laden, and I will give you rest.' },
+    { ref: 'John 1:1', text: 'In the beginning was the Word, and the Word was with God, and the Word was God.' },
+    { ref: 'John 1:5', text: 'And the light shineth in darkness; and the darkness comprehended it not.' },
+    { ref: 'Romans 8:28', text: 'And we know that all things work together for good to them that love God, to them who are the called according to his purpose.' },
+    { ref: '1 Corinthians 13:4', text: 'Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up,' },
+    { ref: 'Philippians 4:13', text: 'I can do all things through Christ which strengtheneth me.' },
+  ]},
+  quran: { label: 'Qur\'an · Pickthall', credit: 'Marmaduke Pickthall, The Meaning of the Glorious Koran (1930), public domain', items: [
+    { ref: 'Al-Fatihah 1:1', text: 'In the name of Allah, the Beneficent, the Merciful.' },
+    { ref: 'Al-Fatihah 1:2-4', text: 'Praise be to Allah, Lord of the Worlds, The Beneficent, the Merciful. Owner of the Day of Judgment,' },
+    { ref: 'Al-Fatihah 1:5-7', text: 'Thee (alone) we worship; Thee (alone) we ask for help. Show us the straight path, The path of those whom Thou hast favoured; Not the (path) of those who earn Thine anger nor of those who go astray.' },
+    { ref: 'Al-Baqarah 2:152', text: 'Therefore remember Me, I will remember you. Give thanks to Me, and reject not Me.' },
+    { ref: 'Al-Baqarah 2:186', text: 'And when My servants question thee concerning Me, then surely I am nigh. I answer the prayer of the suppliant when he crieth unto Me. So let them hear My call and let them trust in Me, in order that they may be led aright.' },
+    { ref: 'Al-Baqarah 2:255 (opening)', text: 'Allah! There is no God save Him, the Alive, the Eternal. Neither slumber nor sleep overtaketh Him.' },
+    { ref: 'Al-Baqarah 2:286 (opening)', text: 'Allah tasketh not a soul beyond its scope.' },
+    { ref: 'Ar-Ra\'d 13:28', text: 'Who have believed and whose hearts have rest in the remembrance of Allah. Verily in the remembrance of Allah do hearts find rest!' },
+    { ref: 'An-Nur 24:35 (opening)', text: 'Allah is the Light of the heavens and the earth.' },
+    { ref: 'Ar-Rahman 55:13', text: 'Which is it, of the favours of your Lord, that ye deny?' },
+    { ref: 'At-Talaq 65:3 (closing)', text: 'And whosoever putteth his trust in Allah, He will suffice him. Lo! Allah bringeth His command to pass. Allah hath set a measure for all things.' },
+    { ref: 'Ad-Duha 93:5', text: 'And verily thy Lord will give unto thee so that thou wilt be content.' },
+    { ref: 'Ash-Sharh 94:5-6', text: 'But lo! with hardship goeth ease, Lo! with hardship goeth ease;' },
+    { ref: 'Al-Ikhlas 112:1-4', text: 'Say: He is Allah, the One! Allah, the eternally Besought of all! He begetteth not nor was begotten. And there is none comparable unto Him.' },
+  ]},
+};
+const PHRASES = [
+  'The quick brown fox jumps over the lazy dog.',
+  'Pack my box with five dozen liquor jugs.',
+  'How vexingly quick daft zebras jump!',
+  'Sphinx of black quartz, judge my vow.',
+  'The five boxing wizards jump quickly.',
+  'Fireflies along the riverbank flash together without a conductor.',
+  'Crickets chirp in step on a warm night; the field becomes one clock.',
+  'Heart cells beating alone fall into one rhythm once they touch.',
+  'Two pendulum clocks on one beam will swing as one by morning.',
+  'Order emerges from coupling, not from command.',
+  'Every keystroke is a pulse; the ring is listening.',
+  'History rhymes when the thread is pulled taut.',
+  'Hold two truths with a semicolon; let neither collapse.',
+  'The lighthouse does not chase ships; it keeps a steady beat.',
+  'Breakneck speed is not more force. It is better coupling.',
+];
+
+// ── State ────────────────────────────────────────────────────────────────────
+const st = {
+  mode: 'free',
+  v: 0,                 // velocity, keys/s (1000 / smoothed interval)
+  iki: null,            // smoothed inter-key interval, ms
+  omega: TAU*4,         // oscillator natural frequency, rad/s
+  phi: 0,               // oscillator phase, (−π, π]
+  phases: [],           // oscillator phase at each of the last N keystrokes
+  r: 0,                 // displayed order parameter (smoothed)
+  lastKey: null, keys: [],
+  typed: 0, errors: 0, acc: 1,
+  hist: [],             // colour history for the rings
+  flash: 0, done: false,
+};
+const game = { running: false, over: false, level: 1, score: 0, best: 0, peak: 0, budget: 0, start: 0 };
+try { game.best = +localStorage.getItem('tmr-best') || 0; } catch {}
+
+let target = null, prevVal = '', scripture = 'bible', verseIdx = 0, lastPhrase = '';
+
+const input = $('#input'), targetEl = $('#target'), refEl = $('#ref');
+const cvs = $('#ring'), ctx = cvs.getContext('2d');
+let dpr = 1, size = 360;
+
+// ── Keystroke → oscillator ───────────────────────────────────────────────────
+function keystroke(now){
+  if (st.lastKey != null) {
+    const iki = now - st.lastKey;
+    if (iki < 2500) {
+      st.iki = st.iki == null ? iki : st.iki + 0.3*(iki - st.iki);   // smooth the interval, not the rate: velocity is keys per unit time
+      st.v = 1000/st.iki;
+      const vi = 1000/iki;
+      st.phases.push(st.phi); if (st.phases.length > 12) st.phases.shift();
+      st.phi = wrap(st.phi - 0.35*Math.sin(st.phi));            // pulse coupling: kick toward φ = 0
+      st.omega = clamp(st.omega + 0.25*(TAU*vi - st.omega), TAU*0.5, TAU*16); // frequency adaptation
+    } else { st.phases.length = 0; st.v = 0; st.iki = null; }
+  }
+  st.lastKey = now; st.keys.push(now);
+}
+
+input.addEventListener('input', () => {
+  if (st.done) { input.value = prevVal; return; }
+  const val = input.value, now = performance.now();
+  if (val.length > prevVal.length) {
+    const added = val.length - prevVal.length;
+    if (added === 1) keystroke(now);
+    if (target) { for (let i = prevVal.length; i < val.length; i++) { st.typed++; if (val[i] !== target[i]) st.errors++; } }
+    else st.typed += added;
+  }
+  prevVal = val;
+  st.acc = st.typed ? 1 - st.errors/st.typed : 1;
+  if (target) { renderTarget(val); if (val === target) complete(); }
+});
+input.addEventListener('keydown', e => { if (target && e.key === 'Enter') e.preventDefault(); });
+input.addEventListener('paste', e => { if (target) e.preventDefault(); });
+
+// ── Target text ──────────────────────────────────────────────────────────────
+let spans = [];
+function setTarget(text, ref){
+  target = text; st.done = false; input.value = ''; prevVal = ''; input.readOnly = false;
+  if (!text) { targetEl.classList.add('hidden'); refEl.classList.add('hidden'); return; }
+  targetEl.innerHTML = ''; spans = [];
+  for (const ch of text) { const s = document.createElement('span'); s.textContent = ch; targetEl.appendChild(s); spans.push(s); }
+  targetEl.classList.remove('hidden'); targetEl.classList.remove('enter'); void targetEl.offsetWidth; targetEl.classList.add('enter');
+  refEl.textContent = ref || ''; refEl.classList.toggle('hidden', !ref);
+  renderTarget('');
+}
+function renderTarget(val){
+  for (let i = 0; i < spans.length; i++)
+    spans[i].className = i < val.length ? (val[i] === target[i] ? 'ok' : 'bad') : (i === val.length ? 'cur' : '');
+}
+function complete(){
+  st.done = true; st.flash = 1; input.readOnly = true;
+  if (st.mode === 'faith') setTimeout(() => { if (st.mode === 'faith') showVerse(verseIdx + 1); }, 1200);
+  if (st.mode === 'game') {
+    game.score += Math.round(target.length * (1 + st.r) * (0.5 + st.acc/2) * game.level);
+    game.level++; updateGameBar(); nextPhrase();
+  }
+}
+
+// ── Faith ────────────────────────────────────────────────────────────────────
+function showVerse(i){
+  const items = VERSES[scripture].items;
+  verseIdx = ((i % items.length) + items.length) % items.length;
+  const v = items[verseIdx];
+  setTarget(v.text, `${v.ref} · ${VERSES[scripture].label}`);
+  $('#verseCount').textContent = `${verseIdx+1} / ${items.length}`;
+  input.focus();
+}
+$('#prevVerse').onclick = () => showVerse(verseIdx - 1);
+$('#nextVerse').onclick = () => showVerse(verseIdx + 1);
+for (const b of $('#faithBar').querySelectorAll('[data-scr]')) b.onclick = () => {
+  scripture = b.dataset.scr;
+  for (const o of $('#faithBar').querySelectorAll('[data-scr]')) o.classList.toggle('on', o === b);
+  showVerse(0);
+};
+
+// ── Game ─────────────────────────────────────────────────────────────────────
+function pick(pool){ let p; do { p = pool[Math.floor(Math.random()*pool.length)]; } while (p === lastPhrase && pool.length > 1); lastPhrase = p; return p; }
+function nextPhrase(){
+  const pool = $('#gVerses').checked ? VERSES.bible.items.concat(VERSES.quran.items).map(v => v.text) : PHRASES;
+  const text = pick(pool);
+  setTarget(text, null);
+  const wpmTarget = 20 * Math.pow(1.12, game.level - 1);           // level 10 ≈ 55 wpm, level 15 ≈ 98 wpm
+  game.budget = (text.length/5)/wpmTarget*60*1000*1.3 + 1500;
+  game.start = performance.now();
+  input.focus();
+}
+function startGame(){
+  game.running = true; game.over = false; game.level = 1; game.score = 0; game.peak = 0;
+  st.typed = 0; st.errors = 0; st.acc = 1;
+  $('#gameCard').classList.add('hidden'); $('#gStart').textContent = 'restart';
+  updateGameBar(); nextPhrase();
+}
+function endGame(){
+  game.running = false; game.over = true; setTarget(null);
+  input.placeholder = 'press start';
+  if (game.score > game.best) { game.best = game.score; try { localStorage.setItem('tmr-best', String(game.best)); } catch {} }
+  updateGameBar();
+  showGameCard(`<h3>the ring went dark at level ${game.level}</h3><p>score <span class="num">${game.score}</span> · peak <span class="num">${Math.round(game.peak)} wpm</span> · accuracy <span class="num">${Math.round(st.acc*100)}%</span> · best <span class="num">${game.best}</span></p>`);
+}
+function showGameCard(html){ const c = $('#gameCard'); c.innerHTML = html; c.classList.remove('hidden'); }
+function updateGameBar(){ $('#gLevel').textContent = game.level; $('#gScore').textContent = game.score; $('#gBest').textContent = game.best; }
+function tickGame(now){ if (game.budget - (now - game.start) <= 0) endGame(); }
+$('#gStart').onclick = startGame;
+
+// ── Modes ────────────────────────────────────────────────────────────────────
+function setMode(mode){
+  st.mode = mode;
+  for (const b of $('#tabs').children) b.classList.toggle('on', b.dataset.mode === mode);
+  $('#panelType').classList.toggle('hidden', mode === 'about');
+  $('#panelAbout').classList.toggle('hidden', mode !== 'about');
+  $('#faithBar').classList.toggle('hidden', mode !== 'faith');
+  $('#gameBar').classList.toggle('hidden', mode !== 'game');
+  $('#gameCard').classList.add('hidden');
+  if (game.running) { game.running = false; game.over = false; }
+  st.typed = 0; st.errors = 0; st.acc = 1;
+  if (mode === 'free') { setTarget(null); input.placeholder = 'type anything ;'; input.focus(); }
+  if (mode === 'faith') { input.placeholder = 'type the verse above'; showVerse(verseIdx); }
+  if (mode === 'game') {
+    setTarget(null); input.placeholder = 'press start'; $('#gStart').textContent = 'start'; updateGameBar();
+    showGameCard('<h3>breakneck</h3><p>Type each line before the gold ring runs out. Every level asks for more speed; sync and accuracy multiply your score. The ring remembers your best.</p>');
+  }
+}
+for (const b of $('#tabs').children) b.onclick = () => setMode(b.dataset.mode);
+
+$('#reset').onclick = () => {
+  st.v = 0; st.iki = null; st.phases.length = 0; st.r = 0; st.lastKey = null; st.keys.length = 0; st.typed = 0; st.errors = 0; st.acc = 1;
+  if (st.mode === 'game') { game.running = false; game.over = false; setMode('game'); }
+  else { setTarget(target, refEl.textContent); input.focus(); }
+};
+
+// ── Snapshot ─────────────────────────────────────────────────────────────────
+$('#snap').onclick = () => {
+  const s = 720, o = document.createElement('canvas'); o.width = s; o.height = s + 190;
+  const c = o.getContext('2d');
+  c.fillStyle = '#09090a'; c.fillRect(0, 0, o.width, o.height);
+  c.drawImage(cvs, 0, 0, s, s);
+  c.textAlign = 'center';
+  c.fillStyle = '#fff'; c.font = 'italic 60px "Instrument Serif", Georgia, serif';
+  c.fillText($('#moodWord').textContent, s/2, s + 30);
+  c.fillStyle = 'rgba(255,255,255,.55)'; c.font = '22px "DM Mono", monospace';
+  c.fillText(`${$('#sKps').textContent} keys/s · ${$('#sWpm').textContent} wpm · sync ${$('#sSync').textContent} · ${$('#sAcc').textContent}`, s/2, s + 84);
+  const date = new Date().toISOString().slice(0,10);
+  c.fillStyle = '#c9a96e'; c.fillText(`s; typing mood ring · ${date}`, s/2, s + 136);
+  const a = document.createElement('a'); a.download = `aura-${date}.png`; a.href = o.toDataURL('image/png'); a.click();
+};
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function resize(){
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  size = Math.min(360, $('.wrap').clientWidth - 36);
+  cvs.width = size*dpr; cvs.height = size*dpr; cvs.style.width = cvs.style.height = size + 'px';
+}
+window.addEventListener('resize', resize); resize();
+
+function sample(now, delay){
+  const h = st.hist, t = now - delay;
+  for (let i = h.length - 1; i >= 0; i--) if (h[i].t <= t) return h[i];
+  return h[0];
+}
+const RINGS = 7, DELAY = 330;
+function draw(now, cur){
+  const W = size, cx = W/2, cy = W/2, R = W*0.19, gap = W*0.028;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, W);
+  for (let k = RINGS; k >= 1; k--) {
+    const s = sample(now, k*DELAY), rgb = oklch(s.L, s.C, s.H);
+    const wobble = Math.cos(s.phi) * gap*0.3 * st.r;                 // the phase, delayed ring by ring: a wave travelling outward
+    const rad = R + gap*0.9 + (k-1)*gap + wobble;
+    const alpha = lerp(0.6, 0.12, (k-1)/(RINGS-1)) * lerp(0.55, 1, clamp(s.C/0.2, 0, 1));
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, TAU);
+    ctx.lineWidth = gap*0.62; ctx.strokeStyle = css(rgb, alpha);
+    ctx.shadowBlur = 14; ctx.shadowColor = css(rgb, alpha*0.9);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+  // the sphere
+  const c = oklch(cur.L, cur.C, cur.H), hi = oklch(clamp(cur.L+0.22, 0, 1), cur.C*0.55, cur.H), lo = oklch(clamp(cur.L-0.28, 0, 1), cur.C*0.9, cur.H);
+  const Rp = R * (1 + 0.012*Math.sin(now/1300) + 0.035*Math.cos(st.phi)*st.r);
+  const g = ctx.createRadialGradient(cx - Rp*0.35, cy - Rp*0.4, Rp*0.05, cx, cy, Rp);
+  g.addColorStop(0, css(hi)); g.addColorStop(0.55, css(c)); g.addColorStop(1, css(lo));
+  ctx.beginPath(); ctx.arc(cx, cy, Rp, 0, TAU); ctx.fillStyle = g;
+  ctx.shadowBlur = 44*clamp(cur.C/0.2, 0.25, 1); ctx.shadowColor = css(c, 0.8); ctx.fill(); ctx.shadowBlur = 0;
+  // game timer
+  if (game.running) {
+    const frac = clamp(1 - (now - game.start)/game.budget, 0, 1);
+    ctx.beginPath(); ctx.arc(cx, cy, R + gap*0.9 + RINGS*gap + gap*0.5, -Math.PI/2, -Math.PI/2 + TAU*frac);
+    ctx.strokeStyle = frac < 0.25 ? '#e07a6a' : '#c9a96e'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.stroke();
+  }
+}
+
+function updateStats(now){
+  while (st.keys.length && now - st.keys[0] > 10000) st.keys.shift();
+  const n = st.keys.length;
+  const wpm = n >= 2 ? (n/5) / (Math.max(2000, now - st.keys[0])/60000) : 0;
+  if (game.running && wpm > game.peak) game.peak = wpm;
+  const active = st.v > 0.05;
+  $('#sKps').textContent = st.v.toFixed(1);
+  $('#sWpm').textContent = Math.round(wpm);
+  $('#sSync').textContent = active && st.phases.length >= 3 ? Math.round(st.r*100) + '%' : '—';
+  $('#sAcc').textContent = Math.round(st.acc*100) + '%';
+  $('#moodWord').textContent = moodFor(st.v);
+  $('#moodSub').textContent = st.done && st.mode === 'faith' ? '✦ complete' : !active ? 'type to wake the ring'
+    : st.phases.length < 3 ? 'listening…' : st.r > 0.8 ? 'locked in' : st.r > 0.55 ? 'finding the beat' : st.r > 0.3 ? 'drifting' : 'scattered';
+}
+
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - last)/1000); last = now;
+  st.phi = wrap(st.phi + st.omega*dt);
+  const idle = st.lastKey == null ? Infinity : now - st.lastKey;
+  if (idle > 700) st.v *= Math.exp(-dt/0.7);
+  if (st.v < 0.02) { st.v = 0; st.iki = null; }
+  let r = 0;
+  if (st.phases.length >= 3) { let x = 0, y = 0; for (const p of st.phases) { x += Math.cos(p); y += Math.sin(p); } r = Math.hypot(x, y)/st.phases.length; }
+  st.r += ((idle > 2500 ? 0 : r) - st.r) * Math.min(1, dt*4);
+  const activity = clamp(st.v/3, 0, 1);
+  const H = hueFor(st.v);
+  const C = 0.03 + 0.04*activity + 0.16*st.r*activity;
+  const L = clamp(0.5 + 0.22*activity - 0.22*(1 - st.acc) + 0.06*st.flash, 0.3, 0.86);
+  st.flash *= Math.exp(-dt/0.5);
+  st.hist.push({ t: now, L, C, H, phi: st.phi });
+  while (st.hist.length && now - st.hist[0].t > 4000) st.hist.shift();
+  draw(now, { L, C, H });
+  updateStats(now);
+  if (game.running) tickGame(now);
+  requestAnimationFrame(frame);
+}
+
+// legend strip
+$('#legend').style.background = 'linear-gradient(90deg,' + Array.from({length: 23}, (_, i) => css(oklch(0.7, 0.17, hueFor(i*0.5)))).join(',') + ')';
+$('#moodWord').style.color = '#fff';
+
+setMode('free');
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -2,6 +2,17 @@
 
 Side explorations — not part of the app.
 
+## `typing-mood-ring/`
+
+A mood ring for typing: a sphere with seven aura rings whose colour is
+computed in OKLCH from your keystrokes (hue = speed, chroma = rhythm,
+lightness = accuracy, rings = the last two seconds radiating outward).
+"Sync" is the Kuramoto order parameter of a pulse-coupled oscillator that
+the keystrokes entrain. Free typing, a faith tab (KJV Bible, Pickthall
+Qur'an) and a *breakneck* game. Open
+[`typing-mood-ring/index.html`](typing-mood-ring/index.html) in a browser;
+no build step. Details in [its README](typing-mood-ring/README.md).
+
 ## `coupled_prime26_pangram.py`
 
 Finds five pairs of primes that share one sum (Goldbach pairs), where the ten
