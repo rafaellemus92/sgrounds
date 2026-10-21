@@ -271,6 +271,17 @@ const G = '#c9a96e', RED = '#e07a6a';
 const store = {
   get(k, fb){ try { const r = localStorage.getItem(k); return r == null ? fb : JSON.parse(r); } catch { return fb; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k){ try { localStorage.removeItem(k); } catch {} },
+  // A saved best must be a finite, nonnegative number (fractions are kept). Anything else, such as
+  // 1e999 (Infinity), a negative, a string or unparsable text, is removed and read as 0, so it cannot
+  // outrank, and so block, every future record.
+  record(k){
+    let r; try { r = localStorage.getItem(k); } catch { return 0; }
+    if (r == null) return 0;
+    let x; try { x = JSON.parse(r); } catch { x = NaN; }
+    if (typeof x === 'number' && Number.isFinite(x) && x >= 0) return x;
+    store.del(k); return 0;
+  },
 };
 const put = (el, s) => { if (el.textContent !== s) el.textContent = s; };
 
@@ -453,36 +464,40 @@ const showCard = html => { card.innerHTML = html; card.classList.remove('hidden'
 const hideCard = () => { card.classList.add('hidden'); fitPhone(); };
 // On phones the sphere is pinned to the top. When the keyboard scrolls the field into view, keep the
 // field, and the verse or word above it, clear of the pinned sphere.
+// Phones in either orientation: narrow, or short (a landscape phone). The full landscape layout is deferred;
+// on short screens this only keeps the line to type and the field in view.
+const compact = () => window.innerWidth <= 520 || (window.innerHeight <= 500 && matchMedia('(pointer: coarse)').matches);
 function fitPhone(){
-  if (window.innerWidth > 520) { input.style.scrollMarginTop = ''; return; }
+  if (!compact()) { input.style.scrollMarginTop = ''; return; }
   const intro = !card.classList.contains('hidden') && document.querySelector('#panelType .subbar:not(.hidden)');
   const anchor = intro || (st.mode === 'sprint' ? E.mood : !targetEl.classList.contains('hidden') ? targetEl : input);
   const above = Math.max(0, input.getBoundingClientRect().top - anchor.getBoundingClientRect().top);
   const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   const m = $('.stage').offsetHeight + 10 + above;
-  input.style.scrollMarginTop = Math.max(0, Math.round(intro ? m : Math.min(m, vh - input.offsetHeight - 8))) + 'px';
+  // the unclamped card offset assumes the small sphere pinned at the top, which only portrait phones have
+  input.style.scrollMarginTop = Math.max(0, Math.round(intro && window.innerWidth <= 520 ? m : Math.min(m, vh - input.offsetHeight - 8))) + 'px';
 }
 function alignPhone(){
-  if (window.innerWidth > 520 || document.activeElement !== input) return;
+  if (!compact() || document.activeElement !== input) return;
   fitPhone();
   const y = window.scrollY + input.getBoundingClientRect().top - (parseFloat(input.style.scrollMarginTop) || 0);
   if (Math.abs(y - window.scrollY) > 2) window.scrollTo(0, Math.max(0, y));
 }
 let booted = false;
 function focusInput(){
-  if (!booted && window.innerWidth <= 520) return;   // a focus at load opens no phone keyboard; do not scroll for one
+  if (!booted && compact()) return;   // a focus at load opens no phone keyboard; do not scroll for one
   input.focus({ preventScroll: true }); alignPhone();
 }
 const pick = pool => { let p, n = 0; do { p = pool[Math.floor(Math.random()*pool.length)]; } while (p === lastPick && pool.length > 1 && ++n < 20); lastPick = p; return p; };
 function resetTyping(){ sleep(st); st.keys.length = 0; st.typed = 0; st.errors = 0; st.acc = 1; st.recent.length = 0; st.accR = 1; }
 
 const game = { running:false, over:false, level:1, score:0, best:0, peak:0, budget:0, start:0 };
-game.best = Number(store.get('tmr-best', 0)) || 0;
+game.best = store.record('tmr-best');
 
 const ghostOk = a => Array.isArray(a) && a.length <= 1000 && a.every(x => Number.isInteger(x) && x >= 0 && x <= 100000);
 const sp = { on:false, over:false, count:0, countT:0, fuel:6000, cap:6000, words:0, score:0, streak:0, bestStreak:0, peak:0,
              start:0, rune:false, typo:false, queue:[], recent:[], vq:[], vref:'', ref:'', drawn:0, sec:[], lane:'',
-             best: Number(store.get('tmr-sprint-best', 0)) || 0, far: Number(store.get('tmr-sprint-far', 0)) || 0, ghost: [] };
+             best: store.record('tmr-sprint-best'), far: store.record('tmr-sprint-far'), ghost: [] };
 { const g = store.get('tmr-sprint-ghost', []); sp.ghost = ghostOk(g) ? g : []; }
 const pace = w => 1.5 + 0.05*w;                                   // break-even keys/s at word w
 const combo = () => Math.min(4, 1 + 0.5*Math.floor(sp.streak/5));
@@ -812,6 +827,8 @@ function tickDuel(now, dt){
   duel.Ta = Ta; duel.Tb = Tb;
   duel.p = clamp(duel.p + G_DUEL*(Ia*Ta - Ib*Tb)*dt, -RINGS, RINGS);
   if (!la && !lb) { chargeLoki(0, Ia*(1 - Ta)*dt, now); chargeLoki(1, Ib*(1 - Tb)*dt, now); }
+  // a Loki that fired this frame shows at once, so the HUD and the rays never disagree
+  if (now < duel.lokiUntil[0]) { duel.Ta = 1; duel.Tb = 0; } else if (now < duel.lokiUntil[1]) { duel.Ta = 0; duel.Tb = 1; }
   if (Math.abs(duel.p) >= RINGS || now - duel.start >= duel.len) endDuel();
 }
 function endDuel(abandon){

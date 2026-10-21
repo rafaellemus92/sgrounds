@@ -130,12 +130,59 @@ caret. On intro and result cards the mode bar (start, opponents) is kept in
 view instead. The page does not scroll at load, since a focus at load opens
 no keyboard.
 
+Landscape phones (a touch screen 500 px tall or less) get only the
+alignment: the line to type and the field are scrolled into view, and result
+cards stay on screen, but the sphere stays at desktop size and is off-screen
+while typing. A landscape layout is not designed yet. Short desktop windows
+are left alone, so the field is still focused at load there.
+
 ## Storage
 
-`localStorage`, all reads validated and wrapped in try/catch:
-`tmr-best` (game), `tmr-sprint-best`, `tmr-sprint-far`, `tmr-sprint-ghost`
-(words per second of the best run), `tmr-duel` (`{w, l, d, giant}`),
-`tmr-ghost` (`{v: 1, d: [ms offsets], acc, at}`, the last duel).
+`localStorage`. Every read and write is wrapped in try/catch, so storage
+that is blocked or throws (private windows, blocked site data) reads as the
+defaults and skips writes; the page still plays.
+
+| key | holds | on load |
+|-----|-------|---------|
+| `tmr-best` | game best score | must be a finite, nonnegative number (fractions kept); anything else, such as `1e999` (Infinity), a negative, a string or unparsable text, is removed and read as 0 |
+| `tmr-sprint-best` | sprint best score | same rule as `tmr-best` |
+| `tmr-sprint-far` | most sprint words | same rule as `tmr-best` |
+| `tmr-sprint-ghost` | words per second of the best sprint | an array of at most 1000 integers in 0–100000, else ignored; the next best run replaces it |
+| `tmr-duel` | `{w, l, d, giant}` | each field is used only if it is a finite number; `giant` is rounded and clamped to 15–160 wpm. `w`, `l` and `d` are not otherwise range-checked |
+| `tmr-ghost` | `{v: 1, d: [ms offsets], acc, at}`, the last duel | used only if `v` is 1 and `d` holds 20–6000 non-decreasing integers up to 600000; `acc` outside 0–1 becomes 0.95; otherwise ignored |
+
+A record is replaced only by a greater value, so the three best-score keys
+are checked strictly: a corrupt Infinity would otherwise outrank every
+future record, and a corrupt sprint best would also stop the ghost from
+ever being replaced.
+
+## Tests
+
+Browser checks drive the page in Chromium through Playwright. Playwright is
+not a dependency of the repository: the harness uses a local install if
+there is one, then `PLAYWRIGHT_MODULE` (a path to its `index.mjs`), then the
+global npm root. Run everything with
+
+```
+node experiments/typing-mood-ring/tests/run.mjs
+```
+
+or one file at a time:
+
+| file | checks |
+|------|--------|
+| `suite.mjs` | 42: sync and rests, auto-repeat, faith navigation and carry-over, smart quotes, game, sprint, duel, phone layout, reduced motion, snapshots |
+| `regress.mjs` | 14: the review of the sprint and duel tabs (hidden count-ins and the run clock after them, duel reset, desktop and phone focus, sprint whitespace) |
+| `records.mjs` | 14: corrupt saved records recover (twelve corrupt forms), valid ones survive weaker runs that score, new bests save, the sprint ghost is replaced only by a better run, all of it across reloads, blocked storage |
+| `interaction.mjs` | 24: count-in, background and resume (clocks, no opponent burst), caret locking, Loki's HUD and rays frame by frame, phone portrait layout (the caret's line clear of the pinned sphere), landscape usability and result cards, focus in a short desktop window |
+
+Phones are emulated (desktop Chromium with a phone viewport, touch and
+device scale), not real devices. A background tab is emulated too: the
+harness flips `document.hidden`, fires `visibilitychange` and holds animation
+frames while hidden. Screenshots go to `TMR_OUT` (default `<tmp>/tmr-tests`).
+`TMR_PAGE=path/to/other.html` runs the checks against another copy of the
+page, for example an older commit, to compare. Timing-based checks type at
+fixed intervals, so a heavily loaded machine can make a sync reading flaky.
 
 ## Adding a scripture
 
