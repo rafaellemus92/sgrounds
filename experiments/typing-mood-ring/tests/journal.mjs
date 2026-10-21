@@ -260,6 +260,35 @@ const FAILING = () => {
   texts = (await stored(p)).entries.map(e => e.text);
   ok('…which saves as a new entry; the deleted one stays deleted', texts.length === 2 && texts[1] === 'today, a new page plus words not saved yet' && !(await stored(p)).entries.some(e => e.id === cur), texts);
   await p.close(); }
+{ const p = await open(browser, errors);   // undo, typing over, a leftover newline, the list mark, delete keeping typing
+  await p.keyboard.type('an entry with a feeling'); await save(p);
+  await p.click('#feel [data-feel="after"]'); await p.click('[data-chip="calm"]'); await p.click('#feelDone');
+  await p.click('#input'); await p.keyboard.press('End'); await typeAt(p, ', edited slowly', 120);
+  await p.keyboard.press('Control+a'); await p.keyboard.press('Backspace');
+  ok('clearing by mistake starts a new page…', (await status(p)).startsWith('a new page'));
+  await p.keyboard.press('Control+z'); await p.waitForTimeout(60);
+  ok('…and undo brings back the entry, with its feeling and the edit', (await p.inputValue('#input')) === 'an entry with a feeling, edited slowly' && (await p.textContent('#feel')).includes('after: calm') && (await p.textContent('#feel')).includes('editing'));
+  await save(p);
+  let s = await stored(p);
+  ok('…so saving updates that entry rather than adding a copy', s.entries.length === 1 && s.entries[0].text === 'an entry with a feeling, edited slowly' && s.entries[0].feelings.after.labels[0] === 'calm' && s.entries[0].typing, s.entries);
+  await panel(p);
+  await p.click('#input'); await p.keyboard.press('Control+a'); await p.keyboard.type('typed over the whole page');
+  ok('typing over the whole page starts a new page, and the list no longer marks the entry as open', (await status(p)).startsWith('a new page') && (await p.locator('#jList .jitem.here').count()) === 0);
+  await save(p);
+  ok('…and saves as a new entry, the first kept', JSON.stringify((await stored(p)).entries.map(e => e.text)) === JSON.stringify(['an entry with a feeling, edited slowly', 'typed over the whole page']));
+  await p.click('#jNew'); if (await p.isVisible('#journal')) await p.click('#jNew');
+  await p.click('#input'); await p.keyboard.type('yesterday'); await p.keyboard.press('Enter'); await save(p);
+  await p.evaluate(() => input.setSelectionRange(0, 9)); await p.keyboard.press('Backspace');
+  await p.keyboard.type('today, different'); await save(p);
+  const texts = (await stored(p)).entries.map(e => e.text);
+  ok('clearing the words but leaving a newline also starts a new page', texts.includes('yesterday\n') && texts.includes('today, different\n'), texts);
+  const id = (await stored(p)).entries.find(e => e.text === 'today, different\n').id;
+  await typeAt(p, ' and more words typed slowly', 120);
+  await panel(p); await p.click(`[data-del="${id}"]`); await p.click(`[data-del-yes="${id}"]`); await p.waitForTimeout(60);
+  await p.click('#input'); await save(p);
+  const kept = (await stored(p)).entries.find(e => e.text === 'today, different and more words typed slowly\n');   // the caret sat before the newline
+  ok('the page kept after deleting its entry still carries the typing summary of those words', kept && kept.typing && kept.typing.activeSec >= 1, kept && kept.typing);
+  await p.close(); }
 { const a = await open(browser, errors);
   await a.keyboard.type('one entry, two tabs'); await save(a);
   const b = await a.context().newPage(); await b.goto(a.url()); await b.waitForTimeout(300);

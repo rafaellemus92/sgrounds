@@ -174,15 +174,15 @@ function framePage(name, w, h){
   await p.close(); }
 
 // ── review fixes: caret away from the end, landscape stability, turning then done, open sideways, verse window ──
-// where the caret's line is inside the field, measured independently with a copy of the text up to the caret
-const caretSeen = f => f.evaluate(() => {
-  const cs = getComputedStyle(input), m = document.createElement('div');
-  for (const k of ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing']) m.style[k] = cs[k];
-  Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'break-word', width: (input.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) + 'px' });
-  m.textContent = input.value.slice(0, input.selectionEnd); const k = document.createElement('span'); k.textContent = '|'; m.appendChild(k); document.body.appendChild(m);
-  const top = parseFloat(cs.paddingTop) + k.offsetTop, h = k.offsetHeight; m.remove();
-  return { top, h, st: input.scrollTop, ch: input.clientHeight, seen: top >= input.scrollTop - 1 && top + h <= input.scrollTop + input.clientHeight + 1 };
-});
+// The caret's line is in view when the browser's own caret reveal has nothing to scroll: moving the caret right
+// and back (which Chromium follows by scrolling the field) leaves scrollTop where it was. Independent of the page's
+// own measurement.
+const caretSeen = async f => {
+  const st = await f.evaluate(() => input.scrollTop);
+  await f.keyboard.press('ArrowRight'); await f.keyboard.press('ArrowLeft'); await settle(f);
+  const after = await f.evaluate(() => input.scrollTop);
+  return { st, after, seen: Math.abs(after - st) <= 1 };
+};
 { const p = await open(browser, errors, PHONE);
   const long = Array.from({ length: 80 }, (_, i) => `line ${i + 1}: an old entry being fixed`).join('\n');
   await p.evaluate(t => { input.value = t; input.dispatchEvent(new Event('input')); const at = t.indexOf('line 78:'); input.setSelectionRange(at, at); input.scrollTop = input.scrollHeight; }, long);
@@ -194,6 +194,22 @@ const caretSeen = f => f.evaluate(() => {
   await vv(p, { height: 380 }); await settle(p);
   const c2 = await caretSeen(p);
   ok('…and one near the top (line 3) too', c2.seen, c2);
+  await p.close(); }
+{ const p = await open(browser, errors, PHONE);   // a caret inside a word that soft-wraps to the next line
+  const prose = Array.from({ length: 400 }, (_, i) => ['the', 'loom', 'keeps', 'its', 'beat', 'while', 'sentences', 'gather', 'slowly', 'cooling'][i % 10]).join(' ');
+  await p.evaluate(t => { input.value = t; input.dispatchEvent(new Event('input')); }, prose);
+  await p.evaluate(() => input.focus()); await settle(p);
+  const pos = await p.evaluate(() => {   // the first word of a wrapped line two thirds of the way down, caret inside it
+    const words = [...input.value.matchAll(/\S+/g)], m = document.createElement('div'), cs = getComputedStyle(input);
+    Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'break-word', font: cs.font, width: (input.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) + 'px' });
+    document.body.appendChild(m); let prev = -1, starts = [];
+    for (const w of words) { m.textContent = input.value.slice(0, w.index + w[0].length); const h = m.offsetHeight; if (h > prev && prev >= 0) starts.push(w.index); prev = h; }
+    m.remove(); const at = starts[Math.floor(starts.length*0.66)]; return at + 3;
+  });
+  await p.evaluate(at => { input.setSelectionRange(at, at); input.scrollTop = 0; }, pos);
+  const res = [];
+  for (const h of [420, 380, 360]) { await vv(p, { height: h }); await settle(p); res.push(await caretSeen(p)); }
+  ok('a caret inside the first word of a wrapped line stays in view as the keyboard shrinks the field', res.every(r => r.seen), res);
   await p.close(); }
 for (const [vw, vh, kh] of [[844, 390, 140], [667, 330, 110]]) {
   const p = await open(browser, errors, { ...PHONE, viewport: { width: vw, height: vh } });
@@ -218,6 +234,29 @@ for (const [vw, vh, kh] of [[844, 390, 140], [667, 330, 110]]) {
   await p.tap('#kbDone'); await settle(p, 20); await p.evaluate(() => window.__vvReset()); await settle(p);
   let g = await geo(p);
   ok('upright, typing, turned sideways, done: the field is on screen', !g.kb && g.input.t >= 0 && g.input.t < g.ih - 40, g.input);
+  await p.close(); }
+{ const p = await open(browser, errors, PHONE);   // turning with the keyboard open: same sizes as entering in each orientation
+  await p.tap('#input'); await vv(p, { height: 420 });
+  const up = await geo(p);
+  await p.setViewportSize({ width: 844, height: 390 });
+  await p.evaluate(() => { window.__vv({ width: 844, height: 140 }); window.dispatchEvent(new Event('orientationchange')); }); await settle(p, 450);
+  const side = await geo(p);
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.evaluate(() => { window.__vv({ width: 390, height: 420 }); window.dispatchEvent(new Event('orientationchange')); }); await settle(p, 450);
+  const back = await geo(p);
+  ok('turning with the keyboard open keeps the sphere at its own size for each orientation, and the field where it was', up.ring.h === 80 && side.ring.h === 72 && back.ring.h === 80 && back.input.t === up.input.t, { up: up.ring.h, side: side.ring.h, back: back.ring.h, t: [up.input.t, back.input.t] });
+  await p.close(); }
+{ const p = await open(browser, errors, SIDE);   // sideways, back into the writing view mid-verse
+  await p.tap('button[data-mode="faith"]'); await settle(p, 100);
+  for (let i = 0; i < 3; i++) await p.tap('#nextVerse');
+  await p.tap('#input'); await settle(p);
+  const v = await p.textContent('#target');
+  await typeAt(p, v.slice(0, Math.round(v.length*0.55)), 8);
+  await p.tap('#kbDone'); await settle(p, 50);
+  await p.tap('#input'); await settle(p, 50);
+  const lineSeen = () => p.evaluate(() => { const c = document.querySelector('#target .cur').getBoundingClientRect(), t = target.getBoundingClientRect(); return { c: [Math.round(c.top), Math.round(c.bottom)], t: [Math.round(t.top), Math.round(t.bottom)], ok: c.top >= t.top - 1 && c.bottom <= t.bottom + 1 }; });
+  const a = await lineSeen(); await vv(p, { height: 140 }); const b = await lineSeen();
+  ok('sideways, back into the writing view mid-verse: the one-line window shows the next letter, before and after the keyboard', a.ok && b.ok, { a, b });
   await p.close(); }
 { const p = await open(browser, errors, SIDE);
   await p.tap('#input'); await p.keyboard.type('turning back upright'); await vv(p, { height: 140 });

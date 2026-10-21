@@ -331,7 +331,7 @@ body.kb.kb-short textarea{padding:6px 10px}
       <ul>
         <li><b>Hue ← velocity.</b> Keys per second move along a thermometer from <span class="sw" style="background:#9b7bd6"></span>violet (still) through <span class="sw" style="background:#5b8fe0"></span>blue, <span class="sw" style="background:#4fb98a"></span>green, <span class="sw" style="background:#d8b35a"></span>gold and <span class="sw" style="background:#e07a4a"></span>amber to <span class="sw" style="background:#e05a4a"></span>red (breakneck). The scale is stretched through blue and green, where most people type, and compressed at the red end, so the colours line up with the mood words.</li>
         <li><b>Chroma ← sync.</b> Saturation is measured as a fraction of the most vivid colour the screen can show at that hue and lightness, so a steady beat reaches full colour at every speed. Scattered keystrokes stay greyish.</li>
-        <li><b>Lightness ← accuracy.</b> Over your last twenty characters. One slip dims the sphere a little, a run of them darkens it, and it brightens again as you type cleanly. Idle dims it too; it sleeps when you do.</li>
+        <li><b>Lightness ← accuracy.</b> Over your last twenty characters; in the free tab there is nothing to copy, so only speed and stillness move it. One slip dims the sphere a little, a run of them darkens it, and it brightens again as you type cleanly. Idle dims it too; it sleeps when you do.</li>
         <li><b>Rings ← time.</b> Ring <code>k</code> shows the colour from <code>k × 0.33 s</code> ago. The innermost ring is a third of a second behind you; the outermost a little over two seconds. Your past propagates outward, and the small wobble travelling through the rings is the oscillator's phase, delayed ring by ring.</li>
       </ul>
 
@@ -664,7 +664,7 @@ function kbMeasure(){
   // zoomed, or a reading no screen can have (rotation briefly reports some): keep the last good layout
   if (zoomed() || !(w > 0 && full > 0) || !(x >= 0 && y >= 0) || (!framed && full > window.innerHeight + 1 && KB.h)) return;
   const side = w > 1.6*full;
-  if (side !== KB.side) { KB.idle = full; KB.shrunk = false; }       // turned: the old reference no longer applies
+  if (side !== KB.side) { KB.idle = Math.max(full, window.innerHeight); KB.shrunk = false; }   // turned: the old reference no longer applies; the layout height ignores the keyboard
   if (full < KB.idle*0.85) KB.shrunk = true;
   const capped = framed && !KB.shrunk;
   const h = capped ? Math.max(Math.min(full, 90), Math.round(full*(side ? KB_CAP.side : KB_CAP.tall))) : full;
@@ -676,7 +676,7 @@ function kbMeasure(){
   b.toggle('kb-side', side); b.toggle('kb-short', short); b.toggle('kb-panned', y > 1); b.toggle('kb-capped', capped);
   const changed = w !== KB.w || h !== KB.h, reflow = short !== KB.short || side !== KB.side;
   Object.assign(KB, { w, h, hs, side, capped, short });
-  if (reflow && target) renderTarget(input.value);   // the verse window rewraps: bring the caret's line back
+  if (reflow && target) { resize(); renderTarget(input.value); }   // the verse window rewraps at the new size: bring the caret's line back
   if (changed) requestAnimationFrame(keepCaret);
 }
 // Keep the caret's line inside the field after the field changes size. At the end of the text (nearly always)
@@ -691,8 +691,10 @@ function keepCaret(){
   for (const k of ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'wordSpacing', 'lineHeight', 'tabSize', 'textTransform']) m[k] = cs[k];
   Object.assign(m, { position: 'absolute', visibility: 'hidden', left: '-9999px', top: '0', padding: '0', border: '0', boxSizing: 'content-box',
                      whiteSpace: 'pre-wrap', overflowWrap: 'break-word', width: Math.max(1, input.clientWidth - px('paddingLeft') - px('paddingRight')) + 'px' });
+  // the whole text, so a word that wraps carries the caret with it; a word joiner marks the caret without adding a break
   mirror.textContent = input.value.slice(0, e);
-  const mark = document.createElement('span'); mark.textContent = '\u200b'; mirror.appendChild(mark);
+  const mark = document.createElement('span'); mark.textContent = '\u2060'; mirror.appendChild(mark);
+  mirror.appendChild(document.createTextNode(input.value.slice(e)));
   const top = px('paddingTop') + mark.offsetTop, lh = mark.offsetHeight || px('lineHeight') || 24;
   mirror.textContent = '';
   if (top < input.scrollTop) input.scrollTop = Math.max(0, top - 4);
@@ -822,6 +824,8 @@ input.addEventListener('keydown', e => {
 });
 input.addEventListener('beforeinput', e => {
   if (sp.count || duel.count) { e.preventDefault(); return; }
+  // typing or pasting over the whole of a saved entry is starting a new page (see jWatch)
+  J.whole = st.mode === 'free' && !!J.cur && input.value.length > 0 && input.selectionStart === 0 && input.selectionEnd === input.value.length && !/^(delete|history)/.test(e.inputType);
   if (!target) return;
   if (BLOCK.has(e.inputType)) { e.preventDefault(); return; }                  // only typing counts
   if (st.mode === 'sprint' && e.data && /^\s+$/.test(e.data)) e.preventDefault(); // no spaces in sprint
@@ -846,9 +850,9 @@ input.addEventListener('input', e => {
       input.value = val = extra;
     } else { input.value = prevVal; return; }
   }
+  const before = prevVal;
   handle(val, t, e.inputType, e.data);
-  if (st.mode === 'free' && !input.value && J.cur) { jUnbind(); jSay('a new page; the saved entry is kept'); }   // clearing the field starts a new page
-  if (st.mode === 'free' && !input.value !== J.emptyWas) jFeelLine();   // the before-writing prompt shows only on an empty page
+  if (st.mode === 'free') jWatch(before);
 });
 function handle(val, t, type, data){
   const pv = prevVal, n = Math.min(pv.length, val.length);
@@ -1260,7 +1264,7 @@ const J_KEY = 'tmr-journal';
 const FEELINGS = ['calm', 'content', 'grateful', 'hopeful', 'energised', 'tired', 'restless', 'anxious', 'sad', 'frustrated', 'lonely', 'numb'];
 const jAcc = () => ({ sec: 0, v: 0, syncSec: 0, r: 0, L: 0, a: 0, b: 0, keys: 0 });
 const J = { raw: [], labels: [], forget: new Set(), blocked: false, readOnly: false, unreadable: null, notice: '',
-            cur: null, base: '', feel: { before: null, after: null }, feelSet: new Set(), acc: jAcc(), draft: null,
+            cur: null, base: '', feel: { before: null, after: null }, feelSet: new Set(), acc: jAcc(), draft: null, was: null, whole: false,
             open: false, pick: null, arm: '', armT: 0, sayT: 0, emptyWas: true };
 const esc = x => String(x).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const rd = (x, d) => Math.round(x*10**d)/10**d;
@@ -1391,7 +1395,7 @@ function jSave(){
     return es;
   });
   if (err) { jSay('Not saved: ' + J_WHY[err] + ' Your text is still in the field; export keeps a copy as a file.', true); return false; }
-  J.cur = id; J.base = text; J.acc = jAcc(); J.feelSet.clear(); jFeelSync();
+  J.cur = id; J.base = text; J.acc = jAcc(); J.feelSet.clear(); J.was = null; jFeelSync();
   jSay('saved ;'); jRender();
   return true;
 }
@@ -1400,10 +1404,24 @@ function jFeelSync(){   // feelings of the open entry as stored, except any this
   if (e) for (const k of ['before', 'after']) if (!J.feelSet.has(k)) J.feel[k] = e[k];
 }
 // The field stops being a saved entry: what is typed next saves as a new one. The text is left as it is.
-function jUnbind(){ J.cur = null; J.base = ''; J.feel = { before: null, after: null }; J.feelSet.clear(); J.acc = jAcc(); }
+function jUnbind(){ J.cur = null; J.base = ''; J.feel = { before: null, after: null }; J.feelSet = new Set(); J.acc = jAcc(); }
+// Clearing the field (nothing but spaces left), or typing or pasting over all of it, starts a new page, so the next
+// save is a new entry and the saved one is kept. Undo back to the text as it was picks the entry up again.
+function jWatch(before){
+  const v = input.value;
+  if (J.cur && (!v.trim() || J.whole)) {
+    J.was = { cur: J.cur, base: J.base, feel: J.feel, feelSet: J.feelSet, acc: J.acc, text: before };
+    jUnbind(); jSay('a new page; the saved entry is kept'); jRender();
+  } else if (J.was && v === J.was.text && J.raw.some(x => x && x.id === J.was.cur)) {
+    const w = J.was; J.was = null;
+    Object.assign(J, { cur: w.cur, base: w.base, feel: w.feel, feelSet: w.feelSet, acc: w.acc });
+    jSay('back to the saved entry'); jRender();
+  } else if (!v !== J.emptyWas) jFeelLine();   // the before-writing prompt shows only on an empty page
+  J.whole = false;
+}
 function jReset(text = '', e = null){
   jUnbind(); J.cur = e ? e.id : null; J.base = text; J.feel = { before: e ? e.before : null, after: e ? e.after : null };
-  J.pick = null; J.arm = '';
+  J.pick = null; J.arm = ''; J.was = null;
   resetTyping(); input.value = prevVal = text;
 }
 function jArmed(key){ const on = J.arm === key && performance.now() < J.armT; J.arm = ''; return on; }
@@ -1424,7 +1442,7 @@ function jDelete(id){
   const err = jApply(es => es.filter(e => !(e && e.id === id)));
   if (err) { jSay('Not deleted: ' + J_WHY[err], true); jRender(); return; }
   if (J.cur !== id) jSay('entry deleted');
-  else if (jDirty()) { jUnbind(); jSay('entry deleted; your unsaved text stays in the field as a new page'); }   // never take unsaved words with it
+  else if (jDirty()) { const acc = J.acc; jUnbind(); J.acc = acc; jSay('entry deleted; your unsaved text stays in the field as a new page'); }   // never take unsaved words with it
   else { jReset(); jSay('entry deleted'); }
   jRender();
 }
