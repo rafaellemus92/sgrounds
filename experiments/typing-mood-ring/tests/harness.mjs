@@ -83,3 +83,17 @@ export async function hide(p, on) {
     if (!on && window.__rafRelease) window.__rafRelease();
   }, on);
 }
+
+// A stand-in for the claude.ai preview: the page as an artifact (no document wrapper of its own) inside the exact
+// skeleton claude.ai served for it (captured from the published version), framed under a host header the way a
+// phone shows it. Emulation only: the real host page, its scripts and its keyboard handling are not reproduced.
+const HOST_HEAD = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>\n';
+export function previewReplica(name, header = 56) {
+  const src = readFileSync(PAGE_FILE, 'utf8');
+  const head = src.slice(src.indexOf('<title>'), src.indexOf('</head>'));
+  const body = src.slice(src.indexOf('>', src.indexOf('<body')) + 1, src.indexOf('</body>'));
+  const inner = path.join(OUT, name + '-artifact.html'), outer = path.join(OUT, name + '.html');
+  writeFileSync(inner, HOST_HEAD + head.replace(/\n+$/, '') + '\n' + body.replace(/^\n+|\n+$/g, '') + '\n\n\n</body></html>');
+  writeFileSync(outer, `<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;height:100%;background:#1f1e1d}header{height:${header}px;background:#262624;color:#ccc;font:14px sans-serif;display:flex;align-items:center;padding:0 14px}iframe{display:block;width:100%;height:calc(100% - ${header}px);border:0}</style><header>claude.ai preview (stand-in)</header><iframe id="f" src="${pathToFileURL(inner).href}"></iframe>`);
+  return pathToFileURL(outer).href;
+}

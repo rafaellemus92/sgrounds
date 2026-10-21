@@ -1,12 +1,13 @@
-// Saved records (tmr-best, tmr-sprint-best, tmr-sprint-far): corrupt values recover, valid ones
-// survive, new bests save afterwards, the sprint ghost is still replaced, and it all survives reload.
+// Saved records of the default (relaxed capitals) setting: tmr-best:relaxed, tmr-sprint-best:relaxed and
+// tmr-sprint-far:relaxed. Corrupt values recover, valid ones survive, new bests save afterwards, the sprint ghost
+// is still replaced, and it all survives reload. scoring.mjs covers strict records and the earlier, unsuffixed keys.
 // Run: node experiments/typing-mood-ring/tests/records.mjs
 import { chromium, checks, fresh as open, txt, typeAt } from './harness.mjs';
 const { ok, done } = checks('records');
 const browser = await chromium.launch(); const errors = [];
-const KEYS = ['tmr-best', 'tmr-sprint-best', 'tmr-sprint-far'];
+const KEYS = ['tmr-best:relaxed', 'tmr-sprint-best:relaxed', 'tmr-sprint-far:relaxed'];
 const setKeys = (p, vals) => p.evaluate(v => { for (const [k, x] of Object.entries(v)) x === null ? localStorage.removeItem(k) : localStorage.setItem(k, x); }, vals);
-const getKeys = p => p.evaluate(ks => Object.fromEntries(ks.map(k => [k, localStorage.getItem(k)])), [...KEYS, 'tmr-sprint-ghost']);
+const getKeys = p => p.evaluate(ks => Object.fromEntries(ks.map(k => [k, localStorage.getItem(k)])), [...KEYS, 'tmr-sprint-ghost:relaxed']);
 const reload = async p => { await p.reload(); await p.waitForTimeout(300); };
 const gameBest = async p => { await p.click('button[data-mode="game"]'); await p.waitForTimeout(80); const b = await txt(p, '#gBest'); await p.click('button[data-mode="free"]'); return b; };
 async function gameLine(p) {           // play one line, then leave the tab mid-run; returns the score
@@ -43,7 +44,7 @@ const cardNum = (card, label) => { const m = card.match(new RegExp(label + ' ([0
 
 // 2. valid records survive, fractions included, and are not lowered by a weaker run
 { const p = await open(browser, errors);
-  const valid = { 'tmr-best': '654', 'tmr-sprint-best': '1012.5', 'tmr-sprint-far': '7', 'tmr-sprint-ghost': '[0,1,2,3]' };
+  const valid = { 'tmr-best:relaxed': '654', 'tmr-sprint-best:relaxed': '1012.5', 'tmr-sprint-far:relaxed': '7', 'tmr-sprint-ghost:relaxed': '[0,1,2,3]' };
   await setKeys(p, valid); await reload(p);
   ok('valid game best survives load', (await gameBest(p)) === '654');
   ok('valid records are left untouched in storage', JSON.stringify(await getKeys(p)) === JSON.stringify(valid), await getKeys(p));
@@ -52,19 +53,19 @@ const cardNum = (card, label) => { const m = card.match(new RegExp(label + ' ([0
   const s = await gameLine(p);
   const weak = await sprintRun(p, 2);                       // a sprint that scores, but below the saved best
   const after = await getKeys(p);
-  ok('weaker runs that score do not lower valid records or replace the ghost', cardNum(weak, 'score') > 0 && after['tmr-best'] === '654' && after['tmr-sprint-best'] === '1012.5' && after['tmr-sprint-far'] === '7' && after['tmr-sprint-ghost'] === '[0,1,2,3]', { game: s, sprint: cardNum(weak, 'score'), after });
+  ok('weaker runs that score do not lower valid records or replace the ghost', cardNum(weak, 'score') > 0 && after['tmr-best:relaxed'] === '654' && after['tmr-sprint-best:relaxed'] === '1012.5' && after['tmr-sprint-far:relaxed'] === '7' && after['tmr-sprint-ghost:relaxed'] === '[0,1,2,3]', { game: s, sprint: cardNum(weak, 'score'), after });
   await p.close(); }
 
 // 3. after recovery a legitimate new best saves, and the sprint ghost is replaced
 let saved;
 { const p = await open(browser, errors);
-  await setKeys(p, { 'tmr-best': '1e999', 'tmr-sprint-best': '1e999', 'tmr-sprint-far': '1e999', 'tmr-sprint-ghost': '[0,1,2]' }); await reload(p);
+  await setKeys(p, { 'tmr-best:relaxed': '1e999', 'tmr-sprint-best:relaxed': '1e999', 'tmr-sprint-far:relaxed': '1e999', 'tmr-sprint-ghost:relaxed': '[0,1,2]' }); await reload(p);
   const s1 = await gameLine(p);
-  ok('after recovery a new game best is saved', s1 > 0 && (await getKeys(p))['tmr-best'] === String(s1) && (await gameBest(p)) === String(s1), s1);
+  ok('after recovery a new game best is saved', s1 > 0 && (await getKeys(p))['tmr-best:relaxed'] === String(s1) && (await gameBest(p)) === String(s1), s1);
   const card = await sprintRun(p, 3);
-  const k = await getKeys(p), ghost = JSON.parse(k['tmr-sprint-ghost']), best = cardNum(card, 'best');
-  ok('after recovery a new sprint best and farthest are saved', best > 0 && k['tmr-sprint-best'] === String(best) && k['tmr-sprint-far'] === '3' && cardNum(card, 'farthest') === 3, { card: card.slice(-60), k });
-  ok('the stale sprint ghost is replaced by the new best run', k['tmr-sprint-ghost'] !== '[0,1,2]' && ghost.length >= 3 && ghost[ghost.length - 1] === 3, ghost);
+  const k = await getKeys(p), ghost = JSON.parse(k['tmr-sprint-ghost:relaxed']), best = cardNum(card, 'best');
+  ok('after recovery a new sprint best and farthest are saved', best > 0 && k['tmr-sprint-best:relaxed'] === String(best) && k['tmr-sprint-far:relaxed'] === '3' && cardNum(card, 'farthest') === 3, { card: card.slice(-60), k });
+  ok('the stale sprint ghost is replaced by the new best run', k['tmr-sprint-ghost:relaxed'] !== '[0,1,2]' && ghost.length >= 3 && ghost[ghost.length - 1] === 3, ghost);
   saved = { s1, best, k };
   // 4. the corrected state survives reload, and later records still compare against it
   await reload(p);
@@ -74,10 +75,10 @@ let saved;
   const k2 = await getKeys(p), run2 = cardNum(card2, 'score'), beat = run2 > best;
   ok('the reloaded ghost is raced (readout shows)', sub.includes('ghost'), sub);
   ok('the next run replaces best and ghost only if it beats the reloaded best',
-     beat ? (k2['tmr-sprint-best'] === String(run2) && k2['tmr-sprint-ghost'] !== k['tmr-sprint-ghost'])
-          : (k2['tmr-sprint-best'] === String(best) && k2['tmr-sprint-ghost'] === k['tmr-sprint-ghost']),
+     beat ? (k2['tmr-sprint-best:relaxed'] === String(run2) && k2['tmr-sprint-ghost:relaxed'] !== k['tmr-sprint-ghost:relaxed'])
+          : (k2['tmr-sprint-best:relaxed'] === String(best) && k2['tmr-sprint-ghost:relaxed'] === k['tmr-sprint-ghost:relaxed']),
      { best, run2, beat });
-  ok('farthest moves from 3 to 5', k2['tmr-sprint-far'] === '5' && cardNum(card2, 'farthest') === 5, k2['tmr-sprint-far']);
+  ok('farthest moves from 3 to 5', k2['tmr-sprint-far:relaxed'] === '5' && cardNum(card2, 'farthest') === 5, k2['tmr-sprint-far:relaxed']);
   await p.close(); }
 
 // 5. storage that throws: the page loads, bests read 0, play works, no errors

@@ -94,7 +94,7 @@ const newPage = async p => { await p.click('#jOpen'); await p.click('#jNew'); if
   const score = +(await txt(p, '#gScore'));
   ok('a completed line scores and levels up', score > 0 && (await txt(p, '#gLevel')) === '2', { score });
   await p.click('button[data-mode="free"]'); await p.waitForTimeout(100);
-  const best = await p.evaluate(() => localStorage.getItem('tmr-best'));
+  const best = await p.evaluate(() => localStorage.getItem('tmr-best:relaxed'));
   ok('leaving mid-run still saves the best', +best === score, { best, score });
   await p.close();
 }
@@ -125,7 +125,7 @@ const newPage = async p => { await p.click('#jOpen'); await p.click('#jNew'); if
   await p.waitForTimeout(7000);
   const cardTxt = await txt(p, '#gameCard');
   ok('fuel runs out → end card', cardTxt.includes('went dark at word 13'), cardTxt.slice(0, 80));
-  const ls = await p.evaluate(() => ({ b: localStorage.getItem('tmr-sprint-best'), g: localStorage.getItem('tmr-sprint-ghost') }));
+  const ls = await p.evaluate(() => ({ b: localStorage.getItem('tmr-sprint-best:relaxed'), g: localStorage.getItem('tmr-sprint-ghost:relaxed') }));
   ok('sprint best and ghost persisted', +ls.b > 0 && JSON.parse(ls.g).length >= 5, ls);
   await p.screenshot({ path: shot('sprint-end.png') });
   await p.click('#input'); await p.keyboard.press('Enter'); await p.waitForTimeout(1800);
@@ -161,7 +161,7 @@ const newPage = async p => { await p.click('#jOpen'); await p.click('#jNew'); if
   }
   const c1 = await txt(p, '#gameCard');
   ok('fast typist beats the 30-wpm jötunn', /yours|leans your way/.test(c1), c1.slice(0, 120));
-  const st1 = await p.evaluate(() => ({ d: localStorage.getItem('tmr-duel'), g: !!localStorage.getItem('tmr-ghost') }));
+  const st1 = await p.evaluate(() => ({ d: localStorage.getItem('tmr-duel:relaxed'), g: !!localStorage.getItem('tmr-ghost') }));
   ok('duel record and ghost persisted, giant moved up', JSON.parse(st1.d).w === 1 && JSON.parse(st1.d).giant === 34 && st1.g, st1);
   await p.screenshot({ path: shot('duel-end.png') });
   ok('urðr enabled after a duel', !(await p.isDisabled('[data-opp="ghost"]')));

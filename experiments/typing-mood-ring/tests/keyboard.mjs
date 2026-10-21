@@ -6,7 +6,7 @@
 // Run: node experiments/typing-mood-ring/tests/keyboard.mjs
 import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { chromium, checks, fresh as open, typeAt, shot, PAGE, OUT } from './harness.mjs';
+import { chromium, checks, fresh as open, typeAt, shot, PAGE, OUT, previewReplica } from './harness.mjs';
 const { ok: ok0, done } = checks('keyboard');
 const ok = (name, ...a) => ok0('emulated: ' + name, ...a);
 const browser = await chromium.launch(); const errors = [];
@@ -65,7 +65,7 @@ const stacked = (g, top, h) => g.kb && inside(g.ring, top, h) && inside(g.input,
   await p.tap('#kbSave'); await settle(p);
   g = await geo(p);
   const saved = await p.evaluate(() => JSON.parse(localStorage.getItem('tmr-journal')).entries[0].text);
-  ok('save in the writing view: saved exactly as typed, and the field keeps focus (keyboard stays up)', saved === long + ' and more still typing here' && g.active === 'input' && g.kb && (await p.textContent('#kbSave')) === 'saved ;', { len: saved.length, active: g.active });
+  ok('save in the writing view: saved exactly as typed, and the field keeps focus (keyboard stays up)', saved === long + ' and more still typing here' && g.active === 'input' && g.kb && (await p.textContent('#kbSave')) === 'saved', { len: saved.length, active: g.active });
   await vv(p, { scale: 2, width: 195, height: 188 }); // pinch zoom
   g = await geo(p);
   ok('pinch zoom is allowed and the view keeps its last layout instead of jumping', g.kb && g.wrap.h === 376 && g.wrap.t === 210, g.wrap);
@@ -235,6 +235,8 @@ for (const [vw, vh, kh] of [[844, 390, 140], [667, 330, 110]]) {
   let g = await geo(p);
   ok('upright, typing, turned sideways, done: the field is on screen', !g.kb && g.input.t >= 0 && g.input.t < g.ih - 40, g.input);
   await p.close(); }
+let sideDirect;   // the sphere when entering the writing view sideways directly (visible 844x140)
+{ const p = await open(browser, errors, SIDE); await p.tap('#input'); await vv(p, { height: 140 }); sideDirect = (await geo(p)).ring.h; await p.close(); }
 { const p = await open(browser, errors, PHONE);   // turning with the keyboard open: same sizes as entering in each orientation
   await p.tap('#input'); await vv(p, { height: 420 });
   const up = await geo(p);
@@ -244,7 +246,7 @@ for (const [vw, vh, kh] of [[844, 390, 140], [667, 330, 110]]) {
   await p.setViewportSize({ width: 390, height: 844 });
   await p.evaluate(() => { window.__vv({ width: 390, height: 420 }); window.dispatchEvent(new Event('orientationchange')); }); await settle(p, 450);
   const back = await geo(p);
-  ok('turning with the keyboard open keeps the sphere at its own size for each orientation, and the field where it was', up.ring.h === 80 && side.ring.h === 72 && back.ring.h === 80 && back.input.t === up.input.t, { up: up.ring.h, side: side.ring.h, back: back.ring.h, t: [up.input.t, back.input.t] });
+  ok('turning with the keyboard open keeps the sphere at its own size for each orientation, and the field where it was', up.ring.h === back.ring.h && side.ring.h === sideDirect && back.input.t === up.input.t, { up: up.ring.h, side: side.ring.h, sideDirect, back: back.ring.h, t: [up.input.t, back.input.t] });
   await p.close(); }
 { const p = await open(browser, errors, SIDE);   // sideways, back into the writing view mid-verse
   await p.tap('button[data-mode="faith"]'); await settle(p, 100);
@@ -289,6 +291,44 @@ for (const [vw, vh, kh] of [[844, 390, 140], [667, 330, 110]]) {
   await p.tap('button[data-mode="duel"]'); await settle(p, 200);
   const seen = await p.evaluate(() => [...window.__drawn]);
   ok('a 280 px phone, keyboard closed: the duel still labels both spheres', seen.includes('you') && seen.includes('jötunn'), seen);
+  await p.close(); }
+
+// ── a bigger sphere that still never covers the writing, the caret, the line to copy or save ─────────────────
+const clear = (g, top, h, what) => g.kb && inside(g.ring, top, h) && inside(g.input, top, h) &&
+  (g.cls.includes('kb-side') ? g.ring.r <= g.input.l + 1 : g.ring.b <= g.input.t + 1) &&   // sideways the sphere is beside the field
+  (!what || (inside(what, top, h) && (g.cls.includes('kb-side') || what.t >= g.ring.b - 8) && what.b <= g.input.t + 1));
+{ const res = {};
+  for (const [label, vp, kh, mode, minRing, minField] of [
+    ['390x844 free', { width: 390, height: 844 }, 420, 'free', 160, 5*24], ['390x844 faith', { width: 390, height: 844 }, 420, 'faith', 160, 4*24],
+    ['375x667 faith', { width: 375, height: 667 }, 300, 'faith', 88, 4*24], ['320x568 free', { width: 320, height: 568 }, 250, 'free', 80, 4*24],
+    ['320x568 faith', { width: 320, height: 568 }, 250, 'faith', 56, 3*24], ['844x390 sideways', { width: 844, height: 390 }, 140, 'free', 88, 2*24]]) {
+    const p = await open(browser, errors, { ...PHONE, viewport: vp });
+    await p.tap(`button[data-mode="${mode}"]`); await settle(p, 100); await p.tap('#input'); await settle(p);
+    await vv(p, { height: kh });
+    await typeAt(p, 'a few words to check', 10); await settle(p);
+    const g = await geo(p), field = await p.evaluate(() => input.clientHeight);
+    res[label] = { ring: g.ring.h, field, ok: clear(g, 0, kh, mode === 'faith' ? g.target : null) && g.ring.h >= minRing && field >= minField && (mode !== 'free' || inside(g.save, 0, kh)) };
+    if (label.startsWith('390x844 free') || label.startsWith('844x390')) await p.screenshot({ path: shot(`kb-big-${label.split(' ')[0]}.png`) });
+    await p.close();
+  }
+  ok('the sphere is bigger while typing (at least 160 px upright on a 390x844 phone, from 80) yet the field keeps four or five lines, and the sphere, the line to copy, the field and save all stay above the keyboard, down to 320x568 and sideways',
+     Object.values(res).every(r => r.ok), res);
+}
+// ── the same inside a stand-in for the claude.ai preview, framed under a host header ─────────────────────────
+{ const p = await open(browser, errors, PHONE, previewReplica('preview-portrait'));
+  const fr = p.frames().find(f => f !== p.mainFrame());
+  await p.frameLocator('#f').locator('#input').tap(); await settle(fr);
+  await typeAt(p, 'typing inside the preview', 10); await settle(fr);
+  const g = await geo(fr), fh = await fr.evaluate(() => innerHeight);
+  ok('preview stand-in, upright: the view keeps to the top 45% of the frame; sphere, field and save inside it; sphere bigger than before', g.kb && g.cls.includes('kb-capped') && Math.abs(g.wrap.h - Math.round(fh*0.45)) <= 1 && clear(g, 0, g.wrap.h) && inside(g.save, 0, g.wrap.h) && g.ring.h > 80, { fh, wrap: g.wrap, ring: g.ring, input: g.input });
+  await p.screenshot({ path: shot('kb-preview-portrait.png') });
+  await p.close(); }
+{ const p = await open(browser, errors, SIDE, previewReplica('preview-landscape', 48));
+  const fr = p.frames().find(f => f !== p.mainFrame());
+  await p.frameLocator('#f').locator('#input').tap(); await settle(fr);
+  const g = await geo(fr);
+  ok('preview stand-in, sideways: side by side in the top part of the frame, field at least two lines', g.kb && g.cls.includes('kb-side') && clear(g, 0, g.wrap.h) && g.ring.r <= g.input.l && g.input.h >= 2*24, { wrap: g.wrap, ring: g.ring, input: g.input });
+  await p.screenshot({ path: shot('kb-preview-landscape.png') });
   await p.close(); }
 
 // ── no writing view without a touch screen ───────────────────────────────────────────────────────────────

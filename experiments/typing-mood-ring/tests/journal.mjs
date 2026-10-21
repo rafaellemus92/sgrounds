@@ -231,7 +231,7 @@ const FAILING = () => {
   const now = await p.evaluate(ks => Object.fromEntries(ks.map(k => [k, localStorage.getItem(k)])), Object.keys(OTHER));
   ok('saves, edits, feelings, deletes and export leave game, duel, ghost and lab records byte for byte', JSON.stringify(now) === JSON.stringify(OTHER), now);
   await p.click('button[data-mode="game"]');
-  ok('…and the game still reads its best', (await p.textContent('#gBest')) === '120');
+  ok('…and the game shows that earlier best apart, not as the best for the new rules', (await p.textContent('#gameCard')).includes('earlier best, 120') && (await p.textContent('#gBest')) === '0');
   await p.click('button[data-mode="free"]');
   const q = await p.context().newPage(); await q.goto(p.url()); await q.waitForTimeout(300);
   await q.keyboard.type('from the second tab'); await save(q);
@@ -325,6 +325,34 @@ const FAILING = () => {
   await p.click('#input'); await typeAt(p, 'not saved but exported', 120);
   await panel(p); const x = await exported(p);
   ok('export of an unsaved page carries its chosen feeling and typing summary too', x.unsaved.feelings.before.labels[0] === 'hopeful' && x.unsaved.typing && x.unsaved.typing.activeSec > 0, x.unsaved);
+  await p.close(); }
+
+// ── a clear saved or unsaved status, and plain warnings about reloads and import ───────────────────────────
+{ const p = await open(browser, errors);
+  const cls = () => p.evaluate(() => document.getElementById('jStatus').className);
+  ok('an empty page shows no status', (await status(p)) === '');
+  await p.keyboard.type('status check');
+  ok('typing shows "unsaved"', (await status(p)) === 'unsaved' && (await cls(p)) === 'unsaved');
+  await save(p); await p.waitForTimeout(3700);
+  ok('after a save, and after the message fades, it shows "saved"', (await status(p)) === 'saved' && (await cls(p)) === 'saved');
+  await p.keyboard.type('!');
+  ok('an edit turns it back to "unsaved"', (await status(p)) === 'unsaved');
+  await p.keyboard.press('Backspace');
+  ok('…and undoing the edit by hand shows "saved" again', (await status(p)) === 'saved');
+  await panel(p);
+  const note = await p.textContent('#journal .small');
+  ok('the panel says unsaved text is lost on reload and that an export cannot be imported yet', note.includes('lost if the page reloads') && note.includes('cannot import it back yet'), note);
+  await p.click('button[data-mode="about"]');
+  const about = await p.textContent('#panelAbout');
+  ok('the about tab says the same, and that scoring never touches the journal text', about.includes('Unsaved text is lost if the page reloads') && about.includes('cannot be imported back yet') && about.includes('never touches it'));
+  await p.close(); }
+{ const p = await open(browser, errors, { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await p.tap('#input'); await p.keyboard.type('in the writing view');
+  const kb = () => p.evaluate(() => ({ text: kbSave.textContent, gold: kbSave.classList.contains('gold'), label: kbSave.getAttribute('aria-label') }));
+  const a = await kb(); await p.tap('#kbSave'); await p.waitForTimeout(60); const b = await kb();
+  await p.keyboard.type('.'); const c = await kb();
+  ok('in the writing view, save says when the page has unsaved changes and when it is saved, and keeps the keyboard up',
+     a.text === 'save' && a.gold && a.label.includes('unsaved') && b.text === 'saved' && !b.gold && c.text === 'save' && c.gold && (await p.evaluate(() => document.activeElement.id)) === 'input', { a, b, c });
   await p.close(); }
 
 // ── Rhythm Lab: the known k bias is shown beside every fitted k, with no correction applied ────────────────

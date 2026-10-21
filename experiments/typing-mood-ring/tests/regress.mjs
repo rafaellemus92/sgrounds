@@ -10,7 +10,7 @@ const fresh = (opts = {}) => open(browser, errors, opts);
   await p.click('button[data-mode="duel"]'); await p.click('#dStart'); await p.waitForTimeout(100);
   await hide(p, true); await p.waitForTimeout(2500); await hide(p, false); await p.waitForTimeout(100);
   const hT = +(await txt(p, '#hT')); ok('duel: hide during count-in keeps the clock ≤ 45', hT <= 45, hT);
-  await p.click('button[data-mode="sprint"]'); await p.evaluate(() => localStorage.setItem('tmr-sprint-ghost', '[0,1,2,3,4,5,6]'));
+  await p.click('button[data-mode="sprint"]'); await p.evaluate(() => localStorage.setItem('tmr-sprint-ghost:relaxed', '[0,1,2,3,4,5,6]'));
   await p.reload(); await p.waitForTimeout(200); await p.click('button[data-mode="sprint"]');
   await p.click('#pStart'); await p.waitForTimeout(100); await hide(p, true); await p.waitForTimeout(2200); await hide(p, false);
   let nan = false; for (let i = 0; i < 10; i++) { if ((await txt(p, '#moodSub')).includes('NaN')) nan = true; await p.waitForTimeout(100); }

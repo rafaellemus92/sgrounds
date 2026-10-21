@@ -45,6 +45,52 @@ Opened as a plain file it downloads; published as a claude.ai artifact it is
 offered through the viewer's `downloads` capability, and without that the
 image is shown on the page to save by hand.
 
+## Scoring, capitals and quotes
+
+Scores forgive capitals by default (**relaxed**): a capital letter typed as a
+small one, or the other way round, costs no accuracy, streak or points.
+**Strict** is a setting (the **Aa** button in each bar, or the **?** tab), off
+by default, and makes capitals count. In both, straight and curly
+apostrophes and quotation marks (`'` `’` `‘` `ʼ`, `"` `“` `”` `„`) are the same
+character, so iOS smart punctuation never costs anything. The comparison is
+only a comparison: the text in the field, and anything the journal saves, is
+never rewritten.
+
+Each setting keeps its own records (`tmr-best:relaxed`, `tmr-best:strict`
+and so on), and result cards and intro cards say which one a score used.
+Records from before the setting existed stay under their old keys, untouched
+and never compared with the new ones; the intro card shows them as earlier
+records with the rule they were scored under (game and duel counted
+capitals, sprint ignored them).
+
+Accuracy judges each position of the line once for each different character
+it holds, so an input event that repeats text already there never counts
+twice. While an input method is composing (Android keyboards compose every
+word; Japanese and Chinese input compose too), nothing is judged until the
+composition is committed, so its own rewrites cost nothing. A word that
+completes mid-composition counts once, and if the keyboard then commits it
+again into the fresh field it is dropped rather than typed into the next
+word. Autocorrect replacing a word is refused while copying a line; if it
+lands anyway, only the letters it changed are judged again. In the journal
+nothing is refused.
+
+## Background
+
+In the typing and journal tabs the page takes a dim, low-chroma colour
+opposite the sphere's hue on the colour wheel (about 180° away) as a radial
+field centred on the sphere, at a fixed OKLCH lightness (0.205 to 0.285) and
+chroma, so the brightness never changes and the sphere stays the brightest
+thing on screen. The hue eases toward its target over about three seconds.
+Text sits on a calm dark surface (`--surface`) and was checked at 4.5:1 or
+better against what is actually behind it.
+
+Typing sends slow ripples out from the sphere. Quick typing is pooled into at
+most one ripple every 0.8 s; each fades in over 0.8 s and out over seven, at
+no more than 7% opacity, so there are no flashes. With Reduce Motion there
+are no ripples; the **still** setting (in **?**) removes them and fixes the
+colour. The lab and the **?** tab keep the old black page, and the lab's
+display is unchanged.
+
 The page also follows the claude.ai artifact contract (safe-area gutters,
 a deliberate dark scheme, no external requests beyond Google Fonts), so it
 can be published as is after removing the document wrapper tags.
@@ -139,7 +185,11 @@ other tabs, but an unsaved page is not stored anywhere and is gone on reload.
 
 - **Exactly as typed.** The text is saved character for character: typos,
   double spaces, tabs, blank lines and trailing spaces included. Nothing is
-  corrected, and nothing has to be corrected to carry on.
+  corrected, and nothing has to be corrected to carry on. The forgiving comparison
+  used for scores never touches it.
+- **Saved or unsaved.** Next to **save** the page shows **● unsaved** while
+  the field holds changes and **✓ saved** once they are kept; in the phone
+  writing view the save button itself reads **save** or **saved**.
 - **entries** opens a dated list, newest first: **open** puts an entry back
   in the field to edit (saving updates it in place, and the page says
   "editing" with its date), **delete** asks before it deletes, **new entry**
@@ -188,12 +238,17 @@ press start. The page does not scroll at load.
 **The writing view.** On a touch phone, in either orientation, touching the
 field turns the page into one fixed view the size of the visual viewport, the
 part actually on screen above the keyboard and between the browser bars. It
-holds a small sphere, the verse or word to type, and the field, which
-scrolls on its own; **done** closes the keyboard and **save** (free tab)
-saves without closing it. The view follows the visual viewport's size and
+holds the sphere, the verse or word to type, and the field, which scrolls
+on its own; **done** closes the keyboard and **save** (free tab) saves
+without closing it, and reads **save** or **saved** for the page's state.
+The sphere takes the height left once the field has five lines (journal) or
+four (with a line to copy) and the line has its own: 184 px on a
+390×844 phone with the keyboard leaving about 420 px, down to 56–96 px on
+small phones; sideways it fills the left column. The view follows the visual viewport's size and
 offset on every `resize` and `scroll` (iOS pans it to reveal the field), and
-re-reads after a turn. The sphere comes in a few fixed sizes, so browser bars
-coming and going do not move the field. When the visible area is wide and
+re-reads after a turn. The sphere is sized from a steady estimate of the
+space a keyboard leaves and moves in 8 px steps, so browser bars coming and
+going do not move the field. When the visible area is wide and
 short (a phone held sideways), the sphere moves to the left of the field.
 Zoom is never disabled: while pinch-zoomed the view keeps its last layout,
 and touching the field while zoomed in leaves the page as it is. Readings no
@@ -209,9 +264,21 @@ least likely to reach, with the field directly under the sphere. Those shares
 are guesses from typical keyboard heights; if the host does shrink the frame,
 the view uses all of it.
 
+**Keyboard-height assumptions**, all estimates, none measured on a device:
+
+- upright, a keyboard leaves at least half of the keyboard-free height (on a
+  6.1-inch iPhone in Safari it leaves about 55%); the sphere is sized for that,
+  so a smaller share shrinks it by a step when the keyboard arrives;
+- sideways, at least 36%;
+- in the claude.ai preview, where the frame cannot see the keyboard, the view
+  keeps to the top 45% of the frame upright and 26% sideways.
+
 **What is tested, and what is not.** `tests/keyboard.mjs` is emulation:
 desktop Chromium with phone viewports and a stand-in `visualViewport` moved by
-hand. Chromium has no iOS keyboard, no reveal pan and no safe-area insets.
+hand, standalone and inside a stand-in for the claude.ai preview (the
+skeleton claude.ai serves for the page, framed under a header). Chromium has
+no iOS keyboard, no reveal pan and no safe-area insets, and the stand-in is
+not the real host page.
 Before calling the layout done, check on a real iPhone (name the iOS version
 and model), in Safari and in the claude.ai preview:
 
@@ -236,11 +303,12 @@ defaults and skips writes; the page still plays.
 
 | key | holds | on load |
 |-----|-------|---------|
-| `tmr-best` | game best score | must be a finite, nonnegative number (fractions kept); anything else, such as `1e999` (Infinity), a negative, a string or unparsable text, is removed and read as 0 |
-| `tmr-sprint-best` | sprint best score | same rule as `tmr-best` |
-| `tmr-sprint-far` | most sprint words | same rule as `tmr-best` |
-| `tmr-sprint-ghost` | words per second of the best sprint | an array of at most 1000 integers in 0–100000, else ignored; the next best run replaces it |
-| `tmr-duel` | `{w, l, d, giant}` | each field is used only if it is a finite number; `giant` is rounded and clamped to 15–160 wpm. `w`, `l` and `d` are not otherwise range-checked |
+| `tmr-best:relaxed`, `tmr-best:strict` | game best score for each capitals setting | must be a finite, nonnegative number (fractions kept); anything else, such as `1e999` (Infinity), a negative, a string or unparsable text, is removed and read as 0 |
+| `tmr-sprint-best:…`, `tmr-sprint-far:…` | sprint best score and most words, per setting | same rule as `tmr-best:…` |
+| `tmr-sprint-ghost:…` | words per second of the best sprint, per setting | an array of at most 1000 integers in 0–100000, else ignored; the next best run replaces it |
+| `tmr-duel:…` | `{w, l, d, giant}`, per setting | each field is used only if it is a finite number; `giant` is rounded and clamped to 15–160 wpm. `w`, `l` and `d` are not otherwise range-checked |
+| `tmr-best`, `tmr-sprint-best`, `tmr-sprint-far`, `tmr-sprint-ghost`, `tmr-duel` | records from before capitals were a setting | read only and never written or deleted; shown as earlier records when they hold a sensible value |
+| `tmr-caps`, `tmr-bg` | `"strict"` or `"relaxed"`; `"still"` or `"ripples"` | written only when you change the setting |
 | `tmr-ghost` | `{v: 1, d: [ms offsets], acc, at}`, the last duel | used only if `v` is 1 and `d` holds 20–6000 non-decreasing integers up to 600000; `acc` outside 0–1 becomes 0.95; otherwise ignored |
 | `tmr-lab` | Rhythm Lab: `{v: 1, consent: {at}, sessions: [...]}` with cue and tap times per trial | written only after consent; a store of the wrong shape is removed; sessions whose trials are malformed are dropped; at most 20 sessions; reset in the lab deletes the key |
 | `tmr-journal` | the journal: `{v: 1, entries: [{id, createdAt, updatedAt, text, feelings: {before, after}, typing}], labels: [your words]}`; a feeling is `{labels, intensity 1–5 or null, skipped}` | written only by save, a feeling for a saved entry, or delete; every change starts from what is stored now, so two tabs do not overwrite each other; entries of the wrong shape are kept untouched and not shown; an unreadable journal is copied aside first (below) |
@@ -272,8 +340,10 @@ or one file at a time:
 | `lab-core.mjs` | Rhythm Lab analysis in Node, no browser: the integrator against the analytic slip period and locked offset, the regimes, synthetic locked and slipping trials against ground truth, missed, extra and duplicate taps, jitter, slow slips that nearest-beat scoring would hide, parameter recovery, the held-out comparison on phase, linear and no-coupling data, and the coupling bound |
 | `lab.mjs` | Rhythm Lab in Chromium: consent first, baseline, duplicate and repeat taps, one clock for clicks and taps (taps placed 30 ms after each mapped click read back at +30 ms), interrupted trials flagged and re-queued, a full session with the redo rule, export, reset, simulation regimes, a clock step flagged as drift, and touch taps on a phone viewport |
 | `interaction.mjs` | 24: count-in, background and resume (clocks, no opponent burst), caret locking, Loki's HUD and rays frame by frame, phone portrait layout (the caret's line clear of the pinned sphere), landscape usability and result cards, focus in a short desktop window |
-| `keyboard.mjs` | 41, all emulated: the writing view with a stand-in visual viewport, portrait and landscape keyboards, the reveal pan, an 80-line entry scrolling inside the field with the page still, a caret away from the end or inside a wrapped word kept in view, no movement while typing or when the keyboard arrives or grows (upright and sideways), save keeping focus, pinch zoom, impossible readings, done restoring the page, every mode, turning with the keyboard open (sizes kept) and then closing it, opening an entry sideways, the verse window after done and on coming back sideways, the iframe fallback and a host that shrinks the frame, duel labels on a narrow phone, no writing view without touch |
-| `journal.mjs` | 85: text saved exactly, nothing stored before save, drafts across tabs, Ctrl+S, the dated list, open and edit in place, confirmed delete and new entry, clearing the field or typing over it starting a new page (and undo returning to the entry), unsaved words never discarded by open or delete, feelings before and after with skip, own words, intensity and clearing, more than twelve words, the typing summary kept apart, damaged and missing feelings, injected colours, descriptive patterns with counts (including the sync count), export with the unsaved page and its feelings, storage full, dropped writes and blocked storage, unreadable journals copied aside, other records untouched, two tabs saving entries and feelings, the Rhythm Lab's k note |
+| `keyboard.mjs` | 44, all emulated: the bigger sphere with the field, the line to copy and save clear of the keyboard from 390×844 down to 320×568 and sideways, the same inside a stand-in for the claude.ai preview, the writing view with a stand-in visual viewport, portrait and landscape keyboards, the reveal pan, an 80-line entry scrolling inside the field with the page still, a caret away from the end or inside a wrapped word kept in view, no movement while typing or when the keyboard arrives or grows (upright and sideways), save keeping focus, pinch zoom, impossible readings, done restoring the page, every mode, turning with the keyboard open (sizes kept) and then closing it, opening an entry sideways, the verse window after done and on coming back sideways, the iframe fallback and a host that shrinks the frame, duel labels on a narrow phone, no writing view without touch |
+| `scoring.mjs` | 34: relaxed capitals by default in faith, game and sprint, strict as a remembered setting, curly and straight quotes alike in both, separate bests per setting, the setting named on cards and locked during runs, earlier records shown apart and left untouched (damaged ones neither shown nor deleted), composition rewrites and commits counted once (Chromium's IME emulation), a sprint word completed mid-composition not spilling into the next, autocorrect refused or re-judged only where it changed, and journal text kept exactly |
+| `background.mjs` | 16: the colour opposite the sphere at a steady brightness and not black, ripples pooled to one per 0.8 s with no flashes under rapid typing, Reduce Motion and the still setting, the lab and **?** tabs black, text contrast of 4.5:1 or better against the pixels behind it on desktop and phone, the pinned sphere's backdrop |
+| `journal.mjs` | 93: the saved or unsaved status in the row and on the writing view's save, the warnings that unsaved text is lost on reload and exports cannot be imported, text saved exactly, nothing stored before save, drafts across tabs, Ctrl+S, the dated list, open and edit in place, confirmed delete and new entry, clearing the field or typing over it starting a new page (and undo returning to the entry), unsaved words never discarded by open or delete, feelings before and after with skip, own words, intensity and clearing, more than twelve words, the typing summary kept apart, damaged and missing feelings, injected colours, descriptive patterns with counts (including the sync count), export with the unsaved page and its feelings, storage full, dropped writes and blocked storage, unreadable journals copied aside, other records untouched, two tabs saving entries and feelings, the Rhythm Lab's k note |
 
 Phones are emulated (desktop Chromium with a phone viewport, touch and
 device scale), not real devices. A background tab is emulated too: the
