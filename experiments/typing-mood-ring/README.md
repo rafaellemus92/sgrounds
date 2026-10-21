@@ -28,6 +28,12 @@ watch it, and watching it is the feedback loop that makes you faster.
   rune. Your best run is replayed as a ghost (words per second).
 - **duel**: Bifrost. You against a jötunn bot or Urðr, the keystroke
   timing of your own last duel. See below.
+- **lab**: the Rhythm Lab, an exploratory tapping prototype that asks whether a
+  phase-locking model describes how a person taps along with a steady beat. Audio
+  only, with a static tap target. See [RHYTHM_LAB.md](RHYTHM_LAB.md) for the
+  protocol, the single clock, the analysis rules, the held-out model test and
+  what would count against the model. It makes no claim about mood, empathy,
+  intelligence, health or typing.
 - **?**: the colour math, the sync math, the duel physics, and the wager.
 
 Enter starts or restarts game, sprint and duel. **keep this aura ↓**
@@ -150,6 +156,7 @@ defaults and skips writes; the page still plays.
 | `tmr-sprint-ghost` | words per second of the best sprint | an array of at most 1000 integers in 0–100000, else ignored; the next best run replaces it |
 | `tmr-duel` | `{w, l, d, giant}` | each field is used only if it is a finite number; `giant` is rounded and clamped to 15–160 wpm. `w`, `l` and `d` are not otherwise range-checked |
 | `tmr-ghost` | `{v: 1, d: [ms offsets], acc, at}`, the last duel | used only if `v` is 1 and `d` holds 20–6000 non-decreasing integers up to 600000; `acc` outside 0–1 becomes 0.95; otherwise ignored |
+| `tmr-lab` | Rhythm Lab: `{v: 1, consent: {at}, sessions: [...]}` with cue and tap times per trial | written only after consent; a store of the wrong shape is removed; sessions whose trials are malformed are dropped; at most 20 sessions; reset in the lab deletes the key |
 
 A record is replaced only by a greater value, so the three best-score keys
 are checked strictly: a corrupt Infinity would otherwise outrank every
@@ -174,6 +181,8 @@ or one file at a time:
 | `suite.mjs` | 42: sync and rests, auto-repeat, faith navigation and carry-over, smart quotes, game, sprint, duel, phone layout, reduced motion, snapshots |
 | `regress.mjs` | 14: the review of the sprint and duel tabs (hidden count-ins and the run clock after them, duel reset, desktop and phone focus, sprint whitespace) |
 | `records.mjs` | 14: corrupt saved records recover (twelve corrupt forms), valid ones survive weaker runs that score, new bests save, the sprint ghost is replaced only by a better run, all of it across reloads, blocked storage |
+| `lab-core.mjs` | Rhythm Lab analysis in Node, no browser: the integrator against the analytic slip period and locked offset, the regimes, synthetic locked and slipping trials against ground truth, missed, extra and duplicate taps, jitter, slow slips that nearest-beat scoring would hide, parameter recovery, the held-out comparison on phase, linear and no-coupling data, and the coupling bound |
+| `lab.mjs` | Rhythm Lab in Chromium: consent first, baseline, duplicate and repeat taps, one clock for clicks and taps (taps placed 30 ms after each mapped click read back at +30 ms), interrupted trials flagged and re-queued, a full session with the redo rule, export, reset, simulation regimes, a clock step flagged as drift, and touch taps on a phone viewport |
 | `interaction.mjs` | 24: count-in, background and resume (clocks, no opponent burst), caret locking, Loki's HUD and rays frame by frame, phone portrait layout (the caret's line clear of the pinned sphere), landscape usability and result cards, focus in a short desktop window |
 
 Phones are emulated (desktop Chromium with a phone viewport, touch and
