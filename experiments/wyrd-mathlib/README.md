@@ -107,7 +107,9 @@ cycles 1, 3, 71 and 213 and on no other (`lock_periods'`), and
 | `one_key_iff`, `two_keys` | A gap has exactly one prime key iff it is a prime power; 213 has two |
 | `lucas_71`, `orderOf_seven` | **Lucas's certificate**: `7⁷⁰ = 1` and `7³⁵, 7¹⁴, 7¹⁰ ≠ 1` in `ZMod 71` prove `Nat.Prime 71`, and 7 generates |
 | `pow_lock_71`, `pow_lock_37` | Multiplicatively the key refuses: `a²⁵⁰ = a³⁷` in `ZMod 71` only for `a ∈ {0, 1}`; in `ZMod 37` for nonzero `a` iff `a³ = 1` |
-| `strobe_iff` | A sampler at rate `T` gets identical samples from the 250 Hz and 37 Hz tones iff `T ∣ 213` |
+| `strobe_iff`, `strobe_iff_phase` | **Sampling the complex tone** `exp (2πi f t)` at the times `n / T`, `n` any integer, both tones starting at phase 0 (or at any common phase): the 250 Hz and 37 Hz samples agree for every `n` iff `T ∣ 213`, for every rate `T ≥ 1` |
+| `cos_strobe_iff` | **Sampling the real cosine** `cos (2π f t)` at the same times: the samples agree iff `T ∣ 213` or `T ∣ 287 = 250 + 37 = 7 · 41`. The real cosine has the mirror keys 7 and 41, which fold 250 Hz onto −37 Hz; the complex tone does not |
+| `sin_strobe_iff` | **Sampling the real sine**: the samples agree iff `T ∣ 213` or `T = 2`, where both sines are sampled at their zeros |
 | `osc_213_eq` | The 213-oscillator is the product of the 3- and 71-oscillators: `1/213 = 2/3 − 47/71` |
 | `rotation_eq`, `rotation_period` | On `ℝ/ℤ`, rotating by `250/71` and by `37/71` is one map, with orbits of exactly 71 points |
 | `exists_prime_in_phase` | **Dirichlet**: for every `n` there is a prime `p > n` with `(p : ZMod 213) = 37` |

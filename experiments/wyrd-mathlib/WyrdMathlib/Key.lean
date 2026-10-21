@@ -30,10 +30,16 @@ else the key 71 does.
   `a ^ 250 = a ^ 37` only for `a = 0` and `a = 1`, because `gcd 213 70 = 1`;
   in `ZMod 37`, where `gcd 213 36 = 3`, it holds exactly for the cube roots of
   1 (`pow_lock_37`, `cube_roots_37`).
-* **Sampling** (`strobe_iff`): a sampler at rate `T` receives identical sample
-  sequences from the 250 Hz and the 37 Hz tone iff `T ∣ 213`; and the
-  213-oscillator is the product of the 3- and 71-oscillators (`osc_213_eq`),
-  because `1/213 = 2/3 − 47/71`.
+* **Sampling** (`strobe_iff`, `strobe_iff_phase`): sampling the complex tone
+  `exp (2πi f t)` at the times `n / T` for every integer `n`, both tones at
+  phase 0 at time 0 (or at any common phase), the 250 Hz and the 37 Hz samples
+  agree iff `T ∣ 213`. The real cosine is different (`cos_strobe_iff`): its
+  samples agree iff `T ∣ 213` or `T ∣ 287 = 250 + 37 = 7 · 41`, because a
+  cosine is two counter-rotating phasors and a rate dividing 287 folds 250 Hz
+  onto −37 Hz; the real sine (`sin_strobe_iff`) agrees iff `T ∣ 213` or
+  `T = 2`, where both are sampled at their zeros. The 213-oscillator is the
+  product of the 3- and 71-oscillators (`osc_213_eq`), because
+  `1/213 = 2/3 − 47/71`.
 * **Rotations** (`rotation_eq`, `rotation_period`): on the circle `ℝ/ℤ`,
   rotating by `250/71` and by `37/71` is the same map, and every orbit has
   exactly 71 points.
@@ -165,6 +171,138 @@ theorem strobe_iff {T : ℕ} (hT : T ≠ 0) :
     refine (osc_eq_iff hT _ _).mpr ?_
     rw [show (250 * n - 37 * n : ℤ) = 213 * n by ring]
     exact Dvd.dvd.mul_right h n
+
+/-- **With a common initial phase `φ`, the same.** Starting both tones at phase `φ`
+multiplies every sample by the same `exp (φ i)`, so nothing changes. -/
+theorem strobe_iff_phase {T : ℕ} (hT : T ≠ 0) (φ : ℝ) :
+    (∀ n : ℤ, osc T (250 * n) * exp (φ * I) = osc T (37 * n) * exp (φ * I)) ↔
+      (T : ℤ) ∣ 213 := by
+  simp only [mul_left_inj' (Complex.exp_ne_zero _)]
+  exact strobe_iff hT
+
+/-- **Real cosines at zero phase: the rates are those dividing 213 or 287.** A real cosine
+is the sum of two counter-rotating phasors, so a rate `T` dividing `287 = 250 + 37 = 7 · 41`
+folds the 250 Hz cosine onto the mirror image of the 37 Hz one. The mirror keys 7 and 41
+belong to the real cosine only; the complex tone of `strobe_iff` does not have them. -/
+theorem cos_strobe_iff {T : ℕ} (hT : T ≠ 0) :
+    (∀ n : ℤ, Real.cos (2 * π * (250 * n) / T) = Real.cos (2 * π * (37 * n) / T)) ↔
+      (T : ℤ) ∣ 213 ∨ (T : ℤ) ∣ 287 := by
+  have hT' : (T : ℝ) ≠ 0 := by exact_mod_cast hT
+  constructor
+  · intro h
+    obtain ⟨k, hk | hk⟩ := Real.cos_eq_cos_iff.mp (h 1)
+    · left
+      refine ⟨-k, ?_⟩
+      have h3 : (37 : ℝ) - (k * T + 250) = 0 := by
+        field_simp at hk
+        linear_combination hk
+      have h4 : ((213 : ℤ) : ℝ) = ((T * (-k) : ℤ) : ℝ) := by
+        push_cast
+        linarith
+      exact_mod_cast h4
+    · right
+      refine ⟨k, ?_⟩
+      have h3 : (37 : ℝ) - (k * T - 250) = 0 := by
+        field_simp at hk
+        linear_combination hk
+      have h4 : ((287 : ℤ) : ℝ) = ((T * k : ℤ) : ℝ) := by
+        push_cast
+        linarith
+      exact_mod_cast h4
+  · rintro (⟨c, hc⟩ | ⟨c, hc⟩) n
+    · have hc' : (213 : ℝ) = T * c := by exact_mod_cast hc
+      have e : 2 * π * (250 * n) / T = 2 * π * (37 * n) / T + ((c * n : ℤ) : ℝ) * (2 * π) := by
+        push_cast
+        field_simp
+        linear_combination n * hc'
+      rw [e, Real.cos_add_int_mul_two_pi]
+    · have hc' : (287 : ℝ) = T * c := by exact_mod_cast hc
+      have e : 2 * π * (250 * n) / T = -(2 * π * (37 * n) / T) + ((c * n : ℤ) : ℝ) * (2 * π) := by
+        push_cast
+        field_simp
+        linear_combination n * hc'
+      rw [e, Real.cos_add_int_mul_two_pi, Real.cos_neg]
+
+/-- **Real sines: the rates are those dividing 213, and 2.** At two samples per second
+both sines are sampled at their zeros. There is no mirror key here: `sin x = sin y` needs
+`x + y` to be an odd multiple of `π`, which `2π · 287 n / T` cannot be for every `n`. -/
+theorem sin_strobe_iff {T : ℕ} (hT : T ≠ 0) :
+    (∀ n : ℤ, Real.sin (2 * π * (250 * n) / T) = Real.sin (2 * π * (37 * n) / T)) ↔
+      (T : ℤ) ∣ 213 ∨ T = 2 := by
+  have hT' : (T : ℝ) ≠ 0 := by exact_mod_cast hT
+  have hTz : (T : ℤ) ≠ 0 := by exact_mod_cast hT
+  constructor
+  · intro h
+    obtain ⟨k, hk | hk⟩ := Real.sin_eq_sin_iff.mp (h 1)
+    · left
+      refine ⟨-k, ?_⟩
+      have h3 : (37 : ℝ) - (k * T + 250) = 0 := by
+        field_simp at hk
+        linear_combination hk
+      have h4 : ((213 : ℤ) : ℝ) = ((T * (-k) : ℤ) : ℝ) := by
+        push_cast
+        linarith
+      exact_mod_cast h4
+    · -- the first sample: `574 = (2k + 1) T`
+      have e1 : (574 : ℤ) = (2 * k + 1) * T := by
+        have h3 : (574 : ℝ) - (2 * k + 1) * T = 0 := by
+          field_simp at hk
+          linear_combination hk
+        have h4 : ((574 : ℤ) : ℝ) = (((2 * k + 1) * T : ℤ) : ℝ) := by
+          push_cast
+          linarith
+        exact_mod_cast h4
+      obtain ⟨k', hk' | hk'⟩ := Real.sin_eq_sin_iff.mp (h 2)
+      · -- the second sample on the first branch: `426 = −k' T`, so `T ∣ gcd 574 426 = 2`
+        have e2 : (426 : ℤ) = T * (-k') := by
+          have h3 : (74 : ℝ) - (k' * T + 500) = 0 := by
+            field_simp at hk'
+            linear_combination hk'
+          have h4 : ((426 : ℤ) : ℝ) = ((T * (-k') : ℤ) : ℝ) := by
+            push_cast
+            linarith
+          exact_mod_cast h4
+        have d1 : (T : ℤ) ∣ 574 := ⟨2 * k + 1, by rw [e1]; ring⟩
+        have d2 : (T : ℤ) ∣ 426 := ⟨-k', e2⟩
+        have d3 : (T : ℤ) ∣ 2 := by
+          have hg := Int.dvd_gcd d1 d2
+          rw [show Int.gcd 574 426 = 2 by rfl] at hg
+          exact_mod_cast hg
+        have hle := Int.le_of_dvd (by norm_num) d3
+        have hT12 : T = 1 ∨ T = 2 := by omega
+        rcases hT12 with rfl | rfl
+        · left
+          norm_num
+        · right
+          rfl
+      · -- the second sample on the mirror branch: `1148 = (2k' + 1) T`, which with
+        -- `574 = (2k + 1) T` makes an odd number even
+        exfalso
+        have e2 : (1148 : ℤ) = (2 * k' + 1) * T := by
+          have h3 : (1148 : ℝ) - (2 * k' + 1) * T = 0 := by
+            field_simp at hk'
+            linear_combination hk'
+          have h4 : ((1148 : ℤ) : ℝ) = (((2 * k' + 1) * T : ℤ) : ℝ) := by
+            push_cast
+            linarith
+          exact_mod_cast h4
+        have h5 : ((2 * k' + 1) : ℤ) * T = (2 * (2 * k + 1)) * T := by linarith
+        have h6 := mul_right_cancel₀ hTz h5
+        omega
+  · rintro (⟨c, hc⟩ | rfl) n
+    · have hc' : (213 : ℝ) = T * c := by exact_mod_cast hc
+      have e : 2 * π * (250 * n) / T = 2 * π * (37 * n) / T + ((c * n : ℤ) : ℝ) * (2 * π) := by
+        push_cast
+        field_simp
+        linear_combination n * hc'
+      rw [e, Real.sin_add_int_mul_two_pi]
+    · have e1 : 2 * π * (250 * (n : ℝ)) / ((2 : ℕ) : ℝ) = ((250 * n : ℤ) : ℝ) * π := by
+        push_cast
+        ring
+      have e2 : 2 * π * (37 * (n : ℝ)) / ((2 : ℕ) : ℝ) = ((37 * n : ℤ) : ℝ) * π := by
+        push_cast
+        ring
+      rw [e1, e2, Real.sin_int_mul_pi, Real.sin_int_mul_pi]
 
 /-- **The 213-oscillator is the product of the 3- and the 71-oscillator**, because
 `1 / 213 = 2 / 3 − 47 / 71` (from `2 · 71 − 47 · 3 = 1`). -/

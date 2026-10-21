@@ -139,8 +139,25 @@ def section_oscillators():
     alias = max(abs(math.sin(2 * math.pi * A * k / 71) - math.sin(2 * math.pi * B * k / 71))
                 for k in range(71))
     print(f"   aliasing: 250 Hz sampled at 71 Hz vs 37 Hz, largest sample gap: {alias:.1e}")
+    # Which sample rates T cannot tell the two tones apart at all? The sample
+    # sequences repeat every T samples, so k < T covers every integer k.
+    def gap_of(f, T):
+        return max(abs(f(A * k / T) - f(B * k / T)) for k in range(T))
+    phasor = lambda x: cmath.exp(2j * math.pi * x)
+    cosine = lambda x: math.cos(2 * math.pi * x)
+    sine = lambda x: math.sin(2 * math.pi * x)
+    rates = {name: [T for T in range(1, 300) if gap_of(f, T) < 1e-9]
+             for name, f in (("complex phasor", phasor), ("cosine", cosine), ("sine", sine))}
+    print("   rates T < 300 whose samples of the 250 Hz and 37 Hz tones agree for every k:")
+    for name, Ts in rates.items():
+        print(f"      {name:<15}{Ts}")
+    print("   the real cosine folds 250 onto -37 at the rates dividing 287 = 250 + 37 = 7 * 41,")
+    print("   and the sine is sampled at its zeros at T = 2; the complex phasor has no such extras")
     check(gap < 1e-12 and strobe and alias < 1e-9, "oscillators")
     check(not locked(70, A, B), "the 70-cycle does not lock")
+    check(rates["complex phasor"] == [1, 3, 71, 213], "complex sampling rates")
+    check(rates["cosine"] == [1, 3, 7, 41, 71, 213, 287], "cosine sampling rates")
+    check(rates["sine"] == [1, 2, 3, 71, 213], "sine sampling rates")
     print()
 
 

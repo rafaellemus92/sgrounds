@@ -73,6 +73,9 @@ import WyrdMathlib
 #print axioms Wyrd.Lock.pow_lock_37
 #print axioms Wyrd.Lock.cube_roots_37
 #print axioms Wyrd.Lock.strobe_iff
+#print axioms Wyrd.Lock.strobe_iff_phase
+#print axioms Wyrd.Lock.cos_strobe_iff
+#print axioms Wyrd.Lock.sin_strobe_iff
 #print axioms Wyrd.Lock.osc_213_eq
 #print axioms Wyrd.Lock.rotation_eq
 #print axioms Wyrd.Lock.rotation_period

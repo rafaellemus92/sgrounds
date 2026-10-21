@@ -59,7 +59,9 @@ The script prints four sections: the lock (the periods are the divisors of
 prime); oscillators (a 71-cycle drawn in ASCII, the sine wave, a stroboscope
 flashing 71 times per second that sees a wheel turning 250 times per second as
 one turning 37 times per second, and a 250 Hz tone that sampled at 71 Hz gives
-the samples of a 37 Hz tone); the Chinese
+the samples of a 37 Hz tone, with the rates that do this listed for the complex
+phasor, the cosine and the sine: the cosine also folds at the rates dividing
+`287 = 250 + 37 = 7 · 41`, and the sine also at 2 samples per second); the Chinese
 remainder theorem (locked on 213 iff locked on 3 and on 71, every pair
 checked); Riemann's oscillators, where the phases `γ · log x` of the first
 100 zeta zeros lock near π at prime powers, 3, 37 and 71 among them, and not at
