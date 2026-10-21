@@ -10,7 +10,9 @@ watch it, and watching it is the feedback loop that makes you faster.
 
 ## Tabs
 
-- **free**: type anything and watch the ring.
+- **free**: type anything and watch the ring. Saving is optional: **save**
+  keeps the page in a private journal in this browser, and **entries** holds
+  everything else (see [Journal](#journal)).
 - **faith**: type scripture. Bible (King James Version, 1611; public
   domain everywhere except the UK, where it is under Crown letters
   patent) and Qur'an (Pickthall, *The Meaning of the Glorious Koran*,
@@ -36,7 +38,8 @@ watch it, and watching it is the feedback loop that makes you faster.
   intelligence, health or typing.
 - **?**: the colour math, the sync math, the duel physics, and the wager.
 
-Enter starts or restarts game, sprint and duel. **keep this aura ↓**
+Enter starts or restarts game, sprint and duel. **keep this aura ↓** (in the
+free tab it sits under **entries**)
 re-renders the canvas at 720 px into a PNG with the mood word and the numbers.
 Opened as a plain file it downloads; published as a claude.ai artifact it is
 offered through the viewer's `downloads` capability, and without that the
@@ -127,20 +130,97 @@ beyond that the phases slip, which is its total internal reflection.
 Snell's law is proved in Lean as `snell` in
 [`../wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean`](../wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean).
 
+## Journal
+
+The free tab can keep what you write, if you want it to. Nothing is stored
+until you press **save** (or Ctrl/⌘+S); typing, switching tabs and choosing a
+feeling write nothing. The page you are writing waits for you while you visit
+other tabs, but an unsaved page is not stored anywhere and is gone on reload.
+
+- **Exactly as typed.** The text is saved character for character: typos,
+  double spaces, tabs, blank lines and trailing spaces included. Nothing is
+  corrected, and nothing has to be corrected to carry on.
+- **entries** opens a dated list, newest first: **open** puts an entry back
+  in the field to edit (saving updates it in place), **delete** asks before
+  it deletes, **new entry** asks before it discards unsaved text, and
+  **export** saves everything as a JSON file, with an unsaved page alongside.
+- **Feelings are yours to name, and optional.** On an empty page a quiet
+  line offers to name how you feel before writing; after a save it offers
+  the same for after. Choose any of twelve plain words, add your own (they
+  are remembered, and × forgets one), rate how strong it is from 1 to 5 or
+  not at all, or skip. Skips are recorded as skips.
+- **Typing is stored apart from feelings.** Each entry keeps a summary of
+  the typing that wrote it: active seconds, keys, mean keys/s, mean sync and
+  the mean colour of the sphere (in OKLab). The colours reflect typing
+  mechanics, speed, rhythm and accuracy, and nothing else.
+- **Patterns** describe your own entries: how many there are, how many have
+  a feeling you chose, how often each word appears, before-and-after
+  intensity, and the median typing beside each word used in at least two
+  entries. Every line carries the number of entries it rests on. Nothing
+  infers a feeling from a colour, diagnoses anything or calls a pattern a
+  cause.
+- **Private.** Entries stay in this browser on this device. Clearing
+  browsing or site data, a private window, or the browser freeing space can
+  erase them; export is the backup. There is no account, upload, analytics
+  or AI. There is no import yet: an export can be read but not loaded back.
+- **Separate from the Rhythm Lab.** The journal has its own key and never
+  touches the lab's recordings, the game records or anything else.
+
+When storage fails, save says why (full, blocked, or a write the browser
+silently dropped) and the text stays in the field. A journal that cannot be
+read is copied to `tmr-journal-unreadable-<time>` before anything is written
+over it, and if that copy cannot be made, saving pauses for the session.
+Entries of the wrong shape are left as they are and counted, not shown.
+
 ## Phones
 
-Below 520 px the sphere is 200 px and pinned to the top, and the field is
-scrolled so the sphere, the verse or word, and the field share the space
-above the keyboard. Long verses show as a two-line window that follows the
-caret. On intro and result cards the mode bar (start, opponents) is kept in
-view instead. The page does not scroll at load, since a focus at load opens
-no keyboard.
+Below 520 px the sphere is 200 px and pinned to the top. A tab switch on a
+touch phone opens no keyboard: the start bar, verse or field is scrolled
+into view under the sphere, and the keyboard opens when you tap the field or
+press start. The page does not scroll at load.
 
-Landscape phones (a touch screen 500 px tall or less) get only the
-alignment: the line to type and the field are scrolled into view, and result
-cards stay on screen, but the sphere stays at desktop size and is off-screen
-while typing. A landscape layout is not designed yet. Short desktop windows
-are left alone, so the field is still focused at load there.
+**The writing view.** On a touch phone, in either orientation, touching the
+field turns the page into one fixed view the size of the visual viewport, the
+part actually on screen above the keyboard and between the browser bars. It
+holds a small sphere, the verse or word to type, and the field, which
+scrolls on its own; **done** closes the keyboard and **save** (free tab)
+saves without closing it. The view follows the visual viewport's size and
+offset on every `resize` and `scroll` (iOS pans it to reveal the field), and
+re-reads after a turn. The sphere comes in a few fixed sizes, so browser bars
+coming and going do not move the field. When the visible area is wide and
+short (a phone held sideways), the sphere moves to the left of the field.
+Zoom is never disabled: while pinch-zoomed the view keeps its last layout,
+and touching the field while zoomed in leaves the page as it is. Readings no
+screen has (zero height, negative offsets) are ignored. When a run ends the
+keyboard closes so the result card shows. Field and inputs use 16 px text,
+so iOS does not zoom on focus.
+
+**In a frame** (claude.ai shows the page in an iframe) the frame's
+visual viewport does not see the keyboard, and iOS pans the whole host page
+to reveal the field. Unless the frame itself shrinks, the view keeps to the
+top 45% of the frame upright and the top 26% sideways, where the keyboard is
+least likely to reach, with the field directly under the sphere. Those shares
+are guesses from typical keyboard heights; if the host does shrink the frame,
+the view uses all of it.
+
+**What is tested, and what is not.** `tests/keyboard.mjs` is emulation:
+desktop Chromium with phone viewports and a stand-in `visualViewport` moved by
+hand. Chromium has no iOS keyboard, no reveal pan and no safe-area insets.
+Before calling the layout done, check on a real iPhone (name the iOS version
+and model), in Safari and in the claude.ai preview:
+
+1. Tap an empty field, a long entry with the caret at the end, and low in a
+   long entry: the sphere and the caret stay visible, nothing jumps.
+2. Type twenty lines: the field scrolls, the page does not.
+3. Predictive bar on and off, emoji keyboard, dictation, a hardware keyboard.
+4. Turn the phone both ways with the keyboard open.
+5. Pinch-zoom with the keyboard open; no zoom on focus.
+6. Safari's bars collapsing and expanding; landscape notch insets.
+7. **done** and **save**: does save keep the keyboard up, as intended?
+8. Close the keyboard and check fixed elements return (iOS 26 has a known
+   `offsetTop` regression after dismissal).
+9. In the claude.ai preview: is the 45% / 26% share too much or too little,
+   and does the sphere stay on screen after iOS pans to the field?
 
 ## Storage
 
@@ -157,6 +237,8 @@ defaults and skips writes; the page still plays.
 | `tmr-duel` | `{w, l, d, giant}` | each field is used only if it is a finite number; `giant` is rounded and clamped to 15–160 wpm. `w`, `l` and `d` are not otherwise range-checked |
 | `tmr-ghost` | `{v: 1, d: [ms offsets], acc, at}`, the last duel | used only if `v` is 1 and `d` holds 20–6000 non-decreasing integers up to 600000; `acc` outside 0–1 becomes 0.95; otherwise ignored |
 | `tmr-lab` | Rhythm Lab: `{v: 1, consent: {at}, sessions: [...]}` with cue and tap times per trial | written only after consent; a store of the wrong shape is removed; sessions whose trials are malformed are dropped; at most 20 sessions; reset in the lab deletes the key |
+| `tmr-journal` | the journal: `{v: 1, entries: [{id, createdAt, updatedAt, text, feelings: {before, after}, typing}], labels: [your words]}`; a feeling is `{labels, intensity 1–5 or null, skipped}` | written only by save, a feeling for a saved entry, or delete; every change starts from what is stored now, so two tabs do not overwrite each other; entries of the wrong shape are kept untouched and not shown; an unreadable journal is copied aside first (below) |
+| `tmr-journal-unreadable-<time>` | a copy of a journal that could not be read | made once per distinct unreadable journal, never deleted by the page |
 
 A record is replaced only by a greater value, so the three best-score keys
 are checked strictly: a corrupt Infinity would otherwise outrank every
@@ -184,6 +266,8 @@ or one file at a time:
 | `lab-core.mjs` | Rhythm Lab analysis in Node, no browser: the integrator against the analytic slip period and locked offset, the regimes, synthetic locked and slipping trials against ground truth, missed, extra and duplicate taps, jitter, slow slips that nearest-beat scoring would hide, parameter recovery, the held-out comparison on phase, linear and no-coupling data, and the coupling bound |
 | `lab.mjs` | Rhythm Lab in Chromium: consent first, baseline, duplicate and repeat taps, one clock for clicks and taps (taps placed 30 ms after each mapped click read back at +30 ms), interrupted trials flagged and re-queued, a full session with the redo rule, export, reset, simulation regimes, a clock step flagged as drift, and touch taps on a phone viewport |
 | `interaction.mjs` | 24: count-in, background and resume (clocks, no opponent burst), caret locking, Loki's HUD and rays frame by frame, phone portrait layout (the caret's line clear of the pinned sphere), landscape usability and result cards, focus in a short desktop window |
+| `keyboard.mjs` | 29, all emulated: the writing view with a stand-in visual viewport, portrait and landscape keyboards, the reveal pan, an 80-line entry scrolling inside the field with the page still, no movement while typing or when the keyboard grows, save keeping focus, pinch zoom, impossible readings, done restoring the page, every mode, turning with the keyboard open, the iframe fallback and a host that shrinks the frame, no writing view without touch |
+| `journal.mjs` | 66: text saved exactly, nothing stored before save, drafts across tabs, Ctrl+S, the dated list, open and edit in place, confirmed delete and new entry, feelings before and after with skip, own words, intensity and clearing, the typing summary kept apart, damaged and missing feelings, injected colours, descriptive patterns with counts, export with the unsaved page, storage full, dropped writes and blocked storage, unreadable journals copied aside, other records untouched, two tabs, the Rhythm Lab's k note |
 
 Phones are emulated (desktop Chromium with a phone viewport, touch and
 device scale), not real devices. A background tab is emulated too: the

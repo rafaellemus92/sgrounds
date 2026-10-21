@@ -5,6 +5,8 @@ const { ok, done } = checks('suite');
 const browser = await chromium.launch();
 const errors = [];
 const fresh = (opts = {}) => open(browser, errors, opts);
+// a new page in the free tab, through the entries panel; unsaved text asks for a second tap
+const newPage = async p => { await p.click('#jOpen'); await p.click('#jNew'); if (await p.isVisible('#journal')) await p.click('#jNew'); };
 
 // 1. steady vs jittered sync, free mode
 {
@@ -24,7 +26,7 @@ const fresh = (opts = {}) => open(browser, errors, opts);
   await p.click('button[data-mode="free"]');
   ok('re-clicking free keeps the text', (await p.inputValue('#input')).includes('keep me'));
   // short pause does not wreck sync: lock, pause 1.5 s, resume
-  await p.click('#reset'); await p.click('#input');
+  await newPage(p); await p.click('#input');
   await typeAt(p, 'abcdefghijklmnopqrstuvwxyzabcd', 160);
   const pre = await stats(p);
   await p.waitForTimeout(1500);
@@ -189,13 +191,14 @@ const fresh = (opts = {}) => open(browser, errors, opts);
     await p.click(`button[data-mode="${m}"]`); await p.waitForTimeout(150);
     if (m === 'sprint') { await p.click('#pStart'); await p.waitForTimeout(1800); }
     if (m === 'duel') { await p.click('#dStart'); await p.waitForTimeout(1800); }
-    if (m === 'free') { await p.tap('#input'); }
+    if (m === 'free' || m === 'faith') { await p.tap('#input'); }   // a tab switch on a phone does not open the keyboard
     await p.waitForTimeout(450);
     const r = await p.evaluate(() => { const c = ring.getBoundingClientRect(), i = input.getBoundingClientRect(), t = (document.querySelector('.m-sprint') ? moodWord : target).getBoundingClientRect(); return { cTop: c.top, cBot: c.bottom, iTop: i.top, iBot: i.bottom, tTop: t.top, tBot: t.bottom, vh: innerHeight }; });
     ok(`phone ${m}: canvas and input both on screen`, r.cTop >= -1 && r.cBot <= r.iTop + 1 && r.iBot <= r.vh + 1, r);
     if (m !== 'free') ok(`phone ${m}: the line or word to type is visible`, r.tBot > r.cBot + 10 && r.tBot <= r.iTop + 1, r);
     await p.screenshot({ path: shot(`phone-${m}.png`) });
-    await p.click('#reset');
+    await p.tap('#kbDone');
+    if (m !== 'free') await p.click('#reset');
   }
   await p.close();
 }
@@ -216,7 +219,8 @@ const fresh = (opts = {}) => open(browser, errors, opts);
   await p.click('button[data-mode="about"]'); await p.waitForTimeout(150);
   await p.screenshot({ path: shot('about.png'), fullPage: true });
   await p.click('button[data-mode="free"]');
-  const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#snap')]);
+  await p.click('#jOpen');   // in the free tab the snapshot sits with the entries
+  const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#jSnap')]);
   await dl.saveAs(shot('free-snap.png')); ok('free snapshot downloads', true);
   await p.close();
 }

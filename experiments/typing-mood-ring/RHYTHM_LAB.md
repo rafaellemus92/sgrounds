@@ -97,7 +97,10 @@ whole-cycle offset (`round(median ψ − L/T)`) is removed before comparing phas
 half a beat would wrap some trials by a cycle and make the linear model lose for no reason.
 Known limitation: tap-timing jitter enters both sides of the one-step fit, which biases `k` upward
 (about 10–20% at 8–20 ms of jitter in simulation) and makes residuals negatively correlated. A
-state-space fit with a separate measurement-noise term would remove this; it is deferred.
+state-space fit with a separate measurement-noise term would remove this; it is deferred. The page shows
+this beside every fitted `k` (a † on each value, with a note under the table and on the k comparison in the
+checks) and applies no correction: the bias depends on each person's own jitter, so a fixed 10–20%
+discount would be wrong for most people.
 
 **Held-out test.** Fit on the first repetition of each condition, test on the second. Report each model's
 held-out one-step RMS error in ms, and for each held-out trial the observed net slip next to the phase

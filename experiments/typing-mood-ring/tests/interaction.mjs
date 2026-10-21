@@ -152,6 +152,7 @@ for (const vp of [{ width: 320, height: 480 }, { width: 360, height: 420 }, { wi
     res[m] = c.top >= 0 && w.top >= s.bottom - slack && w.bottom <= i.top + 1 && i.bottom <= i.vh;
     if (!res[m]) res[m + ':rects'] = { c, s, w, i };
     await p.screenshot({ path: shot(`phone-${vp.width}x${vp.height}-${m}.png`) });
+    await p.tap('#kbDone'); await p.waitForTimeout(100);   // the writing view hides everything but the sphere and field
     await p.tap('#reset'); await p.waitForTimeout(150);
   }
   ok(`phone ${vp.width}x${vp.height}: tabs on screen at load; start bars visible; sphere, the caret's line and field visible while typing`, tabs.top >= 0 && Object.entries(res).every(([k, v]) => k.endsWith(':rects') || v), res);
@@ -169,6 +170,7 @@ for (const vp of [{ width: 844, height: 390 }, { width: 740, height: 360 }]) {
     const i = await visible(p, '#input'), c = await visible(p, '#ring'), t = await visible(p, m === 'sprint' ? '#moodWord' : '#target');
     res[m] = { startTappable: hit, fieldOnScreen: i.top >= 0 && i.bottom <= i.vh, lineOnScreen: t.top >= 0 && t.bottom <= i.top + 1, sphereOnScreen: c.bottom > 0 && c.top < c.vh };
     if (m === 'game') await p.screenshot({ path: shot(`landscape-${vp.width}x${vp.height}-game.png`) });
+    await p.tap('#kbDone'); await p.waitForTimeout(100);   // the writing view hides everything but the sphere and field
     await p.tap('#reset'); await p.waitForTimeout(150);
   }
   await p.tap('button[data-mode="sprint"]'); await p.waitForTimeout(300);
