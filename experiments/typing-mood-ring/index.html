@@ -186,7 +186,7 @@ body.kb textarea,body.kb.m-free textarea{flex:1 1 auto;height:auto;min-height:44
 body.kb.m-sprint textarea{flex:none;height:44px;min-height:44px}
 /* side by side when the visible area is wide and short: a phone held sideways */
 body.kb.kb-side main{grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:10px}
-body.kb.kb-side .stage{grid-column:1;grid-row:1/3;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0}
+body.kb.kb-side .stage{grid-column:1;grid-row:1/3;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;min-width:116px}
 body.kb.kb-side #kbTools{display:flex;gap:6px}
 body.kb.kb-side #kbTools button{min-height:28px;padding:2px 10px}
 body.kb.kb-side.m-sprint .mood{grid-column:2;grid-row:1}
@@ -336,7 +336,7 @@ body.kb.kb-short textarea{padding:6px 10px}
       </ul>
 
       <h2>The journal</h2>
-      <p>The free tab can keep what you write, if you press save, exactly as you typed it. Entries stay in this browser on this device; export is the backup, and nothing leaves the page. You can name how you feel before or after writing, in your own words or none. Those words are yours: the sphere's colour is stored apart from them, and the page never guesses a feeling from it. Despite the name, the colour and the mood words (still, calm, flowing, quick, blazing, breakneck) read only the mechanics of typing, its speed, rhythm and accuracy.</p>
+      <p>The free tab can keep what you write, if you press save, exactly as you typed it. Entries stay in this browser on this device; export is the backup, and nothing leaves the page. You can name how you feel before or after writing, in your own words or none. Those words are yours: the sphere's colour is stored apart from them, and the page never guesses a feeling from it. Despite the name, the colour and the mood words (still, calm, flowing, quick, blazing, breakneck) read only the mechanics of typing: its speed and rhythm, and accuracy in the tabs with text to copy.</p>
 
       <h2>The sync math</h2>
       <p>Inside the sphere runs one oscillator with phase <code>φ</code> and natural frequency <code>ω</code>. Each keystroke kicks it. It is a cousin of the pulse-coupled models Mirollo and Strogatz studied for fireflies and Peskin for the heart's pacemaker cells: a phase oscillator with a sinusoidal phase-response curve, entrained by your keystrokes, whose frequency slowly adapts to your rate.</p>
@@ -649,7 +649,7 @@ const compact = () => window.innerWidth <= 520 || (window.innerHeight <= 500 && 
 const VV = window.visualViewport || null;
 const framed = (() => { try { return window.self !== window.top; } catch { return true; } })();
 const touch = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
-const KB = { on: false, y: 0, idle: 0, rest: null, shrunk: false, side: false, capped: false, w: 0, h: 0, raf: 0 };
+const KB = { on: false, y: 0, vw: 0, idle: 0, rest: null, shrunk: false, side: false, short: null, capped: false, w: 0, h: 0, hs: 0, raf: 0 };
 const KB_CAP = { tall: 0.45, side: 0.26 };   // share of an unshrunk frame kept clear of a keyboard we cannot see
 const zoomed = () => !!(VV && Math.abs(VV.scale - 1) > 0.01);
 const kbWanted = () => compact() && touch() && document.activeElement === input && (KB.on || !zoomed());
@@ -666,14 +666,37 @@ function kbMeasure(){
   const side = w > 1.6*full;
   if (side !== KB.side) { KB.idle = full; KB.shrunk = false; }       // turned: the old reference no longer applies
   if (full < KB.idle*0.85) KB.shrunk = true;
-  const capped = framed && !KB.shrunk, h = capped ? Math.round(full*(side ? KB_CAP.side : KB_CAP.tall)) : full;
-  const r = document.documentElement.style, b = document.body.classList;
+  const capped = framed && !KB.shrunk;
+  const h = capped ? Math.max(Math.min(full, 90), Math.round(full*(side ? KB_CAP.side : KB_CAP.tall))) : full;
+  // The sphere's size and the one-line verse are chosen from the smaller of the visible height and the share a
+  // keyboard usually leaves, so they are already right before the keyboard arrives and stay put when it does.
+  const hs = Math.min(h, Math.round(KB.idle*(side ? 0.36 : 0.5)));
+  const r = document.documentElement.style, b = document.body.classList, short = hs < 150;
   r.setProperty('--vvx', x + 'px'); r.setProperty('--vvy', y + 'px'); r.setProperty('--vvw', w + 'px'); r.setProperty('--vvh', h + 'px');
-  b.toggle('kb-side', side); b.toggle('kb-short', h < 150); b.toggle('kb-panned', y > 1); b.toggle('kb-capped', capped);
-  const changed = w !== KB.w || h !== KB.h;
-  Object.assign(KB, { w, h, side, capped });
-  // a smaller view keeps the caret in sight when it is at the end, where it almost always is
-  if (changed && input.selectionEnd === input.value.length) requestAnimationFrame(() => { input.scrollTop = input.scrollHeight; });
+  b.toggle('kb-side', side); b.toggle('kb-short', short); b.toggle('kb-panned', y > 1); b.toggle('kb-capped', capped);
+  const changed = w !== KB.w || h !== KB.h, reflow = short !== KB.short || side !== KB.side;
+  Object.assign(KB, { w, h, hs, side, capped, short });
+  if (reflow && target) renderTarget(input.value);   // the verse window rewraps: bring the caret's line back
+  if (changed) requestAnimationFrame(keepCaret);
+}
+// Keep the caret's line inside the field after the field changes size. At the end of the text (nearly always)
+// that is the bottom; elsewhere, a hidden copy of the text up to the caret says where its line is.
+let mirror = null;
+function keepCaret(){
+  const n = input.value.length, e = input.selectionEnd;
+  if (e === n) { input.scrollTop = input.scrollHeight; return; }
+  const cs = getComputedStyle(input), px = k => parseFloat(cs[k]) || 0;
+  if (!mirror) { mirror = document.createElement('div'); mirror.setAttribute('aria-hidden', 'true'); document.body.appendChild(mirror); }
+  const m = mirror.style;
+  for (const k of ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'wordSpacing', 'lineHeight', 'tabSize', 'textTransform']) m[k] = cs[k];
+  Object.assign(m, { position: 'absolute', visibility: 'hidden', left: '-9999px', top: '0', padding: '0', border: '0', boxSizing: 'content-box',
+                     whiteSpace: 'pre-wrap', overflowWrap: 'break-word', width: Math.max(1, input.clientWidth - px('paddingLeft') - px('paddingRight')) + 'px' });
+  mirror.textContent = input.value.slice(0, e);
+  const mark = document.createElement('span'); mark.textContent = '\u200b'; mirror.appendChild(mark);
+  const top = px('paddingTop') + mark.offsetTop, lh = mark.offsetHeight || px('lineHeight') || 24;
+  mirror.textContent = '';
+  if (top < input.scrollTop) input.scrollTop = Math.max(0, top - 4);
+  else if (top + lh > input.scrollTop + input.clientHeight) input.scrollTop = top + lh - input.clientHeight + 4;
 }
 function kbSync(){
   KB.raf = 0;
@@ -682,14 +705,19 @@ function kbSync(){
     KB.on = want;
     if (want) {
       const v = vvSize();
-      KB.y = window.scrollY; KB.shrunk = false; KB.side = v.w > 1.6*v.h;
+      KB.y = window.scrollY; KB.vw = window.innerWidth; KB.shrunk = false; KB.side = v.w > 1.6*v.h; KB.short = null;
       KB.idle = KB.rest && Math.abs(KB.rest.w - v.w) < 2 ? Math.max(KB.rest.h, v.h) : v.h;
     }
     document.body.classList.toggle('kb', want); document.documentElement.classList.toggle('kb', want);
     if (!want) { document.body.classList.remove('kb-side', 'kb-short', 'kb-panned', 'kb-capped'); KB.w = KB.h = 0; }
     if (want) kbMeasure();
     resize();
-    if (!want) window.scrollTo(0, KB.y);
+    if (!want) {
+      // back where the page was; after a turn that place no longer exists, so align for the new shape instead
+      if (window.innerWidth === KB.vw) window.scrollTo(0, KB.y); else alignPhone(true);
+      if (target) renderTarget(input.value);
+      keepCaret();
+    }
     return;
   }
   if (KB.on) { kbMeasure(); resize(); }
@@ -819,6 +847,7 @@ input.addEventListener('input', e => {
     } else { input.value = prevVal; return; }
   }
   handle(val, t, e.inputType, e.data);
+  if (st.mode === 'free' && !input.value && J.cur) { jUnbind(); jSay('a new page; the saved entry is kept'); }   // clearing the field starts a new page
   if (st.mode === 'free' && !input.value !== J.emptyWas) jFeelLine();   // the before-writing prompt shows only on an empty page
 });
 function handle(val, t, type, data){
@@ -1137,7 +1166,7 @@ function setMode(mode){
   if (mode === 'lab') { input.blur(); labRender(); }
   for (const [id, m] of [['#faithBar','faith'],['#gameBar','game'],['#sprintBar','sprint'],['#duelBar','duel']]) $(id).classList.toggle('hidden', mode !== m);
   hideCard(); resetTyping(); E.mood.className = ''; setTarget(null);
-  put($('#hint'), mode === 'duel' ? 'your light crosses where you are faster; where you are slower it comes back to you' : 'hue is speed · colour depth is rhythm · brightness is accuracy');
+  put($('#hint'), mode === 'duel' ? 'your light crosses where you are faster; where you are slower it comes back to you' : mode === 'free' ? 'hue and brightness are speed · colour depth is rhythm' : 'hue is speed · colour depth is rhythm · brightness is accuracy');
   if (mode === 'free') { input.placeholder = 'type anything ;'; input.value = prevVal = J.draft || ''; J.draft = null; }
   if (mode === 'faith') { input.placeholder = 'type the verse above'; showVerse(verseIdx); }
   if (mode === 'game') { Object.assign(game, { over:false, level:1, score:0 }); input.placeholder = 'press start or enter'; $('#gStart').textContent = 'start'; put($('#gTime'), '–'); updateGameBar(); }
@@ -1231,7 +1260,7 @@ const J_KEY = 'tmr-journal';
 const FEELINGS = ['calm', 'content', 'grateful', 'hopeful', 'energised', 'tired', 'restless', 'anxious', 'sad', 'frustrated', 'lonely', 'numb'];
 const jAcc = () => ({ sec: 0, v: 0, syncSec: 0, r: 0, L: 0, a: 0, b: 0, keys: 0 });
 const J = { raw: [], labels: [], forget: new Set(), blocked: false, readOnly: false, unreadable: null, notice: '',
-            cur: null, base: '', feel: { before: null, after: null }, acc: jAcc(), draft: null,
+            cur: null, base: '', feel: { before: null, after: null }, feelSet: new Set(), acc: jAcc(), draft: null,
             open: false, pick: null, arm: '', armT: 0, sayT: 0, emptyWas: true };
 const esc = x => String(x).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const rd = (x, d) => Math.round(x*10**d)/10**d;
@@ -1301,7 +1330,7 @@ function jApply(change){
 // Stored entries are read through these, so a damaged field shows as missing instead of breaking the page.
 function jFeel(f){
   if (!f || typeof f !== 'object') return null;
-  const labels = jLabels(f.labels).slice(0, 12), intensity = Number.isInteger(f.intensity) && f.intensity >= 1 && f.intensity <= 5 ? f.intensity : null;
+  const labels = jLabels(f.labels), intensity = Number.isInteger(f.intensity) && f.intensity >= 1 && f.intensity <= 5 ? f.intensity : null;
   if (!labels.length && intensity == null) return f.skipped === true ? { labels, intensity, skipped: true } : null;
   return { labels, intensity, skipped: false };
 }
@@ -1351,21 +1380,30 @@ function jSave(){
   if (st.mode !== 'free') return false;
   const text = input.value;
   if (!text.trim()) { jSay('nothing to save yet'); return 'empty'; }
-  const now = new Date().toISOString(), id = J.cur || jId(), typing = jSummary(J.acc), feelings = { before: J.feel.before, after: J.feel.after };
+  const now = new Date().toISOString(), id = J.cur || jId(), typing = jSummary(J.acc);
+  // a saved entry takes only the feelings this tab changed and could not store yet, so a feeling named for it
+  // in another tab is not overwritten
+  const own = {}; for (const k of J.feelSet) own[k] = J.feel[k];
   const err = jApply(es => {
     const i = es.findIndex(e => e && e.id === id);
-    if (i >= 0) es[i] = Object.assign({}, es[i], { text, updatedAt: now, feelings: Object.assign({}, obj(es[i].feelings), feelings), typing: jMerge(jTyping(es[i].typing), typing) });
-    else es.push({ id, createdAt: now, updatedAt: now, text, feelings, typing });
+    if (i >= 0) es[i] = Object.assign({}, es[i], { text, updatedAt: now, feelings: Object.assign({}, obj(es[i].feelings), own), typing: jMerge(jTyping(es[i].typing), typing) });
+    else es.push({ id, createdAt: now, updatedAt: now, text, feelings: { before: J.feel.before, after: J.feel.after }, typing });
     return es;
   });
   if (err) { jSay('Not saved: ' + J_WHY[err] + ' Your text is still in the field; export keeps a copy as a file.', true); return false; }
-  J.cur = id; J.base = text; J.acc = jAcc();
+  J.cur = id; J.base = text; J.acc = jAcc(); J.feelSet.clear(); jFeelSync();
   jSay('saved ;'); jRender();
   return true;
 }
+function jFeelSync(){   // feelings of the open entry as stored, except any this tab still has to store
+  const e = J.cur && jNorm(J.raw.find(x => x && x.id === J.cur));
+  if (e) for (const k of ['before', 'after']) if (!J.feelSet.has(k)) J.feel[k] = e[k];
+}
+// The field stops being a saved entry: what is typed next saves as a new one. The text is left as it is.
+function jUnbind(){ J.cur = null; J.base = ''; J.feel = { before: null, after: null }; J.feelSet.clear(); J.acc = jAcc(); }
 function jReset(text = '', e = null){
-  J.cur = e ? e.id : null; J.base = text; J.feel = { before: e ? e.before : null, after: e ? e.after : null };
-  J.acc = jAcc(); J.pick = null; J.arm = '';
+  jUnbind(); J.cur = e ? e.id : null; J.base = text; J.feel = { before: e ? e.before : null, after: e ? e.after : null };
+  J.pick = null; J.arm = '';
   resetTyping(); input.value = prevVal = text;
 }
 function jArmed(key){ const on = J.arm === key && performance.now() < J.armT; J.arm = ''; return on; }
@@ -1379,22 +1417,24 @@ function jOpenEntry(id){
   if (!e) return;
   jReset(e.text, e); J.open = false; jRender();
   jSay('editing the entry from ' + jWhen(e.createdAt));
-  if (compact() && touch()) {   // no keyboard until you tap the field; show the page under the pinned sphere
-    window.scrollTo(0, Math.max(0, window.scrollY + input.getBoundingClientRect().top - $('.stage').offsetHeight - 16));
-  } else { focusInput(); const n = input.value.length; input.setSelectionRange(n, n); input.scrollTop = input.scrollHeight; }
+  if (compact() && touch()) alignPhone(true);   // no keyboard until you tap the field; show the page, upright or sideways
+  else { focusInput(); const n = input.value.length; input.setSelectionRange(n, n); input.scrollTop = input.scrollHeight; }
 }
 function jDelete(id){
   const err = jApply(es => es.filter(e => !(e && e.id === id)));
   if (err) { jSay('Not deleted: ' + J_WHY[err], true); jRender(); return; }
-  if (J.cur === id) jReset();
-  jSay('entry deleted'); jRender();
+  if (J.cur !== id) jSay('entry deleted');
+  else if (jDirty()) { jUnbind(); jSay('entry deleted; your unsaved text stays in the field as a new page'); }   // never take unsaved words with it
+  else { jReset(); jSay('entry deleted'); }
+  jRender();
 }
 function jSetFeel(when, f){
   J.feel[when] = f; J.pick = null;
   if (J.cur) {
     const id = J.cur, err = jApply(es => es.map(e => e && e.id === id ? Object.assign({}, e, { feelings: Object.assign({}, obj(e.feelings), { [when]: f }) }) : e));
-    if (err) jSay('Not saved: ' + J_WHY[err], true); else jSay(f ? 'kept with this entry' : 'cleared');
-  } else jSay(f && !f.skipped ? 'kept with this entry when you save it' : '');
+    if (err) { J.feelSet.add(when); jSay('Not saved: ' + J_WHY[err] + ' It will be saved with the entry next time.', true); }
+    else { J.feelSet.delete(when); jSay(f ? 'kept with this entry' : 'cleared'); }
+  } else { J.feelSet.add(when); jSay(f && !f.skipped ? 'kept with this entry when you save it' : ''); }
   jRender();
 }
 
@@ -1405,6 +1445,8 @@ function jFeelLine(){
   const el = $('#feel'), b = J.feel.before, a = J.feel.after, parts = [];
   J.emptyWas = !input.value;
   if (st.mode !== 'free' || J.pick) { el.classList.add('hidden'); return; }
+  const cur = J.cur && jNorm(J.raw.find(x => x && x.id === J.cur));
+  if (cur) parts.push(`<span>editing <b>${esc(jWhen(cur.createdAt))}</b></span>`);   // so a save that updates an entry never surprises
   if (b) parts.push(`<span>before: <b>${esc(jFmt(b))}</b></span><button type="button" data-feel="before">change</button>`);
   else if (!J.cur && !input.value) parts.push('<span>Before writing, name how you feel? Optional.</span><button type="button" data-feel="before">choose</button><button type="button" data-skip="before">skip</button>');
   if (a) parts.push(`<span>after: <b>${esc(jFmt(a))}</b></span><button type="button" data-feel="after">change</button>`);
@@ -1472,12 +1514,12 @@ function jPatterns(list){
   const med = a => { const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m])/2; };
   const row = (name, es) => {
     const t = es.map(e => e.typing).filter(Boolean), sy = t.filter(x => x.sync != null && x.syncSec >= 2).map(x => x.sync);
-    return t.length < 2 ? '' : `<tr><td>${name}</td><td>${t.length}</td><td>${med(t.map(x => x.kps)).toFixed(1)}</td><td>${sy.length >= 2 ? Math.round(med(sy)*100) + '%' : '–'}</td></tr>`;
+    return t.length < 2 ? '' : `<tr><td>${name}</td><td>${t.length}</td><td>${med(t.map(x => x.kps)).toFixed(1)}</td><td>${sy.length >= 2 ? Math.round(med(sy)*100) + '%' + (sy.length < t.length ? ` (${sy.length})` : '') : '–'}</td></tr>`;
   };
   const rows = words.map(([l, es]) => row(esc(l), es)).filter(Boolean);
-  if (rows.length) out.push(`<p class="small">Typing beside the words you chose: the middle value of each, over the entries that have both; n is how many entries a row rests on, and rows need at least two.</p>
+  if (rows.length) out.push(`<p class="small">Typing beside the words you chose: the middle value of each, over the entries that have both; n is how many entries a row rests on, and rows need at least two. A number in brackets is how many of them the sync value rests on, when fewer had a steady enough stretch to measure.</p>
 <div class="scroll"><table class="labtable"><thead><tr><th>entries with</th><th>n</th><th>keys/s</th><th>sync</th></tr></thead><tbody>${row('all entries', list)}${rows.join('')}</tbody></table></div>`);
-  out.push('<p class="small">This describes your own saved entries and nothing more. The colours come from typing mechanics, the speed, rhythm and accuracy of keystrokes; they say nothing about feelings, and nothing here infers how you feel or diagnoses anything. Two things showing up together does not mean one causes the other, and with few entries most patterns are chance.</p>');
+  out.push('<p class="small">This describes your own saved entries and nothing more. The colours come from typing mechanics, the speed and rhythm of keystrokes (accuracy counts only in tabs with text to copy); they say nothing about feelings, and nothing here infers how you feel or diagnoses anything. Two things showing up together does not mean one causes the other, and with few entries most patterns are chance.</p>');
   return out.join('');
 }
 function jRender(){
@@ -1508,7 +1550,7 @@ $('#jList').addEventListener('click', e => {
   if (d.del) { jArm('del:' + d.del); jRender(); }
   else if (d.delYes) { J.arm = ''; jDelete(d.delYes); }
   else if (d.delNo) { J.arm = ''; jRender(); }
-  else if (d.open) { if (jDirty() && d.open !== J.cur) { jArm('open:' + d.open); jRender(); } else jOpenEntry(d.open); }
+  else if (d.open) { if (jDirty()) { jArm('open:' + d.open); jRender(); } else jOpenEntry(d.open); }
   else if (d.openYes) { J.arm = ''; jOpenEntry(d.openYes); }
 });
 $('#jSave').onclick = () => jSave();
@@ -1525,7 +1567,7 @@ $('#jExport').onclick = async () => {
   const data = { app: 's; typing mood ring journal', version: 1, exportedAt: now,
                  note: 'Entries exactly as typed. "feelings" are only what you chose. "typing" summarises typing mechanics (speed, rhythm and the sphere\'s colour), not feelings.',
                  entries: J.raw, labels: J.labels };
-  if (text.trim() && text !== J.base) data.unsaved = { text, at: now, entry: J.cur };
+  if (text.trim() && text !== J.base) data.unsaved = { text, at: now, entry: J.cur, feelings: { before: J.feel.before, after: J.feel.after }, typing: jSummary(J.acc) };
   if (J.unreadable != null) data.unreadable = J.unreadable;
   if (!J.raw.length && !data.unsaved && data.unreadable == null) { put($('#jNotice'), 'Nothing to export yet.'); $('#jNotice').classList.remove('hidden'); return; }
   const out = JSON.stringify(data, null, 1), name = `journal-${now.slice(0, 10)}.json`;
@@ -1540,7 +1582,7 @@ $('#jExport').onclick = async () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 10000);
   said('Exported. Keep the file somewhere safe; it is the only copy outside this browser.');
 };
-window.addEventListener('storage', e => { if (e.key === J_KEY || e.key === null) { jLoad(); jRender(); } });
+window.addEventListener('storage', e => { if (e.key === J_KEY || e.key === null) { jLoad(); jFeelSync(); jRender(); } });
 jLoad();
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -1548,7 +1590,8 @@ function resize(){
   const d = Math.min(2, window.devicePixelRatio || 1), duelM = st.mode === 'duel';
   let w, h;
   if (KB.on) {   // the writing view, in a few fixed sizes so that browser bars coming and going do not move the field
-    h = KB.side ? (KB.h >= 170 ? 100 : KB.h >= 130 ? 72 : KB.h >= 100 ? 52 : 40) : (KB.h >= 300 ? 80 : KB.h >= 200 ? 60 : 48);
+    const hs = KB.hs || KB.h;
+    h = KB.side ? (hs >= 170 ? 100 : hs >= 130 ? 72 : hs >= 100 ? 52 : 40) : (hs >= 300 ? 80 : hs >= 200 ? 60 : 48);
     w = duelM ? Math.min(Math.round(h/0.62), KB.side ? Math.round(KB.w*0.4) : KB.w - 170) : h;
     if (duelM) h = Math.round(w*0.62);
   } else {
@@ -1654,7 +1697,7 @@ function drawDuel(c, W, Hh, px, now){
   const fpx = Math.max(10, Math.round(W*0.024));
   c.font = `${fpx}px "DM Mono", monospace`; c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,0.5)';
   const y = Math.min(Hh - 6, cy + R*2.05 + W*0.03);
-  if (W >= 260) { c.fillText(`you ${st.v.toFixed(1)}`, xa, y); c.fillText(`${oppName()} ${opp.v.toFixed(1)}`, xb, y); }   // too small to read in the writing view
+  if (!(KB.on && c === ctx)) { c.fillText(`you ${st.v.toFixed(1)}`, xa, y); c.fillText(`${oppName()} ${opp.v.toFixed(1)}`, xb, y); }   // too small to read in the writing view
   if (duel.on) { c.fillStyle = G; c.fillText(String(Math.max(0, Math.ceil((duel.len - (now - duel.start))/1000))), xm, Math.max(fpx, cy - Hh*0.4 - 5)); }
   if (duel.count) { c.fillStyle = G; c.font = `italic ${Math.round(Hh*0.24)}px "Instrument Serif", Georgia, serif`; c.fillText(String(duel.count), xm, cy + Hh*0.08); }
 }

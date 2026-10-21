@@ -173,6 +173,85 @@ function framePage(name, w, h){
   await p.screenshot({ path: shot('kb-frame-landscape.png') });
   await p.close(); }
 
+// ── review fixes: caret away from the end, landscape stability, turning then done, open sideways, verse window ──
+// where the caret's line is inside the field, measured independently with a copy of the text up to the caret
+const caretSeen = f => f.evaluate(() => {
+  const cs = getComputedStyle(input), m = document.createElement('div');
+  for (const k of ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing']) m.style[k] = cs[k];
+  Object.assign(m.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'break-word', width: (input.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) + 'px' });
+  m.textContent = input.value.slice(0, input.selectionEnd); const k = document.createElement('span'); k.textContent = '|'; m.appendChild(k); document.body.appendChild(m);
+  const top = parseFloat(cs.paddingTop) + k.offsetTop, h = k.offsetHeight; m.remove();
+  return { top, h, st: input.scrollTop, ch: input.clientHeight, seen: top >= input.scrollTop - 1 && top + h <= input.scrollTop + input.clientHeight + 1 };
+});
+{ const p = await open(browser, errors, PHONE);
+  const long = Array.from({ length: 80 }, (_, i) => `line ${i + 1}: an old entry being fixed`).join('\n');
+  await p.evaluate(t => { input.value = t; input.dispatchEvent(new Event('input')); const at = t.indexOf('line 78:'); input.setSelectionRange(at, at); input.scrollTop = input.scrollHeight; }, long);
+  await p.evaluate(() => input.focus()); await settle(p);
+  await vv(p, { height: 420 }); await settle(p);
+  const c = await caretSeen(p);
+  ok('a caret away from the end (line 78 of 80) stays in view when the keyboard shrinks the field', c.seen, c);
+  await p.evaluate(() => { const at = input.value.indexOf('line 3:'); input.setSelectionRange(at, at); input.scrollTop = input.scrollHeight; });
+  await vv(p, { height: 380 }); await settle(p);
+  const c2 = await caretSeen(p);
+  ok('…and one near the top (line 3) too', c2.seen, c2);
+  await p.close(); }
+for (const [vw, vh, kh] of [[844, 390, 140], [667, 330, 110]]) {
+  const p = await open(browser, errors, { ...PHONE, viewport: { width: vw, height: vh } });
+  const res = {};
+  for (const m of ['free', 'faith']) {
+    await p.tap(`button[data-mode="${m}"]`); await settle(p, 100);
+    await p.tap('#input'); await settle(p);
+    const a = await geo(p);
+    await vv(p, { height: kh });
+    const b = await geo(p);
+    res[m] = { before: [a.input.l, a.input.t, a.target && a.target.w, a.target && a.target.h], after: [b.input.l, b.input.t, b.target && b.target.w, b.target && b.target.h] };
+    res[m].same = JSON.stringify(res[m].before) === JSON.stringify(res[m].after) && inside(b.input, 0, kh) && inside(b.ring, 0, kh);
+    await p.tap('#kbDone'); await settle(p, 20); await p.evaluate(() => window.__vvReset()); await settle(p);
+  }
+  ok(`landscape ${vw}x${vh}: the keyboard arriving (visible ${kh}) moves neither the field nor the verse box`, res.free.same && res.faith.same, res);
+  await p.close(); }
+{ const p = await open(browser, errors, PHONE);
+  await p.tap('button[data-mode="faith"]'); await settle(p, 100);
+  await p.tap('#input'); await vv(p, { height: 420 });
+  await p.setViewportSize({ width: 844, height: 390 });
+  await p.evaluate(() => { window.__vv({ width: 844, height: 140 }); window.dispatchEvent(new Event('orientationchange')); }); await settle(p, 450);
+  await p.tap('#kbDone'); await settle(p, 20); await p.evaluate(() => window.__vvReset()); await settle(p);
+  let g = await geo(p);
+  ok('upright, typing, turned sideways, done: the field is on screen', !g.kb && g.input.t >= 0 && g.input.t < g.ih - 40, g.input);
+  await p.close(); }
+{ const p = await open(browser, errors, SIDE);
+  await p.tap('#input'); await p.keyboard.type('turning back upright'); await vv(p, { height: 140 });
+  await p.evaluate(() => window.scrollTo(0, 99999));
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.evaluate(() => { window.__vv({ width: 390, height: 420 }); window.dispatchEvent(new Event('orientationchange')); }); await settle(p, 450);
+  await p.tap('#kbDone'); await settle(p, 20); await p.evaluate(() => window.__vvReset()); await settle(p);
+  const g = await geo(p), stage = await p.evaluate(() => document.querySelector('.stage').getBoundingClientRect().bottom);
+  ok('sideways, typing, turned upright, done: the field is below the pinned sphere, not under it', !g.kb && g.input.t >= stage - 1 && g.input.t < g.ih - 40, { input: g.input, stage });
+  await p.close(); }
+{ const p = await open(browser, errors, SIDE);
+  await p.tap('#input'); await p.keyboard.type('an entry to reopen sideways'); await p.tap('#kbSave'); await p.tap('#kbDone'); await settle(p, 50);
+  await p.locator('#jOpen').scrollIntoViewIfNeeded(); await p.tap('#jOpen'); await settle(p, 50);
+  await p.locator('#jList [data-open]').first().scrollIntoViewIfNeeded(); await p.tap('#jList [data-open]'); await settle(p, 50);
+  const g = await geo(p);
+  ok('opening an entry on a sideways phone shows the field', (await p.inputValue('#input')) === 'an entry to reopen sideways' && g.input.t >= 0 && g.input.t < g.ih - 40, g.input);
+  await p.close(); }
+{ const p = await open(browser, errors, PHONE);
+  await p.tap('button[data-mode="faith"]'); await settle(p, 100);
+  for (let i = 0; i < 3; i++) await p.tap('#nextVerse');   // Psalm 23:2-3, a long verse
+  await p.tap('#input'); await vv(p, { height: 420 });
+  const v = await p.textContent('#target');
+  await typeAt(p, v.slice(0, Math.round(v.length*0.8)), 8);
+  await p.tap('#kbDone'); await settle(p, 20); await p.evaluate(() => window.__vvReset()); await settle(p, 50);
+  const r = await p.evaluate(() => { const c = document.querySelector('#target .cur').getBoundingClientRect(), t = target.getBoundingClientRect(); return { c: [c.top, c.bottom], t: [t.top, t.bottom] }; });
+  ok('done in the middle of a long verse: the two-line window still shows the next letter to type', r.c[0] >= r.t[0] - 1 && r.c[1] <= r.t[1] + 1, r);
+  await p.close(); }
+{ const DRAWN = () => { const f = CanvasRenderingContext2D.prototype.fillText; window.__drawn = new Set(); CanvasRenderingContext2D.prototype.fillText = function (t, ...a) { window.__drawn.add(String(t).split(' ')[0]); return f.call(this, t, ...a); }; };
+  const p = await open(browser, errors, { viewport: { width: 280, height: 653 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, init: DRAWN });
+  await p.tap('button[data-mode="duel"]'); await settle(p, 200);
+  const seen = await p.evaluate(() => [...window.__drawn]);
+  ok('a 280 px phone, keyboard closed: the duel still labels both spheres', seen.includes('you') && seen.includes('jötunn'), seen);
+  await p.close(); }
+
 // ── no writing view without a touch screen ───────────────────────────────────────────────────────────────
 { const p = await open(browser, errors, { viewport: { width: 400, height: 800 }, init: FAKE_VV });
   await p.click('#input'); await settle(p);

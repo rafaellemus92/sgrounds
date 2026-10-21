@@ -240,6 +240,64 @@ const FAILING = () => {
   ok('two tabs saving in turn: neither overwrites the other', JSON.stringify(texts) === JSON.stringify(['from the first tab, after', 'from the second tab', 'two']), texts);
   await q.close(); await p.close(); }
 
+// ── review fixes: no silent overwrite or loss of unsaved words; feelings across tabs; counts; honest copy ──
+{ const p = await open(browser, errors);
+  await p.keyboard.type('yesterday, kept'); await save(p);
+  ok('after a save the page says it is editing that entry, with its date', /editing .*\d{4}/.test(await p.textContent('#feel')));
+  await p.keyboard.press('Control+a'); await p.keyboard.press('Backspace');
+  ok('clearing the field starts a new page and says so', (await status(p)).startsWith('a new page') && (await p.textContent('#feel')).includes('Before writing'));
+  await p.keyboard.type('today, a new page'); await save(p);
+  let texts = (await stored(p)).entries.map(e => e.text);
+  ok('…so the next save is a new entry and never replaces the last one', JSON.stringify(texts) === JSON.stringify(['yesterday, kept', 'today, a new page']), texts);
+  await p.keyboard.type(' plus words not saved yet');
+  const cur = (await stored(p)).entries[1].id;
+  await panel(p); await p.click(`[data-open="${cur}"]`);
+  ok('open on the entry already in the field asks before discarding its unsaved words', (await p.isVisible(`[data-open-yes="${cur}"]`)) && (await p.inputValue('#input')).endsWith('not saved yet'));
+  await p.click(`[data-del-no="${cur}"]`);
+  await p.click(`[data-del="${cur}"]`); await p.click(`[data-del-yes="${cur}"]`); await p.waitForTimeout(60);
+  ok('deleting the entry in the field keeps its unsaved text there as a new page', (await p.inputValue('#input')) === 'today, a new page plus words not saved yet' && (await status(p)).includes('stays in the field') && (await stored(p)).entries.length === 1);
+  await p.click('#input'); await save(p);
+  texts = (await stored(p)).entries.map(e => e.text);
+  ok('…which saves as a new entry; the deleted one stays deleted', texts.length === 2 && texts[1] === 'today, a new page plus words not saved yet' && !(await stored(p)).entries.some(e => e.id === cur), texts);
+  await p.close(); }
+{ const a = await open(browser, errors);
+  await a.keyboard.type('one entry, two tabs'); await save(a);
+  const b = await a.context().newPage(); await b.goto(a.url()); await b.waitForTimeout(300);
+  const id = (await stored(a)).entries[0].id;
+  await panel(b); await b.click(`[data-open="${id}"]`);
+  await b.click('#feel [data-feel="after"]'); await b.click('[data-chip="calm"]'); await b.click('#feelDone'); await b.waitForTimeout(60);
+  await a.click('#input'); await a.keyboard.type(', more'); await save(a);
+  const e = (await stored(a)).entries[0];
+  ok('a feeling named in another tab survives this tab saving the same entry', e.text === 'one entry, two tabs, more' && e.feelings.after && e.feelings.after.labels[0] === 'calm', e.feelings);
+  ok('…and this tab shows it', (await a.textContent('#feel')).includes('after: calm'));
+  await b.close(); await a.close(); }
+{ const p = await open(browser, errors);
+  await p.click('#feel [data-feel="before"]');
+  for (const l of ['calm', 'content', 'grateful', 'hopeful', 'energised', 'tired', 'restless', 'anxious', 'sad', 'frustrated', 'lonely', 'numb']) await p.click(`[data-chip="${l}"]`);
+  await p.fill('#feelNew', 'wistful'); await p.click('#feelAdd'); await p.click('#feelDone');
+  await p.click('#input'); await p.keyboard.type('many words'); await save(p);
+  const id = (await stored(p)).entries[0].id;
+  await panel(p); await p.click(`[data-open="${id}"]`); await p.click('#input'); await p.keyboard.press('End'); await p.keyboard.type('!'); await save(p);
+  const l = (await stored(p)).entries[0].feelings.before.labels;
+  ok('thirteen chosen words survive reopening and saving', l.length === 13 && l.includes('wistful'), l);
+  await p.close(); }
+{ const p = await open(browser, errors);
+  const ty = (kps, sync, syncSec) => ({ keys: 50, activeSec: 10, kps, syncSec, sync, lab: [0.6, 0.05, 0.05] });
+  const seed = { v: 1, labels: [], entries: [0.9, 0.1, null, null, null].map((sy, i) => ({ id: 'c' + i, createdAt: `2026-10-0${i + 1}T09:00:00.000Z`, text: 't', feelings: { before: { labels: ['calm'], intensity: null, skipped: false } }, typing: ty(3, sy, sy == null ? 0 : 10) })) };
+  await p.evaluate(([k, v]) => localStorage.setItem(k, v), [J, JSON.stringify(seed)]); await p.reload(); await p.waitForTimeout(300);
+  await panel(p);
+  const rows = await p.locator('#jPatterns tbody tr').allTextContents();
+  ok('a sync value resting on fewer entries than the row shows its own count', rows[1] === 'calm53.050% (2)', rows);
+  const t = await p.textContent('#jPatterns'), hint = await p.textContent('#hint');
+  ok('the free tab never claims its colours show accuracy', !/speed, rhythm and accuracy/.test(t) && t.includes('accuracy counts only in tabs with text to copy') && !hint.includes('accuracy'), { hint });
+  await p.close(); }
+{ const p = await open(browser, errors);
+  await p.click('#feel [data-feel="before"]'); await p.click('[data-chip="hopeful"]'); await p.click('#feelDone');
+  await p.click('#input'); await typeAt(p, 'not saved but exported', 120);
+  await panel(p); const x = await exported(p);
+  ok('export of an unsaved page carries its chosen feeling and typing summary too', x.unsaved.feelings.before.labels[0] === 'hopeful' && x.unsaved.typing && x.unsaved.typing.activeSec > 0, x.unsaved);
+  await p.close(); }
+
 // ── Rhythm Lab: the known k bias is shown beside every fitted k, with no correction applied ────────────────
 { const URL = instrumented('journal-lab.html', [["setMode('free'); booted = true;", "window.__core = LabCore; window.__lmh = labModelHtml; setMode('free'); booted = true;"]]);
   const p = await open(browser, errors, {}, URL);

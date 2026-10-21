@@ -141,9 +141,12 @@ other tabs, but an unsaved page is not stored anywhere and is gone on reload.
   double spaces, tabs, blank lines and trailing spaces included. Nothing is
   corrected, and nothing has to be corrected to carry on.
 - **entries** opens a dated list, newest first: **open** puts an entry back
-  in the field to edit (saving updates it in place), **delete** asks before
-  it deletes, **new entry** asks before it discards unsaved text, and
-  **export** saves everything as a JSON file, with an unsaved page alongside.
+  in the field to edit (saving updates it in place, and the page says
+  "editing" with its date), **delete** asks before it deletes, **new entry**
+  and **open** ask before they discard unsaved text, and **export** saves
+  everything as a JSON file, with an unsaved page alongside. Clearing the
+  field also starts a new page, so the next save never replaces the last
+  entry; deleting the entry in the field keeps any unsaved text there.
 - **Feelings are yours to name, and optional.** On an empty page a quiet
   line offers to name how you feel before writing; after a save it offers
   the same for after. Choose any of twelve plain words, add your own (they
@@ -152,11 +155,13 @@ other tabs, but an unsaved page is not stored anywhere and is gone on reload.
 - **Typing is stored apart from feelings.** Each entry keeps a summary of
   the typing that wrote it: active seconds, keys, mean keys/s, mean sync and
   the mean colour of the sphere (in OKLab). The colours reflect typing
-  mechanics, speed, rhythm and accuracy, and nothing else.
+  mechanics, speed and rhythm (accuracy counts only in tabs with text to
+  copy), and nothing else.
 - **Patterns** describe your own entries: how many there are, how many have
   a feeling you chose, how often each word appears, before-and-after
   intensity, and the median typing beside each word used in at least two
-  entries. Every line carries the number of entries it rests on. Nothing
+  entries. Every line carries the number of entries it rests on (a sync
+  value resting on fewer shows its own count in brackets). Nothing
   infers a feeling from a colour, diagnoses anything or calls a pattern a
   cause.
 - **Private.** Entries stay in this browser on this device. Clearing
@@ -266,8 +271,8 @@ or one file at a time:
 | `lab-core.mjs` | Rhythm Lab analysis in Node, no browser: the integrator against the analytic slip period and locked offset, the regimes, synthetic locked and slipping trials against ground truth, missed, extra and duplicate taps, jitter, slow slips that nearest-beat scoring would hide, parameter recovery, the held-out comparison on phase, linear and no-coupling data, and the coupling bound |
 | `lab.mjs` | Rhythm Lab in Chromium: consent first, baseline, duplicate and repeat taps, one clock for clicks and taps (taps placed 30 ms after each mapped click read back at +30 ms), interrupted trials flagged and re-queued, a full session with the redo rule, export, reset, simulation regimes, a clock step flagged as drift, and touch taps on a phone viewport |
 | `interaction.mjs` | 24: count-in, background and resume (clocks, no opponent burst), caret locking, Loki's HUD and rays frame by frame, phone portrait layout (the caret's line clear of the pinned sphere), landscape usability and result cards, focus in a short desktop window |
-| `keyboard.mjs` | 29, all emulated: the writing view with a stand-in visual viewport, portrait and landscape keyboards, the reveal pan, an 80-line entry scrolling inside the field with the page still, no movement while typing or when the keyboard grows, save keeping focus, pinch zoom, impossible readings, done restoring the page, every mode, turning with the keyboard open, the iframe fallback and a host that shrinks the frame, no writing view without touch |
-| `journal.mjs` | 66: text saved exactly, nothing stored before save, drafts across tabs, Ctrl+S, the dated list, open and edit in place, confirmed delete and new entry, feelings before and after with skip, own words, intensity and clearing, the typing summary kept apart, damaged and missing feelings, injected colours, descriptive patterns with counts, export with the unsaved page, storage full, dropped writes and blocked storage, unreadable journals copied aside, other records untouched, two tabs, the Rhythm Lab's k note |
+| `keyboard.mjs` | 38, all emulated: the writing view with a stand-in visual viewport, portrait and landscape keyboards, the reveal pan, an 80-line entry scrolling inside the field with the page still, a caret away from the end kept in view, no movement while typing or when the keyboard arrives or grows (upright and sideways), save keeping focus, pinch zoom, impossible readings, done restoring the page, every mode, turning with the keyboard open and then closing it, opening an entry sideways, the verse window after done, the iframe fallback and a host that shrinks the frame, duel labels on a narrow phone, no writing view without touch |
+| `journal.mjs` | 78: text saved exactly, nothing stored before save, drafts across tabs, Ctrl+S, the dated list, open and edit in place, confirmed delete and new entry, clearing the field starting a new page, unsaved words never discarded by open or delete, feelings before and after with skip, own words, intensity and clearing, more than twelve words, the typing summary kept apart, damaged and missing feelings, injected colours, descriptive patterns with counts (including the sync count), export with the unsaved page and its feelings, storage full, dropped writes and blocked storage, unreadable journals copied aside, other records untouched, two tabs saving entries and feelings, the Rhythm Lab's k note |
 
 Phones are emulated (desktop Chromium with a phone viewport, touch and
 device scale), not real devices. A background tab is emulated too: the
