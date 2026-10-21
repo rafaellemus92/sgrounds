@@ -346,6 +346,16 @@ const FAILING = () => {
   const about = await p.textContent('#panelAbout');
   ok('the about tab says the same, and that scoring never touches the journal text', about.includes('Unsaved text is lost if the page reloads') && about.includes('cannot be imported back yet') && about.includes('never touches it'));
   await p.close(); }
+{ const a = await open(browser, errors);
+  await a.keyboard.type('kept in tab A'); await save(a); await a.waitForTimeout(3700);
+  const b = await a.context().newPage(); await b.goto(a.url()); await b.waitForTimeout(300);
+  const id = (await stored(a)).entries[0].id;
+  await panel(b); await b.click(`[data-open="${id}"]`); await b.click('#input'); await b.keyboard.press('End'); await b.keyboard.type(' and changed in B'); await save(b); await a.waitForTimeout(150);
+  ok('another tab rewriting the entry turns this tab to "unsaved", since what is stored is no longer what is here', (await status(a)) === 'unsaved');
+  await panel(b); await b.click(`[data-del="${id}"]`); await b.click(`[data-del-yes="${id}"]`); await a.waitForTimeout(150);
+  const st8 = await status(a);
+  ok('another tab deleting the entry: this tab says so, keeps the text, and a save makes a new entry', st8.includes('deleted in another tab') && (await a.inputValue('#input')) === 'kept in tab A' && (await save(a), (await stored(a)).entries.length === 1 && (await stored(a)).entries[0].id !== id), st8);
+  await b.close(); await a.close(); }
 { const p = await open(browser, errors, { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await p.tap('#input'); await p.keyboard.type('in the writing view');
   const kb = () => p.evaluate(() => ({ text: kbSave.textContent, gold: kbSave.classList.contains('gold'), label: kbSave.getAttribute('aria-label') }));

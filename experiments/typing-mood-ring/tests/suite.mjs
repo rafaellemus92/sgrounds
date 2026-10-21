@@ -161,7 +161,7 @@ const newPage = async p => { await p.click('#jOpen'); await p.click('#jNew'); if
   }
   const c1 = await txt(p, '#gameCard');
   ok('fast typist beats the 30-wpm jötunn', /yours|leans your way/.test(c1), c1.slice(0, 120));
-  const st1 = await p.evaluate(() => ({ d: localStorage.getItem('tmr-duel:relaxed'), g: !!localStorage.getItem('tmr-ghost') }));
+  const st1 = await p.evaluate(() => ({ d: localStorage.getItem('tmr-duel:relaxed'), g: !!localStorage.getItem('tmr-ghost:relaxed') }));
   ok('duel record and ghost persisted, giant moved up', JSON.parse(st1.d).w === 1 && JSON.parse(st1.d).giant === 34 && st1.g, st1);
   await p.screenshot({ path: shot('duel-end.png') });
   ok('urðr enabled after a duel', !(await p.isDisabled('[data-opp="ghost"]')));

@@ -54,6 +54,19 @@ const sample = p => p.evaluate(SAMPLE);
   ok('a ripple is faint: its strongest stroke is 7% opaque, faded in over 0.8 s', peak <= 0.07);
   await p.close(); }
 
+// ── easing toward the opposite hue: the colour passes through grey at the same lightness, it never spins ──────
+{ const p = await page();
+  await p.evaluate(() => { const D = Math.PI/180; __BG.x = Math.cos(300*D); __BG.y = Math.sin(300*D); });   // the field sits at 300…
+  await p.click('button[data-mode="about"]'); await p.click('[data-set-bg="still"]'); await p.click('button[data-mode="free"]');   // …and is asked for 120
+  const steps = await p.evaluate(() => new Promise(done => {
+    const out = []; let prev = null, t0 = performance.now();
+    const look = () => { const C = 0.05*Math.min(1, Math.hypot(__BG.x, __BG.y)), h = __BG.hue*Math.PI/180, ab = [C*Math.cos(h), C*Math.sin(h)];
+      if (prev) out.push(Math.hypot(ab[0] - prev[0], ab[1] - prev[1])); prev = ab;
+      if (performance.now() - t0 < 4000) requestAnimationFrame(look); else done({ max: Math.max(...out), hue: __BG.hue }); };
+    requestAnimationFrame(look); }));
+  ok('the colour eases straight across to the opposite hue, with no frame changing it by more than 0.003 in OKLab', steps.max < 0.003, steps);
+  await p.close(); }
+
 // ── Reduce Motion, and the still setting ────────────────────────────────────────────────────────────────────
 { const p = await page({ reducedMotion: 'reduce' });
   await p.click('#input'); await typeAt(p, 'typing with reduce motion on', 80); await p.waitForTimeout(400);
@@ -116,10 +129,33 @@ for (const [label, opts] of [['desktop', {}], ['phone', { viewport: { width: 390
 // ── phones: the pinned sphere takes the page colour only once the page scrolls under it ─────────────────────
 { const p = await page({ viewport: { width: 390, height: 700 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await p.tap('#jOpen'); await p.waitForTimeout(100);
-  const top = await p.evaluate(() => ({ stuck: document.querySelector('.stage').classList.contains('stuck'), bg: getComputedStyle(document.querySelector('.stage')).backgroundColor }));
+  const look = () => p.evaluate(() => { const e = document.querySelector('.stage'), cs = getComputedStyle(e); return { stuck: e.classList.contains('stuck'), color: cs.backgroundColor, image: cs.backgroundImage.slice(0, 15) }; });
+  const top = await look();
   await p.evaluate(() => window.scrollTo(0, 500)); await p.waitForTimeout(150);
-  const down = await p.evaluate(() => ({ stuck: document.querySelector('.stage').classList.contains('stuck'), bg: getComputedStyle(document.querySelector('.stage')).backgroundColor, page: getComputedStyle(document.documentElement).backgroundColor }));
-  ok('phone: at the top the sphere sits on the open colour field; scrolled, it gets the page colour so text does not show through', !top.stuck && top.bg === 'rgba(0, 0, 0, 0)' && down.stuck && down.bg === down.page, { top, down });
+  const down = await look();
+  ok('phone: at the top the sphere sits on the open colour field; scrolled, it gets an opaque backdrop so text does not show through', !top.stuck && top.color === 'rgba(0, 0, 0, 0)' && top.image === 'none' && down.stuck && down.image.startsWith('radial-gradient'), { top, down });
+  await p.close(); }
+
+// the pinned sphere's backdrop against the field around it, from real screenshot pixels decoded in the page
+{ const p = await page({ viewport: { width: 390, height: 700 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await p.tap('#jOpen'); await p.waitForTimeout(100);
+  await p.evaluate(() => window.scrollTo(0, 500)); await p.waitForTimeout(400);
+  // straight across the stage's left edge, a third of the way down, where neither the sphere nor any text is drawn
+  const edge = await p.evaluate(() => { const r = document.querySelector('.stage').getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top + r.height/3), h: Math.round(r.bottom) }; });
+  const png = (await p.screenshot({ clip: { x: 0, y: 0, width: 390, height: edge.h } })).toString('base64');
+  const px = await p.evaluate(async ([src, e]) => {
+    const i = new Image(); i.src = 'data:image/png;base64,' + src; await i.decode();
+    const c = document.createElement('canvas'); c.width = i.width; c.height = i.height; const g = c.getContext('2d'); g.drawImage(i, 0, 0);
+    const at = (x, y) => [...g.getImageData(x, y, 1, 1).data].slice(0, 3);
+    return { stage: at(e.x + 3, e.y), field: at(e.x - 3, e.y) };
+  }, [png, edge]);
+  const diff = (u, v) => Math.max(...u.map((x, i) => Math.abs(x - v[i])));
+  ok('phone: the pinned sphere\'s backdrop is the same colour field as around it, with no box edge (screenshot pixels across its edge)', diff(px.stage, px.field) <= 4, px);
+  await p.close(); }
+{ const p = await page();
+  await p.click('button[data-mode="lab"]');
+  const t3 = await p.evaluate(() => getComputedStyle(document.querySelector('.lab .small')).color);
+  ok('the lab keeps its old text tone (the faint tier was raised only for the colour field)', t3 === 'rgba(255, 255, 255, 0.46)', t3);
   await p.close(); }
 
 ok('no page errors', errors.length === 0, errors);

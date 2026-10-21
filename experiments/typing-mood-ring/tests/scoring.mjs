@@ -5,7 +5,7 @@
 import { chromium, checks, fresh as open, txt, typeAt, instrumented } from './harness.mjs';
 const { ok, done } = checks('scoring');
 const browser = await chromium.launch(); const errors = [];
-const URL = instrumented('scoring.html', [["setMode('free'); booted = true;", "window.__st = st; window.__norm = norm; window.__same = same; setMode('free'); booted = true;"]]);
+const URL = instrumented('scoring.html', [["setMode('free'); booted = true;", "window.__st = st; window.__sp = sp; window.__norm = norm; window.__same = same; setMode('free'); booted = true;"]]);
 const page = (opts = {}) => open(browser, errors, opts, URL);
 const S = p => p.evaluate(() => ({ typed: __st.typed, errors: __st.errors, acc: __st.acc }));
 const caps = p => p.locator('.capsB:visible').first();
@@ -124,9 +124,30 @@ const reload = async p => { await p.reload(); await p.waitForTimeout(300); };
   ok('a sprint word completed inside a composition counts once; the keyboard re-committing it does not spill into the next word', after.words === 1 && after.value === '' && !after.hot, after);
   await typeAt(p, await txt(p, '#moodWord'), 40);
   ok('…and the next word types normally', +(await txt(p, '#pWords')) === 2);
+  await p.click('#reset'); await p.waitForTimeout(100); await p.click('#pStart'); await p.waitForTimeout(1700);
+  const w2 = await txt(p, '#moodWord'), base = await S(p);
+  await cdp.send('Input.imeSetComposition', { text: w2[0], selectionStart: 1, selectionEnd: 1 });                          // keys into a composition,
+  await cdp.send('Input.imeSetComposition', { text: w2[0] + 'q', selectionStart: 2, selectionEnd: 2 });                    // a typo,
+  await cdp.send('Input.imeSetComposition', { text: w2[0], selectionStart: 1, selectionEnd: 1 });                          // taken back,
+  for (let i = 2; i <= w2.length; i++) await cdp.send('Input.imeSetComposition', { text: w2.slice(0, i), selectionStart: i, selectionEnd: i });   // then the word
+  const s3 = await S(p);
+  const run = await p.evaluate(() => ({ words: __sp.words, streak: __sp.streak, best: __sp.bestStreak }));
+  ok('a typo made and fixed inside a composition counts once, as on a plain keyboard, and breaks the streak', s3.errors - base.errors === 1 && s3.typed - base.typed === w2.length + 1 && run.words === 1 && run.streak === 0 && run.best === 0, { base, s3, w2, run });
+  await cdp.send('Input.insertText', { text: w2 }); await p.waitForTimeout(80);
   await p.click('button[data-mode="free"]');
   const free = await p.evaluate(() => { const e = new InputEvent('beforeinput', { inputType: 'insertReplacementText', cancelable: true, bubbles: true }); input.dispatchEvent(e); return e.defaultPrevented; });
   ok('in the journal, autocorrect is the writer\'s own business and is never blocked', !free);
+  await p.close(); }
+
+// ── the urðr ghost belongs to the setting it was typed under; the old one is left alone ─────────────────────
+{ const p = await page();
+  const ghost = JSON.stringify({ v: 1, d: Array.from({ length: 30 }, (_, i) => i*200), acc: 0.9, at: '2026-10-01' });
+  await p.evaluate(g => { localStorage.setItem('tmr-ghost', g); localStorage.setItem('tmr-ghost:relaxed', g); }, ghost); await reload(p);
+  await p.click('button[data-mode="duel"]');
+  const relaxedOn = await p.locator('#oppGhost').isEnabled();
+  await caps(p).click();
+  const strictOn = await p.locator('#oppGhost').isEnabled();
+  ok('urðr races only a ghost typed under the same capitals setting; the earlier unsuffixed ghost is not used or touched', relaxedOn && !strictOn && (await p.evaluate(() => localStorage.getItem('tmr-ghost'))) === ghost, { relaxedOn, strictOn });
   await p.close(); }
 
 // ── the journal keeps exactly what was typed, whatever the scoring compares ────────────────────────────────

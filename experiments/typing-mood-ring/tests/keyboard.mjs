@@ -300,18 +300,20 @@ const clear = (g, top, h, what) => g.kb && inside(g.ring, top, h) && inside(g.in
 { const res = {};
   for (const [label, vp, kh, mode, minRing, minField] of [
     ['390x844 free', { width: 390, height: 844 }, 420, 'free', 160, 5*24], ['390x844 faith', { width: 390, height: 844 }, 420, 'faith', 160, 4*24],
-    ['375x667 faith', { width: 375, height: 667 }, 300, 'faith', 88, 4*24], ['320x568 free', { width: 320, height: 568 }, 250, 'free', 80, 4*24],
-    ['320x568 faith', { width: 320, height: 568 }, 250, 'faith', 56, 3*24], ['844x390 sideways', { width: 844, height: 390 }, 140, 'free', 88, 2*24]]) {
+    ['375x667 faith', { width: 375, height: 667 }, 300, 'faith', 88, 2*24 + 16], ['320x568 free', { width: 320, height: 568 }, 250, 'free', 80, 3*24 + 16],
+    ['320x568 faith', { width: 320, height: 568 }, 250, 'faith', 56, 2*24 + 16], ['844x390 sideways', { width: 844, height: 390 }, 140, 'free', 88, 2*24]]) {
     const p = await open(browser, errors, { ...PHONE, viewport: vp });
     await p.tap(`button[data-mode="${mode}"]`); await settle(p, 100); await p.tap('#input'); await settle(p);
+    const before = await geo(p);
     await vv(p, { height: kh });
     await typeAt(p, 'a few words to check', 10); await settle(p);
     const g = await geo(p), field = await p.evaluate(() => input.clientHeight);
-    res[label] = { ring: g.ring.h, field, ok: clear(g, 0, kh, mode === 'faith' ? g.target : null) && g.ring.h >= minRing && field >= minField && (mode !== 'free' || inside(g.save, 0, kh)) };
+    const still = g.ring.h === before.ring.h && g.input.t === before.input.t && g.input.l === before.input.l;   // the keyboard arriving moved nothing
+    res[label] = { ring: g.ring.h, field, still, ok: still && clear(g, 0, kh, mode === 'faith' ? g.target : null) && g.ring.h >= minRing && field >= minField && (mode !== 'free' || inside(g.save, 0, kh)) };
     if (label.startsWith('390x844 free') || label.startsWith('844x390')) await p.screenshot({ path: shot(`kb-big-${label.split(' ')[0]}.png`) });
     await p.close();
   }
-  ok('the sphere is bigger while typing (at least 160 px upright on a 390x844 phone, from 80) yet the field keeps four or five lines, and the sphere, the line to copy, the field and save all stay above the keyboard, down to 320x568 and sideways',
+  ok('the sphere is bigger while typing (at least 160 px upright in a 390x844 viewport, from 80), the keyboard arriving moves nothing, the field keeps at least two or three lines, and the sphere, the line to copy, the field and save all stay above the keyboard, down to 320x568 and sideways',
      Object.values(res).every(r => r.ok), res);
 }
 // ── the same inside a stand-in for the claude.ai preview, framed under a host header ─────────────────────────

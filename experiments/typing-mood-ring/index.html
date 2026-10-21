@@ -12,6 +12,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:transparent;color:var(--t);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 html{background:var(--bgc)}   /* on html only: a body background would paint over the colour field */
+.m-lab{--t3:rgba(255,255,255,.46)}   /* the lab's display stays as it was */
 ::selection{background:rgba(201,169,110,.3)}
 ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
 .wrap{max-width:560px;margin:0 auto;padding-block:22px 60px;padding-left:max(18px, env(safe-area-inset-left, 0px));padding-right:max(18px, env(safe-area-inset-right, 0px))}
@@ -29,7 +30,7 @@ button.gold{color:#09090a;background:var(--g);border-color:var(--g)}
 button.gold:hover{background:#d8b87c}
 main{display:flex;flex-direction:column}
 .stage{display:flex;justify-content:center;margin:10px 0 0}
-.stage.stuck{background:var(--bgc)}
+.stage.stuck{background:radial-gradient(circle var(--bgR,600px) at var(--bgX,50%) var(--bgY,50%), var(--bg0,var(--bgc)), var(--bg1,var(--bgc)) 45%, var(--bg2,var(--bgc)))}
 /* the colour field and ripples behind the page (typing and journal tabs) */
 #bg{position:fixed;left:0;top:0;width:100%;height:100%;z-index:-1;pointer-events:none}
 .m-lab #bg,.m-about #bg{display:none}
@@ -694,12 +695,12 @@ function kbMeasure(){
   const h = capped ? Math.max(Math.min(full, 90), Math.round(full*(side ? KB_CAP.side : KB_CAP.tall))) : full;
   // The sphere's size and the one-line verse are chosen from the smaller of the visible height and the share a
   // keyboard usually leaves, so they are already right before the keyboard arrives and stay put when it does.
-  const hs = Math.min(h, Math.round(KB.idle*(side ? 0.36 : 0.5)));
+  const est = Math.round(KB.idle*(side ? 0.36 : 0.5)), hs = Math.min(h, est);
   const r = document.documentElement.style, b = document.body.classList, short = hs < 150;
   r.setProperty('--vvx', x + 'px'); r.setProperty('--vvy', y + 'px'); r.setProperty('--vvw', w + 'px'); r.setProperty('--vvh', h + 'px');
   b.toggle('kb-side', side); b.toggle('kb-short', short); b.toggle('kb-panned', y > 1); b.toggle('kb-capped', capped);
   const changed = w !== KB.w || h !== KB.h, reflow = short !== KB.short || side !== KB.side;
-  Object.assign(KB, { w, h, hs, side, capped, short });
+  Object.assign(KB, { w, h, hs, est: capped ? Math.min(h, est) : est, side, capped, short });
   if (reflow && target) { resize(); renderTarget(input.value); }   // the verse window rewraps at the new size: bring the caret's line back
   if (changed) requestAnimationFrame(keepCaret);
 }
@@ -802,15 +803,15 @@ const sp = { on:false, over:false, count:0, countT:0, fuel:6000, cap:6000, words
 const pace = w => 1.5 + 0.05*w;                                   // break-even keys/s at word w
 const combo = () => Math.min(4, 1 + 0.5*Math.floor(sp.streak/5));
 
-function loadGhost(){
-  const g = store.get('tmr-ghost', null);
+function loadGhost(k){
+  const g = store.get(k, null);
   if (!g || g.v !== 1 || !Array.isArray(g.d) || g.d.length < 20 || g.d.length > 6000) return null;
   let prev = 0;
   for (const x of g.d) { if (!Number.isInteger(x) || x < prev || x > 600000) return null; prev = x; }
   return { d: g.d, acc: typeof g.acc === 'number' && g.acc >= 0 && g.acc <= 1 ? g.acc : 0.95 };
 }
 const duel = { on:false, count:0, countT:0, kind:'giant', start:0, len:45000, p:0, loki:[0,0], lokiUntil:[0,0], fired:[0,0],
-               rec:[], si:0, base:0, next:0, ivl:0, Ta:1, Tb:1, peak:0, ghost:loadGhost(), stats:{ w:0, l:0, d:0, giant:30 } };
+               rec:[], si:0, base:0, next:0, ivl:0, Ta:1, Tb:1, peak:0, ghost:null, stats:{ w:0, l:0, d:0, giant:30 } };
 function loadRecords(){   // the records of the current capitals setting
   game.best = store.record(rk('tmr-best'));
   sp.best = store.record(rk('tmr-sprint-best')); sp.far = store.record(rk('tmr-sprint-far'));
@@ -819,6 +820,7 @@ function loadRecords(){   // the records of the current capitals setting
   const s = store.get(rk('tmr-duel'), null);
   if (s && typeof s === 'object') for (const k of ['w','l','d','giant']) if (Number.isFinite(s[k])) duel.stats[k] = s[k];
   duel.stats.giant = clamp(Math.round(duel.stats.giant), 15, 160);
+  duel.ghost = loadGhost(rk('tmr-ghost'));   // urðr races only duels typed under the same setting
 }
 loadRecords();
 const G_DUEL = 0.9, LOKI_K = 0.33;
@@ -832,10 +834,11 @@ const same = (a, b) => a === b || (a != null && b != null && !SET.strict && a.to
 const matches = val => { const v = norm(val), t = norm(target); if (v.length !== t.length) return false; for (let i = 0; i < v.length; i++) if (!same(v[i], t[i])) return false; return true; };
 // Accuracy counts each position of the line once for each different character it holds, so an input event that
 // repeats text already there (a composition being committed, an IME re-sending a word) never counts twice. While a
-// composition is open nothing is judged: what counts is the text it commits.
+// composition is open only a key that grows it is judged, so a typo there counts as it would anywhere; the IME's own
+// rewrites wait for the commit.
 let composing = false, stale = null;
-function judge(){
-  if (!target || composing) return;
+function judge(key = false){
+  if (!target || (composing && !key)) return;
   const v = norm(input.value), t = norm(target), seen = st.seen;
   if (seen.length > v.length) seen.length = v.length;   // deleted positions are forgotten, so typing them again counts
   for (let i = 0; i < v.length; i++) {
@@ -944,7 +947,7 @@ function handle(val, t, type, data){
   }
   if (!target && grew > 0) st.typed += grew;
   prevVal = val;
-  judge();
+  judge(key);
   if (target) {
     renderTarget(val);
     if (matches(val)) {
@@ -1207,7 +1210,7 @@ function endDuel(abandon){
   if (duel.kind === 'giant') duel.stats.giant = clamp(before + (res === 'w' ? 4 : res === 'l' ? -3 : 0), 15, 160);
   store.set(rk('tmr-duel'), duel.stats);
   const secs = Math.max(1, Math.min(duel.len, performance.now() - duel.start)/1000);
-  if (duel.rec.length >= 20) { duel.ghost = { d: duel.rec.slice(), acc: st.acc }; store.set('tmr-ghost', { v:1, d: duel.ghost.d, acc: st.acc, at: new Date().toISOString().slice(0,10) }); }
+  if (duel.rec.length >= 20) { duel.ghost = { d: duel.rec.slice(), acc: st.acc }; store.set(rk('tmr-ghost'), { v:1, d: duel.ghost.d, acc: st.acc, at: new Date().toISOString().slice(0,10) }); }
   const head = res === 'w' ? (sweep ? 'all seven rings are yours' : 'Bifrost leans your way')
              : res === 'l' ? (sweep ? `the ${who} took every ring` : `Bifrost leans to the ${who}`) : 'the bridge held';
   const loki = duel.fired[0] ? ` · Loki <span class="num">×${duel.fired[0]}</span>` : '';
@@ -1485,7 +1488,7 @@ function jSay(msg, err = false){
 }
 function jState(){
   const el = $('#jStatus'), kb = $('#kbSave'), text = st.mode === 'free' ? input.value : '';
-  const state = !text.trim() ? '' : J.cur && text === J.base ? 'saved' : 'unsaved';
+  const e = J.cur && J.raw.find(x => x && x.id === J.cur), state = !text.trim() ? '' : e && e.text === text ? 'saved' : 'unsaved';   // as stored, not as remembered
   put(el, J.msg || state); el.className = J.msg ? (J.err ? 'err' : '') : state;
   if (!J.kbFlash) { put(kb, state === 'saved' ? 'saved' : 'save'); kb.classList.toggle('gold', state !== 'saved'); }
   kb.setAttribute('aria-label', state === 'saved' ? 'saved' : state === 'unsaved' ? 'save: this page has unsaved changes' : 'save');
@@ -1713,7 +1716,12 @@ $('#jExport').onclick = async () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 10000);
   said('Exported. Keep the file somewhere safe; it is the only copy outside this browser.');
 };
-window.addEventListener('storage', e => { if (e.key === J_KEY || e.key === null) { jLoad(); jFeelSync(); jRender(); } });
+window.addEventListener('storage', e => {
+  if (e.key !== J_KEY && e.key !== null) return;
+  jLoad();
+  if (J.cur && !J.raw.some(x => x && x.id === J.cur)) { const acc = J.acc; jUnbind(); J.acc = acc; jSay('the entry in the field was deleted in another tab; the text stays here, unsaved'); }   // deleted elsewhere: the text stays, as a new page
+  jFeelSync(); jRender();
+});
 jLoad();
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -1722,11 +1730,15 @@ function resize(){
   let w, h;
   if (KB.on) {
     // The writing view: the sphere takes the height left once the field (five lines for the journal, four with a
-    // line to copy above it) and the line or word to type have theirs. It is sized from the steady estimate KB.hs
-    // and moves in 8 px steps, so browser bars coming and going do not move the field.
-    const hs = KB.hs || KB.h, M = st.mode, step = x => Math.floor(x/8)*8;
-    if (KB.side) h = clamp(step(hs - 44), 40, 140);                         // the done and save row sits under it
-    else h = clamp(step(hs - 16 - (M === 'free' ? 144 : M === 'sprint' ? 99 : 181)), 56, Math.min(184, KB.w - 150));
+    // line to copy above it) and the line or word to type have theirs, in 8 px steps. It is sized from a steady
+    // estimate of what a keyboard leaves (KB.est), so a keyboard arriving or growing shortens the field instead of
+    // moving it; only if the field would drop below its minimum does the sphere shrink to the height really there.
+    const M = st.mode, step = x => Math.floor(x/8)*8, extra = KB.side ? 0 : M === 'free' ? 0 : M === 'sprint' ? 49 : 61;
+    const size = H => KB.side ? clamp(step(H - 44), 40, 140)                // the done and save row sits under it
+      : clamp(step(H - 16 - (M === 'free' ? 144 : M === 'sprint' ? 99 : 181)), 56, Math.min(184, KB.w - 150));
+    const field = s => KB.side ? KB.h - 12 : KB.h - 12 - (s + 4) - extra - 6, least = KB.side ? 0 : M === 'free' ? 90 : M === 'sprint' ? 44 : 66;
+    h = size(KB.est || KB.h);
+    if (KB.side ? h + 44 > KB.h : field(h) < least) h = size(KB.h);
     w = duelM ? Math.min(Math.round(h/0.62), KB.side ? Math.round(KB.w*0.4) : KB.w - 150) : h;
     if (duelM) h = Math.round(w*0.62);
     document.documentElement.style.setProperty('--kbcol', Math.max(116, w) + 'px');
@@ -1873,7 +1885,7 @@ function updateStats(now){
 // sphere: quick typing is pooled into at most one ripple every 0.8 s, and each fades in and out, so there is never
 // a flash. With Reduce Motion there are no ripples; the still setting also fixes the colour. Lab and about stay black.
 const bg = $('#bg'), bgx = bg.getContext('2d'), D2R = Math.PI/180;
-const BG = { on: null, x: Math.cos(120*D2R), y: Math.sin(120*D2R), hue: 120, rip: [], energy: 0, lastRip: -1e9, cx: -1, cy: -1, drawn: NaN, cssHue: NaN, n: -1 };
+const BG = { on: null, x: Math.cos(120*D2R), y: Math.sin(120*D2R), hue: 120, m: 1, rip: [], energy: 0, lastRip: -1e9, cx: -1, cy: -1, drawn: NaN, cssHue: NaN, cssM: NaN, geo: '', n: -1 };
 const BG_STILL_HUE = 120;                                  // the complement of the resting violet sphere
 const BG_STOPS = [[0, 0.285, 0.05], [0.45, 0.24, 0.042], [1, 0.205, 0.034]];   // position, OKLCH lightness, chroma
 const RIP = { every: 800, life: 7000, speed: 55, width: 22, alpha: 0.07 };
@@ -1883,7 +1895,7 @@ function bgKick(){ if (BG.on && ripplesOn()) BG.energy++; }
 function bgMode(){
   const on = bgActive();
   if (on === BG.on) return;
-  BG.on = on; BG.rip.length = 0; BG.energy = 0; BG.n = -1; BG.cssHue = NaN;
+  BG.on = on; BG.rip.length = 0; BG.energy = 0; BG.n = -1; BG.cssHue = NaN; BG.geo = '';
   if (!on) document.documentElement.style.setProperty('--bgc', '#09090a');
 }
 function bgFrame(now, dt){
@@ -1895,26 +1907,35 @@ function bgFrame(now, dt){
   const tgt = SET.still ? BG_STILL_HUE : (st.cur.H + 180) % 360, e = 1 - Math.exp(-Math.min(dt, 0.25)/3);
   BG.x += (Math.cos(tgt*D2R) - BG.x)*e; BG.y += (Math.sin(tgt*D2R) - BG.y)*e;
   BG.hue = (Math.atan2(BG.y, BG.x)/D2R + 360) % 360;
+  const m = Math.min(1, Math.hypot(BG.x, BG.y));   // the eased colour is a straight line in OKLab: chroma dips, the hue never spins
   if (!ripplesOn()) { BG.rip.length = 0; BG.energy = 0; }
   else if (BG.energy > 0 && now - BG.lastRip >= RIP.every) {
     BG.rip.push({ t0: now, a: Math.min(1, 0.4 + 0.12*BG.energy), H: st.cur.H }); BG.energy = 0; BG.lastRip = now;
   }
   while (BG.rip.length && now - BG.rip[0].t0 > RIP.life) BG.rip.shift();
   const dh = Math.abs(((BG.hue - BG.drawn + 540) % 360) - 180);
-  if (BG.n === 0 && !BG.rip.length && !(dh > 0.2) && Math.abs(cx - BG.cx) < 0.5 && Math.abs(cy - BG.cy) < 0.5) return;   // nothing changed
-  BG.cx = cx; BG.cy = cy; BG.drawn = BG.hue; BG.n = BG.rip.length;
+  if (BG.n === 0 && !BG.rip.length && !(dh > 0.2) && !(Math.abs(m - BG.m) > 0.005) && Math.abs(cx - BG.cx) < 0.5 && Math.abs(cy - BG.cy) < 0.5) return;   // nothing changed
+  BG.cx = cx; BG.cy = cy; BG.drawn = BG.hue; BG.m = m; BG.n = BG.rip.length;
   bgx.setTransform(k, 0, 0, k, 0, 0);
   const R = Math.max(1, Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)));
   const g = bgx.createRadialGradient(cx, cy, 0, cx, cy, R);
-  for (const [at, L, C] of BG_STOPS) g.addColorStop(at, css(oklch(L, C, BG.hue)));
+  const stops = BG_STOPS.map(([at, L, C]) => [at, css(oklch(L, C*m, BG.hue))]);
+  for (const [at, c] of stops) g.addColorStop(at, c);
   bgx.fillStyle = g; bgx.fillRect(0, 0, W, H);
   for (const q of BG.rip) {
     const age = (now - q.t0)/1000, life = RIP.life/1000, env = Math.min(1, age/0.8)*Math.pow(Math.max(0, 1 - age/life), 1.5);
     bgx.beginPath(); bgx.arc(cx, cy, r0 + RIP.speed*age, 0, TAU);
     bgx.lineWidth = RIP.width; bgx.strokeStyle = css(oklch(0.72, 0.06, q.H), RIP.alpha*q.a*env); bgx.stroke();
   }
-  // the page colour behind everything else (and under a pinned sphere) follows, a degree at a time
-  if (!(Math.abs(((BG.hue - BG.cssHue + 540) % 360) - 180) < 1)) { BG.cssHue = BG.hue; document.documentElement.style.setProperty('--bgc', css(oklch(BG_STOPS[2][1], BG_STOPS[2][2], BG.hue))); }
+  // The page colour, and the same field for a pinned sphere's backdrop (so it matches what is around it), follow
+  // when the colour has moved a degree or the field has moved.
+  const sr = $('.stage').getBoundingClientRect(), geo = `${Math.round(R)}|${Math.round(cx - sr.left)}|${Math.round(cy - sr.top)}`;
+  if (!(Math.abs(((BG.hue - BG.cssHue + 540) % 360) - 180) < 1) || !(Math.abs(m - BG.cssM) < 0.01) || geo !== BG.geo) {
+    BG.cssHue = BG.hue; BG.cssM = m; BG.geo = geo;
+    const r = document.documentElement.style, [gR, gX, gY] = geo.split('|');
+    r.setProperty('--bgc', stops[2][1]); r.setProperty('--bg0', stops[0][1]); r.setProperty('--bg1', stops[1][1]); r.setProperty('--bg2', stops[2][1]);
+    r.setProperty('--bgR', gR + 'px'); r.setProperty('--bgX', gX + 'px'); r.setProperty('--bgY', gY + 'px');
+  }
 }
 // On phones the sphere is pinned at the top; once the page scrolls under it, it takes the page colour as a backdrop.
 function stageStuck(){
