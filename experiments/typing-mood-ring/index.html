@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>s; typing mood ring</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
-:root{--g:#c9a96e;--bg:#09090a;--red:#e07a6a;--t:rgba(255,255,255,.82);--t2:rgba(255,255,255,.52);--t3:rgba(255,255,255,.46)}
+:root{color-scheme:dark;--g:#c9a96e;--bg:#09090a;--red:#e07a6a;--t:rgba(255,255,255,.82);--t2:rgba(255,255,255,.52);--t3:rgba(255,255,255,.46)}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--t);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 ::selection{background:rgba(201,169,110,.3)}
 ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
-.wrap{max-width:560px;margin:0 auto;padding:22px 18px 60px}
+.wrap{max-width:560px;margin:0 auto;padding-block:22px 60px;padding-left:max(18px, env(safe-area-inset-left, 0px));padding-right:max(18px, env(safe-area-inset-right, 0px))}
 header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .brand{font-family:'Instrument Serif',serif;font-size:30px;color:#fff;letter-spacing:-.01em}
 .brand b{color:var(--g);font-weight:400}
@@ -103,8 +104,9 @@ textarea::placeholder{color:var(--t3)}
 .m-duel .legendLabels{margin-left:44px}
 @media (prefers-reduced-motion:reduce){.enter,.cur,.pop,.shake{animation:none}}
 @media (max-width:520px){
-  .wrap{padding-top:14px}
-  .stage{position:sticky;top:0;z-index:3;padding:6px 0;margin-top:6px}
+  .wrap{padding-block:14px 60px}
+  .stage{position:sticky;top:env(safe-area-inset-top, 0px);z-index:3;padding:6px 0;margin-top:6px}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top, 0px);z-index:10;background:var(--bg)}
   .m-about .stage{position:static}
   #panelType,#panelAbout{order:1}
   .stats,.legendWrap,.legendLabels{order:2}
@@ -244,7 +246,7 @@ push         dp/dt = g · (I_you·T_you − I_them·T_them)</pre>
       <p><b>The opposite colour wheel.</b> In the duel you own the warm half of the wheel, violet through red to gold as you speed up, and your opponent owns the cool half, green through cyan to blue. At equal speeds your colours are exact complements, 180° apart. Light that crosses Bifrost takes rings in its own colour.</p>
       <p><b>Loki.</b> Light that turns back is not lost. It charges Loki, and when the meter fills, for two seconds your light ignores the critical angle and theirs cannot reach you: the branch nobody saw coming. Only the side that is losing light charges it.</p>
       <p><b>Opponents.</b> A jötunn is a giant who types at a steady pace with a human wobble and gets four words a minute faster each time you beat it. Urðr is the keystroke timing of your own last duel, replayed against you: what was, against what is.</p>
-      <p><b>An honest note.</b> Typing speed is a rate, not the speed of light, so the duel is a picture and not a law of typing. The law that does govern two typists is the oscillator one. Two coupled oscillators whose frequencies differ by <code>Δω</code> lock when <code>|Δω| ≤ 2K</code>, at a phase lag where <code>sin ψ = Δω / 2K</code>, the same sine-equals-ratio shape as Snell's law. When <code>|Δω| &gt; 2K</code> there is no locked solution and the phases slip past each other: that is its total internal reflection. Snell's law itself is proved in Lean in this repository, as <code>snell</code> in <a href="../wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean">wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean</a>.</p>
+      <p><b>An honest note.</b> Typing speed is a rate, not the speed of light, so the duel is a picture and not a law of typing. The law that does govern two typists is the oscillator one. Two coupled oscillators whose frequencies differ by <code>Δω</code> lock when <code>|Δω| ≤ 2K</code>, at a phase lag where <code>sin ψ = Δω / 2K</code>, the same sine-equals-ratio shape as Snell's law. When <code>|Δω| &gt; 2K</code> there is no locked solution and the phases slip past each other: that is its total internal reflection. Snell's law itself is proved in Lean in this repository, as <code>snell</code> in <a href="https://github.com/rafaellemus92/sgrounds/blob/main/experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean" target="_blank" rel="noopener">wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean</a>.</p>
 
       <h2>The wager</h2>
       <p>Typing is a two-oscillator system. One is in your head and produces the next letter; one is in your hands and executes it. The hypothesis this toy makes visible is that the velocity of thought shows up as phase coherence in the keystrokes, and that a continuous picture of that coherence, a colour you cannot help but watch, trains the two oscillators to lock faster. Breakneck speed is not more force. It is better coupling.</p>
@@ -923,6 +925,8 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ── Snapshot ─────────────────────────────────────────────────────────────────
+const downloadsP = window.claude && typeof window.claude.use === 'function'
+  ? Promise.resolve(window.claude.use('downloads')).catch(() => null) : Promise.resolve(null);
 $('#snap').onclick = async () => {
   try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]); } catch {}
   const W = 720, isDuel = st.mode === 'duel', Hh = isDuel ? Math.round(W*0.62) : W;
@@ -937,9 +941,25 @@ $('#snap').onclick = async () => {
   c.fillStyle = 'rgba(255,255,255,.55)'; c.font = '22px "DM Mono", monospace';
   c.fillText(isDuel ? `${st.v.toFixed(1)} k/s vs ${opp.v.toFixed(1)} k/s · margin ${duel.p >= 0 ? '+' : '−'}${Math.abs(duel.p).toFixed(1)} rings`
                     : `${E.kps.textContent} keys/s · ${E.wpm.textContent} wpm · sync ${E.sync.textContent} · ${E.acc.textContent}`, W/2, Hh + 84);
-  const date = new Date().toISOString().slice(0,10);
+  const date = new Date().toISOString().slice(0,10), name = `aura-${date}.png`;
   c.fillStyle = G; c.fillText(`s; typing mood ring · ${date}`, W/2, Hh + 136);
-  const a = document.createElement('a'); a.download = `aura-${date}.png`; a.href = o.toDataURL('image/png'); a.click();
+  const blob = await new Promise(r => o.toBlob(r, 'image/png'));
+  // In claude.ai the viewer offers the file with its own confirmation; opened as a plain file, the browser downloads it.
+  const dl = await downloadsP;
+  if (dl && blob) {
+    try { await dl.save({ filename: name, data: blob }); note('aura saved ;'); return; }
+    catch (e) {
+      const code = e && e.code;
+      if (code === 'declined') { note('not saved'); return; }
+      if (code === 'rate_limited') { note('a save is already waiting'); return; }
+    }
+  }
+  if (window.claude || !blob) {   // framed without downloads: show the image so it can be kept by hand
+    showCard(`<h3>your aura ;</h3><p><img src="${o.toDataURL('image/png')}" alt="your typing aura" style="display:block;width:100%;border-radius:10px"></p><p>press and hold, or right-click, to save it</p>`);
+    return;
+  }
+  const a = document.createElement('a'); a.download = name; a.href = URL.createObjectURL(blob); a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 };
 
 // ── Render ───────────────────────────────────────────────────────────────────

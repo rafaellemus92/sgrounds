@@ -32,6 +32,13 @@ watch it, and watching it is the feedback loop that makes you faster.
 
 Enter starts or restarts game, sprint and duel. **keep this aura ↓**
 re-renders the canvas at 720 px into a PNG with the mood word and the numbers.
+Opened as a plain file it downloads; published as a claude.ai artifact it is
+offered through the viewer's `downloads` capability, and without that the
+image is shown on the page to save by hand.
+
+The page also follows the claude.ai artifact contract (safe-area gutters,
+a deliberate dark scheme, no external requests beyond Google Fonts), so it
+can be published as is after removing the document wrapper tags.
 
 ## The colour math
 
