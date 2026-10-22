@@ -26,14 +26,17 @@ Goals in rough order of difficulty. ✅ = proved, ⬜ = open.
   Mathlib's proof through the bridge.
 - ✅ √2 is irrational: infinite descent in core Lean (`no_fraction_squares_to_two`),
   lifted to the real number in `../wyrd-mathlib` (`irrational_sqrt_two`).
-- ✅ The rainbow (`../wyrd-mathlib/WyrdMathlib/Rainbow/`): the k-th bow at
-  `cos² i = (n² − 1)/(k(k+2))` is the unique strict minimum of the deviation;
-  for water the bows sit at 41–43° and 50–52°, with Alexander's dark band
-  between them.
+- ✅ The rainbow (`../wyrd-mathlib/WyrdMathlib/Rainbow/`): for `k ≥ 1` and
+  `1 < n < k+1`, the k-th bow at `cos² i = (n² − 1)/(k(k+2))` is the only
+  stationary point and the strict minimum of the deviation on `[0, π/2]`; for
+  `n = 4/3` the bows sit at 41–43° and 50–52°, and no once- or twice-reflected
+  ray leaves between 43° and 50° (Alexander's dark band).
 - ✅ Rainbow colours (`Colours.lean`, `Spectrum*.lean`, `VisibleBand.lean`): the
   primary bow shrinks and the secondary grows with `n`, so red is outside the
-  primary and inside the secondary; real-water brackets for red and violet; the
-  dark band holds for every colour from red up.
+  primary and inside the secondary; 1° brackets at `n = 1.331` (red) and
+  `n = 1.343` (violet); for every `1.331 ≤ n < 2`, `π − D < 43°` after one
+  reflection and `D − π > 50°` after two (the dark band across the colours).
+  Redder light (`n < 1.331`, beyond about 663 nm at 20 °C) is outside that range.
 - ⬜ Rainbow width to 0.1°: tighter arcsin brackets would prove the ~1.7° and
   ~3.1° band widths, not just more than 1° and 2°.
 - ✅ Body water (`../wyrd-mathlib/WyrdMathlib/BodyWater/`): dilution principle,

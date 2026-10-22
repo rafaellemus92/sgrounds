@@ -62,16 +62,18 @@ on both and are built on both. In the entries, NS abbreviates Navier–Stokes.
 
 ## Where the work adds something beyond known results
 
-1. **A machine-checked theory of the rainbow** (`WyrdMathlib/Rainbow`, both branches). It covers:
-   - the deviation of a ray after k internal reflections, its derivative, and the unique stationary ray
-     cos² i = (n² − 1)/(k(k+2)), which is a strict global minimum on [0, π/2] (`dev_lt_of_ne`). This is Newton and
-     Halley's general rule;
-   - the 42° and 51° bows for n = 4/3;
-   - Alexander's dark band, for n = 4/3 (`alexander_dark_band`) and for every index from red (1.331) up to 2
-     (`dark_band_of_red_le`);
+1. **A machine-checked theory of the rainbow** (`WyrdMathlib/Rainbow`, both branches; see
+   [`wyrd-mathlib/RAINBOW.md`](wyrd-mathlib/RAINBOW.md)). It takes the standard deviation formula as given and covers:
+   - its derivative, and the unique stationary ray cos² i = (n² − 1)/(k(k+2)), which is a strict global minimum on
+     [0, π/2] for k ≥ 1 and 1 < n < k + 1 (`dev_lt_of_ne`). This is Newton's general rule (*Opticks*, 1704);
+   - brackets of 41–43° and 50–52° for the two bows at n = 4/3;
+   - Alexander's dark band for once- and twice-reflected rays, for n = 4/3 (`alexander_dark_band`) and, in signed
+     form, for 1.331 ≤ n < 2 (`dark_band_of_red_le`);
    - Newton's colour order (`colour_order`).
 
-   The mathematics dates from 1637–1704. A web search found no earlier machine-checked proof in any proof assistant.
+   The mathematics dates from 1637–1704. As of 22 October 2026 we found no earlier machine-checked proof of these
+   results. We searched Lean and Mathlib, Physlib, Isabelle, HOL Light, HOL4, Rocq, Mizar, Metamath, ACL2, PVS and
+   Agda. The closest formal work is the paraxial HOL Light optics library of Siddique, Aravantinos and Tahar.
 2. **Small gaps in Mathlib filled.** These are candidates for upstreaming:
    - one-sided Taylor bounds of degree 4–7 for sin and cos on x ≥ 0 (`Rainbow/TrigBounds.lean`);
    - Grönwall's inequality with a variable coefficient (`PeriodicNS/Gronwall.lean`, new-session);
@@ -2044,7 +2046,7 @@ New statements about objects this project defines. Their truth is machine-checke
   - Caveat: A computation; 1.343 is a modelling input.
 - **`Wyrd.Rainbow.dark_band_of_red_le`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/VisibleBand.lean:31` · both branches
   - Lean: `{n i : ℝ} (hred : 1331 / 1000 ≤ n) (hn2 : n < 2) (hi : i ∈ Set.Icc 0 (π / 2)) : π - dev 1 n i < 43 * π / 180 ∧ 50 * π / 180 < dev 2 n i - π`
-  - Means: For every real n with 1.331 ≤ n < 2 and every i ∈ [0, π/2], π − dev 1 n i < 43° and dev 2 n i − π > 50°. So once- and twice-reflected rays avoid the 43–50° band for all such indices.
+  - Means: For every real n with 1.331 ≤ n < 2 and every i ∈ [0, π/2], π − dev 1 n i < 43° and dev 2 n i − π > 50°. So once- and twice-reflected rays avoid the 43–50° band, read as sky angles, for 1.331 ≤ n < 1.777. For n ≥ 1.777, grazing once-reflected rays have π − D < 0 and exit at D − π ≥ 43°, although the signed statement still holds.
   - Closest known: Newton, Opticks (1704), Book I Part II, Prop. IX: the gap between the bows is bounded by the red limits of both bows (42°2′ inner, 50°57′ outer), and bluer light lies further from the gap. This is Descartes' minimum-deviation argument with dispersion added. The Lean form, uniform over n ∈ [1.331, 2) via bowDev_strictMonoOn, is the project's own packaging of that classical fact.
   - In Mathlib: no
   - Caveat: It combines the red brackets at n = 1.331 with bowDev_strictMonoOn. 'Every colour from red up' rests on identifying colours with n ≥ 1.331, a modelling input; the 726 nm deep-red exception is prose. Lean has the extra hypothesis n < 2, which is harmless for water.

@@ -20,37 +20,51 @@ results, and the reverse.
 
 ## The rainbow (`WyrdMathlib/Rainbow/`)
 
-Descartes' theory of the rainbow, proved. Sunlight enters a spherical drop at
-angle `i`, bends by Snell's law (`sin i = n sin r`), reflects `k` times inside,
-and leaves, turned by `D(i) = kπ + 2i − 2(k+1)r`. The light piles up where `D`
-is stationary, and that bright fold is the bow.
+Descartes' ray model of the rainbow, with its calculus proved. Sunlight enters a
+spherical drop at angle `i`, bends by Snell's law (`sin i = n sin r`, `n` the
+index of water relative to air), reflects `k` times inside, and leaves, turned
+by `D(i) = kπ + 2i − 2(k+1)r`. Angles from the antisolar point are `π − D`
+(primary) and `D − π` (secondary). Physically, rays bunch up where `D` is
+stationary, and that bright fold is the bow; the theorems find that ray but do
+not model brightness.
+[`RAINBOW.md`](RAINBOW.md) maps what is proved, what is assumed and what is left out.
 
 | Theorem | Statement |
 |---|---|
-| `snell` | The refraction angle really satisfies Snell's law |
-| `hasDerivAt_dev` | `D'(i) = 2 − 2(k+1) cos i / √(n² − sin² i)` |
-| `deriv_dev_eq_zero_iff_eq` | For `1 < n < k+1`, the **only** stationary point on `[0, π/2]` is where `cos² i = (n² − 1)/(k(k+2))` (Newton and Halley's formula) |
-| `dev_lt_of_ne`, `dev_isMinOn` | It is the **strict minimum** of the deviation |
-| `water_primary`, `water_secondary` | Water (`n = 4/3`): `cos² i = 7/27` (primary) and `7/72` (secondary) |
-| `primary_bow_water` | The primary bow is seen between **41° and 43°** from the antisolar point (true value 42.03°) |
-| `secondary_bow_water` | The secondary bow between **50° and 52°** (true value 50.98°) |
-| `alexander_dark_band` | **No light** with one or two internal reflections leaves between 43° and 50°, which is why the sky between the bows is darker |
-| `colour_order` | **Colours**: a larger index (violet) gives a smaller primary bow and a larger secondary bow, so red is outside in the primary and inside in the secondary |
-| `primary_red`, `primary_violet` | Real water: primary bow at 42–43° for red (`n = 1.331`) and 40–41° for violet (`n = 1.343`) |
-| `secondary_red`, `secondary_violet` | Secondary bow at 50–51° (red) and 53–54° (violet) |
-| `primary_spread`, `secondary_spread` | The colours spread over more than 1° (primary) and more than 2° (secondary) |
-| `dark_band_of_red_le` | Red governs both edges of the dark band, so it holds for **every** colour from red (`n ≥ 1.331`) up |
+| `snell` | For `n ≥ 1`, the refraction angle really satisfies Snell's law (a check of the definition) |
+| `hasDerivAt_dev` | For `n > 1`, `D'(i) = 2 − 2(k+1) cos i / √(n² − sin² i)` |
+| `deriv_dev_eq_zero_iff_eq` | For `k ≥ 1` and `1 < n < k+1`, the **only** stationary point on `[0, π/2]` is where `cos² i = (n² − 1)/(k(k+2))` (Newton's rule, *Opticks* 1704) |
+| `dev_lt_of_ne`, `dev_isMinOn` | It is the **strict minimum** of the deviation on `[0, π/2]` |
+| `water_primary`, `water_secondary` | Water as `n = 4/3`: `cos² i = 7/27` (primary) and `7/72` (secondary) |
+| `primary_bow_water` | For `n = 4/3`, the primary bow is seen between **41° and 43°** from the antisolar point (numerically 42.03°) |
+| `secondary_bow_water` | The secondary bow between **50° and 52°** (numerically 50.98°) |
+| `alexander_dark_band` | For `n = 4/3`, **no ray** with one or two internal reflections leaves between 43° and 50° |
+| `colour_order` | **Colours**: if `1 < n_red < n_violet < 2`, violet's primary bow is smaller and its secondary bow larger, so red is outside in the primary and inside in the secondary |
+| `primary_red`, `primary_violet` | Primary bow at 42–43° for `n = 1.331` (red) and 40–41° for `n = 1.343` (violet) |
+| `secondary_red`, `secondary_violet` | Secondary bow at 50–51° (`n = 1.331`) and 53–54° (`n = 1.343`) |
+| `primary_spread`, `secondary_spread` | From `n = 1.331` to `n = 1.343` the bow moves by more than 1° (primary) and more than 2° (secondary) |
+| `dark_band_of_red_le` | For **every** `n` with `1.331 ≤ n < 2` and every ray, `π − D < 43°` after one reflection and `D − π > 50°` after two: red, the smallest index covered, sets both edges. `dark_band_visible` is the case `1.331 ≤ n ≤ 1.343` |
 
-The numeric bounds need sin and cos to about four decimal places, and Mathlib's
-bounds stop at degree 3, so `TrigBounds.lean` proves Taylor bounds to degree 7
-(each from the previous one, by a derivative argument). The colour theorems use
-water's index for red (`1.331`, about 663–694 nm) and violet (`1.343`, about
-402–410 nm). The ordering needs no calculus in `n`: a larger index bends every
-ray more, so the minimum deviation (the bow) grows too.
+The brackets need sin to about four decimal places. Mathlib's one-sided bounds
+stop at `x − x³/6 ≤ sin x`, and its two-sided `Real.sin_bound` (error `|x|⁵/100`
+for `|x| ≤ 1`), applied directly, is too loose for four of the six brackets, so
+`TrigBounds.lean` proves Taylor bounds to degree 7 for `x ≥ 0` (each from the
+previous one, by a derivative argument). The ordering needs no calculus in `n`:
+a larger index bends every slanted ray more, so the minimum deviation (the bow)
+grows too.
 
-The "dark" band is *darker*, not black: the theorems exclude refracted light
-reflected once or twice, while external reflection, higher-order bows,
-diffraction and the sun's disc still put some light there.
+The indices are inputs, not theorems. Relative to air (IAPWS 1997), `4/3` is
+water at about 578 nm, `1.331` at 663 nm and `1.343` at 402 nm, at 20 °C (601,
+693 and 410 nm at 10 °C). The dark-band theorems stop at `1.331`, so redder
+light is not covered; numerically, beyond 726 nm at 20 °C (`n < 1.32962`) its
+secondary bow is under 50°, so twice-reflected light does reach the band.
+
+The gap between the bows is the geometric reason the sky there looks darker
+(Alexander's band). It is *darker*, not black: external reflection, light
+reflected three or more times, diffraction and the sun's 0.5° disc still put
+some light there. `π − D` and `D − π` are the sky angles of every ray when
+`1.18 ≤ n ≤ √2`, which covers water (not proved); for `n ≥ 1.777`, grazing
+once-reflected rays do reach 43–50°.
 
 ## Body water (`WyrdMathlib/BodyWater/`)
 
