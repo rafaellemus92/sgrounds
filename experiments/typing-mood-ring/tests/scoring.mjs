@@ -9,6 +9,7 @@ const URL = instrumented('scoring.html', [["setMode('free'); booted = true;", "w
 const page = (opts = {}) => open(browser, errors, opts, URL);
 const S = p => p.evaluate(() => ({ typed: __st.typed, errors: __st.errors, acc: __st.acc }));
 const caps = p => p.locator('.capsB:visible').first();
+const sub = async p => { await p.waitForTimeout(80); return txt(p, '#moodSub'); };   // the line under the word updates on the next frame
 const reload = async p => { await p.reload(); await p.waitForTimeout(300); };
 
 // ── capitals relaxed by default; quotes alike; strict as a setting ─────────────────────────────────────────
@@ -18,27 +19,27 @@ const reload = async p => { await p.reload(); await p.waitForTimeout(300); };
   const v1 = await txt(p, '#target');
   await p.click('#input'); await typeAt(p, v1.toLowerCase(), 12);
   let s = await S(p);
-  ok('relaxed: a verse typed all in lower case completes with no errors and 100% accuracy', (await txt(p, '#moodSub')) === 'complete ;' && s.errors === 0 && (await txt(p, '#sAcc')) === '100%', s);
+  ok('relaxed: a verse typed all in lower case completes with no errors and 100% accuracy', (await sub(p)) === 'complete ;' && s.errors === 0 && (await txt(p, '#sAcc')) === '100%', s);
   await p.click('#nextVerse'); await p.click('#input');
   const v2 = await txt(p, '#target'); await typeAt(p, v2.toUpperCase(), 12);
-  ok('relaxed: …and one typed in capitals', (await txt(p, '#moodSub')) === 'complete ;' && (await S(p)).errors === 0);
+  ok('relaxed: …and one typed in capitals', (await sub(p)) === 'complete ;' && (await S(p)).errors === 0);
   ok('the text in the field is what was typed, not a normalised copy', (await p.inputValue('#input')) === v2.toUpperCase());
   for (let i = 0; i < 2; i++) await p.click('#nextVerse');   // Psalm 23:2-3, with an apostrophe
   await p.click('#input');
   const v4 = await txt(p, '#target');
   await p.evaluate(t => { for (const ch of t.replace(/'/g, '’')) document.execCommand('insertText', false, ch); }, v4);
-  ok('a curly apostrophe matches a straight one', (await txt(p, '#moodSub')) === 'complete ;' && (await S(p)).errors === 0 && (await p.inputValue('#input')).includes('’'));
+  ok('a curly apostrophe matches a straight one', (await sub(p)) === 'complete ;' && (await S(p)).errors === 0 && (await p.inputValue('#input')).includes('’'));
   const eq = await p.evaluate(() => ['‘', '’', 'ʼ', '‛', '′'].every(c => __same(__norm(c), "'")) && ['“', '”', '„', '″'].every(c => __same(__norm(c), '"')) && __norm('a b') === 'a b');
   ok('every curly or typographic apostrophe and quotation mark compares as the straight one', eq);
   await caps(p).click();
   ok('the Aa button switches to strict and remembers it', (await caps(p).textContent()) === 'Aa strict' && (await p.evaluate(() => localStorage.getItem('tmr-caps'))) === '"strict"');
   await p.click('#prevVerse'); await p.click('#input');
   await p.evaluate(t => { for (const ch of t.replace(/'/g, '’')) document.execCommand('insertText', false, ch); }, await txt(p, '#target'));
-  ok('strict still treats curly and straight apostrophes alike', (await txt(p, '#moodSub')) === 'complete ;' && (await S(p)).errors === 0);
+  ok('strict still treats curly and straight apostrophes alike', (await sub(p)) === 'complete ;' && (await S(p)).errors === 0);
   await p.click('#prevVerse'); await p.click('#input');
   const v = await txt(p, '#target'); await typeAt(p, v.toLowerCase(), 12);
   s = await S(p);
-  ok('strict: lower case where the verse has capitals counts as errors and does not complete', (await txt(p, '#moodSub')) !== 'complete ;' && s.errors > 0 && (await txt(p, '#sAcc')) !== '100%', s);
+  ok('strict: lower case where the verse has capitals counts as errors and does not complete', (await sub(p)) !== 'complete ;' && s.errors > 0 && (await txt(p, '#sAcc')) !== '100%', s);
   await reload(p); await p.click('button[data-mode="faith"]');
   ok('strict survives a reload', (await caps(p).textContent()) === 'Aa strict');
   await p.close(); }
@@ -114,7 +115,7 @@ const reload = async p => { await p.reload(); await p.waitForTimeout(300); };
   ok('…and if it lands anyway, only the two letters it changed are counted again; nothing is counted twice', s2.typed === s.typed + 2 && s2.errors === s.errors, { before: s, after: s2 });
   const v = await txt(p, '#target');
   await typeAt(p, v.slice(6), 8);
-  ok('progress carries on to the end of the verse', (await txt(p, '#moodSub')) === 'complete ;');
+  ok('progress carries on to the end of the verse', (await sub(p)) === 'complete ;');
   await p.click('button[data-mode="sprint"]'); await p.click('#pStart'); await p.waitForTimeout(1700);
   const w = await txt(p, '#moodWord');
   await cdp.send('Input.imeSetComposition', { text: w, selectionStart: w.length, selectionEnd: w.length });   // the word completes mid-composition
@@ -148,6 +149,9 @@ const reload = async p => { await p.reload(); await p.waitForTimeout(300); };
   await caps(p).click();
   const strictOn = await p.locator('#oppGhost').isEnabled();
   ok('urðr races only a ghost typed under the same capitals setting; the earlier unsuffixed ghost is not used or touched', relaxedOn && !strictOn && (await p.evaluate(() => localStorage.getItem('tmr-ghost'))) === ghost, { relaxedOn, strictOn });
+  await caps(p).click(); await p.click('#oppGhost'); await caps(p).click();   // urðr chosen under relaxed, then strict, which has no ghost
+  const sel = await p.evaluate(() => ({ giant: document.querySelector('[data-opp="giant"]').classList.contains('on'), ghost: oppGhost.classList.contains('on'), tag: ltagB.textContent }));
+  ok('switching to a setting with no ghost visibly hands the duel back to the jötunn', sel.giant && !sel.ghost && sel.tag === 'jötunn', sel);
   await p.close(); }
 
 // ── the journal keeps exactly what was typed, whatever the scoring compares ────────────────────────────────

@@ -29,7 +29,7 @@ watch it, and watching it is the feedback loop that makes you faster.
   five clean words up to ×4, and one word in ten after the tenth is a gold
   rune. Your best run is replayed as a ghost (words per second).
 - **duel**: Bifrost. You against a jötunn bot or Urðr, the keystroke
-  timing of your own last duel. See below.
+  timing of your own last duel under the same capitals setting. See below.
 - **lab**: the Rhythm Lab, an exploratory tapping prototype that asks whether a
   phase-locking model describes how a person taps along with a steady beat. Audio
   only, with a static tap target. See [RHYTHM_LAB.md](RHYTHM_LAB.md) for the
@@ -80,7 +80,7 @@ nothing is refused.
 In the typing and journal tabs the page takes a dim, low-chroma colour
 opposite the sphere's hue on the colour wheel (about 180° away) as a radial
 field centred on the sphere, at a fixed OKLCH lightness (0.205 to 0.285) and
-chroma, so the brightness never changes and the sphere stays the brightest
+chroma (the chroma dips only while the hue eases across), so the brightness never changes and the sphere stays the brightest
 thing on screen. The hue eases toward its target over about three seconds.
 Text sits on a calm dark surface (`--surface`) and was checked at 4.5:1 or
 better against what is actually behind it.
@@ -92,7 +92,8 @@ are no ripples; the **still** setting (in **?**) removes them and fixes the
 colour. The colour eases as a straight line in OKLab, so moving to the
 opposite hue passes through grey at the same lightness instead of spinning
 round the wheel. On phones, once the page scrolls under the pinned sphere, its
-backdrop is painted with the same field, so no box shows. The lab and the
+backdrop is painted with the same field, runs edge to edge and fades out at
+its bottom, so no box shows; ripples pass beneath it. The lab and the
 **?** tab keep the old black page, and the lab's display, text tones
 included, is unchanged.
 
@@ -316,7 +317,8 @@ defaults and skips writes; the page still plays.
 | `tmr-sprint-best:…`, `tmr-sprint-far:…` | sprint best score and most words, per setting | same rule as `tmr-best:…` |
 | `tmr-sprint-ghost:…` | words per second of the best sprint, per setting | an array of at most 1000 integers in 0–100000, else ignored; the next best run replaces it |
 | `tmr-duel:…` | `{w, l, d, giant}`, per setting | each field is used only if it is a finite number; `giant` is rounded and clamped to 15–160 wpm. `w`, `l` and `d` are not otherwise range-checked |
-| `tmr-best`, `tmr-sprint-best`, `tmr-sprint-far`, `tmr-sprint-ghost`, `tmr-duel`, `tmr-ghost` | records from before capitals were a setting | read only and never written or deleted; shown as earlier records when they hold a sensible value |
+| `tmr-best`, `tmr-sprint-best`, `tmr-sprint-far`, `tmr-duel` | records from before capitals were a setting | read only and never written or deleted; shown as earlier records when they hold a sensible value |
+| `tmr-sprint-ghost`, `tmr-ghost` | the sprint and duel ghosts from before capitals were a setting | no longer read or shown (each setting keeps its own ghost); never written or deleted |
 | `tmr-caps`, `tmr-bg` | `"strict"` or `"relaxed"`; `"still"` or `"ripples"` | written only when you change the setting |
 | `tmr-ghost:…` | `{v: 1, d: [ms offsets], acc, at}`, the last duel typed under that setting (urðr races only it) | used only if `v` is 1 and `d` holds 20–6000 non-decreasing integers up to 600000; `acc` outside 0–1 becomes 0.95; otherwise ignored |
 | `tmr-lab` | Rhythm Lab: `{v: 1, consent: {at}, sessions: [...]}` with cue and tap times per trial | written only after consent; a store of the wrong shape is removed; sessions whose trials are malformed are dropped; at most 20 sessions; reset in the lab deletes the key |
@@ -350,9 +352,9 @@ or one file at a time:
 | `lab.mjs` | Rhythm Lab in Chromium: consent first, baseline, duplicate and repeat taps, one clock for clicks and taps (taps placed 30 ms after each mapped click read back at +30 ms), interrupted trials flagged and re-queued, a full session with the redo rule, export, reset, simulation regimes, a clock step flagged as drift, and touch taps on a phone viewport |
 | `interaction.mjs` | 24: count-in, background and resume (clocks, no opponent burst), caret locking, Loki's HUD and rays frame by frame, phone portrait layout (the caret's line clear of the pinned sphere), landscape usability and result cards, focus in a short desktop window |
 | `keyboard.mjs` | 44, all emulated: the bigger sphere with the field, the line to copy and save clear of the keyboard, and nothing moving when it arrives, from 390×844 down to 320×568 and sideways, the same inside a stand-in for the claude.ai preview, the writing view with a stand-in visual viewport, portrait and landscape keyboards, the reveal pan, an 80-line entry scrolling inside the field with the page still, a caret away from the end or inside a wrapped word kept in view, no movement while typing or when the keyboard arrives or grows (upright and sideways), save keeping focus, pinch zoom, impossible readings, done restoring the page, every mode, turning with the keyboard open (sizes kept) and then closing it, opening an entry sideways, the verse window after done and on coming back sideways, the iframe fallback and a host that shrinks the frame, duel labels on a narrow phone, no writing view without touch |
-| `scoring.mjs` | 36: relaxed capitals by default in faith, game and sprint, strict as a remembered setting, curly and straight quotes alike in both, separate bests per setting, the setting named on cards and locked during runs, earlier records shown apart and left untouched (damaged ones neither shown nor deleted), composition rewrites and commits counted once and a typo inside a composition counted like any other (Chromium's IME emulation), the urðr ghost kept per setting, a sprint word completed mid-composition not spilling into the next, autocorrect refused or re-judged only where it changed, and journal text kept exactly |
+| `scoring.mjs` | 37: relaxed capitals by default in faith, game and sprint, strict as a remembered setting, curly and straight quotes alike in both, separate bests per setting, the setting named on cards and locked during runs, earlier records shown apart and left untouched (damaged ones neither shown nor deleted), composition rewrites and commits counted once and a typo inside a composition counted like any other (Chromium's IME emulation), the urðr ghost kept per setting (and the jötunn taking over visibly where a setting has none), a sprint word completed mid-composition not spilling into the next, autocorrect refused or re-judged only where it changed, and journal text kept exactly |
 | `background.mjs` | 19: the colour opposite the sphere at a steady brightness and not black, ripples pooled to one per 0.8 s with no flashes under rapid typing, Reduce Motion and the still setting, the lab and **?** tabs black, text contrast of 4.5:1 or better against the pixels behind it on desktop and phone, the colour easing straight across to the opposite hue, the pinned sphere's backdrop matching the field (screenshot pixels), the lab's text tone unchanged |
-| `journal.mjs` | 95: the saved or unsaved status in the row and on the writing view's save, the warnings that unsaved text is lost on reload and exports cannot be imported, another tab rewriting or deleting the entry in the field, text saved exactly, nothing stored before save, drafts across tabs, Ctrl+S, the dated list, open and edit in place, confirmed delete and new entry, clearing the field or typing over it starting a new page (and undo returning to the entry), unsaved words never discarded by open or delete, feelings before and after with skip, own words, intensity and clearing, more than twelve words, the typing summary kept apart, damaged and missing feelings, injected colours, descriptive patterns with counts (including the sync count), export with the unsaved page and its feelings, storage full, dropped writes and blocked storage, unreadable journals copied aside, other records untouched, two tabs saving entries and feelings, the Rhythm Lab's k note |
+| `journal.mjs` | 96: the saved or unsaved status in the row and on the writing view's save, the warnings that unsaved text is lost on reload and exports cannot be imported, another tab rewriting or deleting the entry in the field (status, export and prompts agreeing), text saved exactly, nothing stored before save, drafts across tabs, Ctrl+S, the dated list, open and edit in place, confirmed delete and new entry, clearing the field or typing over it starting a new page (and undo returning to the entry), unsaved words never discarded by open or delete, feelings before and after with skip, own words, intensity and clearing, more than twelve words, the typing summary kept apart, damaged and missing feelings, injected colours, descriptive patterns with counts (including the sync count), export with the unsaved page and its feelings, storage full, dropped writes and blocked storage, unreadable journals copied aside, other records untouched, two tabs saving entries and feelings, the Rhythm Lab's k note |
 
 Phones are emulated (desktop Chromium with a phone viewport, touch and
 device scale), not real devices. A background tab is emulated too: the

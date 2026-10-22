@@ -161,9 +161,10 @@ function framePage(name, w, h){
   let g = await geo(fr);
   ok('framed portrait, frame unchanged by the keyboard: the view keeps to the top 45% of the frame (a guess to check on a real iPhone)',
      g.kb && g.cls.includes('kb-capped') && g.wrap.t === 0 && Math.abs(g.wrap.h - Math.round(844*0.45)) <= 1 && stacked(g, 0, g.wrap.h) && g.input.h >= 120, g);
+  const capped = g;
   await p.evaluate(() => { document.getElementById('f').style.height = '420px'; }); await settle(fr, 50);
   g = await geo(fr);
-  ok('framed, host shrinks the frame to the visible area: the view uses all of it', g.kb && !g.cls.includes('kb-capped') && g.wrap.h === 420 && stacked(g, 0, 420), g);
+  ok('framed, host shrinks the frame to the visible area: the view uses all of it, and the sphere and the top of the field stay where they were', g.kb && !g.cls.includes('kb-capped') && g.wrap.h === 420 && stacked(g, 0, 420) && g.ring.h === capped.ring.h && g.input.t === capped.input.t && g.input.h > capped.input.h, { capped: [capped.ring, capped.input], now: [g.ring, g.input] });
   await p.close(); }
 { const p = await open(browser, errors, SIDE, framePage('frame-landscape.html'));
   const fr = p.frames().find(f => f !== p.mainFrame());
@@ -301,15 +302,16 @@ const clear = (g, top, h, what) => g.kb && inside(g.ring, top, h) && inside(g.in
   for (const [label, vp, kh, mode, minRing, minField] of [
     ['390x844 free', { width: 390, height: 844 }, 420, 'free', 160, 5*24], ['390x844 faith', { width: 390, height: 844 }, 420, 'faith', 160, 4*24],
     ['375x667 faith', { width: 375, height: 667 }, 300, 'faith', 88, 2*24 + 16], ['320x568 free', { width: 320, height: 568 }, 250, 'free', 80, 3*24 + 16],
-    ['320x568 faith', { width: 320, height: 568 }, 250, 'faith', 56, 2*24 + 16], ['844x390 sideways', { width: 844, height: 390 }, 140, 'free', 88, 2*24]]) {
+    ['320x568 faith', { width: 320, height: 568 }, 250, 'faith', 56, 2*24 + 16], ['320x568 sprint', { width: 320, height: 568 }, 250, 'sprint', 80, 40], ['844x390 sideways', { width: 844, height: 390 }, 140, 'free', 88, 2*24]]) {
     const p = await open(browser, errors, { ...PHONE, viewport: vp });
-    await p.tap(`button[data-mode="${mode}"]`); await settle(p, 100); await p.tap('#input'); await settle(p);
+    await p.tap(`button[data-mode="${mode}"]`); await settle(p, 100);
+    if (mode === 'sprint') { await p.tap('#pStart'); await settle(p, 1800); } else { await p.tap('#input'); await settle(p); }
     const before = await geo(p);
     await vv(p, { height: kh });
-    await typeAt(p, 'a few words to check', 10); await settle(p);
+    if (mode !== 'sprint') { await typeAt(p, 'a few words to check', 10); await settle(p); }
     const g = await geo(p), field = await p.evaluate(() => input.clientHeight);
     const still = g.ring.h === before.ring.h && g.input.t === before.input.t && g.input.l === before.input.l;   // the keyboard arriving moved nothing
-    res[label] = { ring: g.ring.h, field, still, ok: still && clear(g, 0, kh, mode === 'faith' ? g.target : null) && g.ring.h >= minRing && field >= minField && (mode !== 'free' || inside(g.save, 0, kh)) };
+    res[label] = { ring: g.ring.h, field, still, ok: still && clear(g, 0, kh, mode === 'faith' ? g.target : mode === 'sprint' ? g.mood : null) && g.ring.h >= minRing && field >= minField && (mode !== 'free' || inside(g.save, 0, kh)) };
     if (label.startsWith('390x844 free') || label.startsWith('844x390')) await p.screenshot({ path: shot(`kb-big-${label.split(' ')[0]}.png`) });
     await p.close();
   }

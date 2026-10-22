@@ -213,7 +213,8 @@ body.kb.kb-short textarea{padding:6px 10px}
 @media (prefers-reduced-motion:reduce){.enter,.cur,.pop,.shake{animation:none}}
 @media (max-width:520px){
   .wrap{padding-block:14px 60px}
-  .stage{position:sticky;top:env(safe-area-inset-top, 0px);z-index:3;padding:6px 0;margin-top:6px}
+  .stage{position:sticky;top:env(safe-area-inset-top, 0px);z-index:3;padding:6px max(18px, env(safe-area-inset-right, 0px)) 6px max(18px, env(safe-area-inset-left, 0px));margin:6px calc(-1*max(18px, env(safe-area-inset-right, 0px))) 0 calc(-1*max(18px, env(safe-area-inset-left, 0px)))}
+  .stage.stuck{-webkit-mask-image:linear-gradient(#000 calc(100% - 16px),transparent);mask-image:linear-gradient(#000 calc(100% - 16px),transparent)}
   body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top, 0px);z-index:10;background:var(--bgc)}
   .m-about .stage{position:static}
   #panelType,#panelAbout{order:1}
@@ -387,7 +388,7 @@ push         dp/dt = g · (I_you·T_you − I_them·T_them)</pre>
       <p>Where you are faster, all of your light crosses and bends toward the normal, converging on the other sphere. Where you are slower, rays steeper than the critical angle reflect totally and stay on your side. <code>T</code> is the fraction of a glowing sphere's light that escapes, <code>sin²θc</code>, which is the same factor as the n² brightness theorem. <code>I</code> is how bright your light is, <code>(1 + sync)/2</code> times your recent accuracy, so coherence and care count as much as speed. The push <code>p</code> takes the other sphere's rings from the outside in; seven rings or forty-five seconds decides it. Both velocities get a floor of 0.5 keys/s, so two idle typists are a draw and nothing divides by zero.</p>
       <p><b>The opposite colour wheel.</b> In the duel you own the warm half of the wheel, violet through red to gold as you speed up, and your opponent owns the cool half, green through cyan to blue. At equal speeds your colours are exact complements, 180° apart. Light that crosses Bifrost takes rings in its own colour.</p>
       <p><b>Loki.</b> Light that turns back is not lost. It charges Loki, and when the meter fills, for two seconds your light ignores the critical angle and theirs cannot reach you: the branch nobody saw coming. Only the side that is losing light charges it.</p>
-      <p><b>Opponents.</b> A jötunn is a giant who types at a steady pace with a human wobble and gets four words a minute faster each time you beat it. Urðr is the keystroke timing of your own last duel, replayed against you: what was, against what is.</p>
+      <p><b>Opponents.</b> A jötunn is a giant who types at a steady pace with a human wobble and gets four words a minute faster each time you beat it. Urðr is the keystroke timing of your own last duel under the same capitals setting, replayed against you: what was, against what is.</p>
       <p><b>An honest note.</b> Typing speed is a rate, not the speed of light, so the duel is a picture and not a law of typing. The law that does govern two typists is the oscillator one. Two coupled oscillators whose frequencies differ by <code>Δω</code> lock when <code>|Δω| ≤ 2K</code>, at a phase lag where <code>sin ψ = Δω / 2K</code>, the same sine-equals-ratio shape as Snell's law. When <code>|Δω| &gt; 2K</code> there is no locked solution and the phases slip past each other: that is its total internal reflection. Snell's law itself is proved in Lean in this repository, as <code>snell</code> in <a href="https://github.com/rafaellemus92/sgrounds/blob/main/experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean" target="_blank" rel="noopener">wyrd-mathlib/WyrdMathlib/Rainbow/Defs.lean</a>.</p>
 
       <h2>The wager</h2>
@@ -695,7 +696,7 @@ function kbMeasure(){
   const h = capped ? Math.max(Math.min(full, 90), Math.round(full*(side ? KB_CAP.side : KB_CAP.tall))) : full;
   // The sphere's size and the one-line verse are chosen from the smaller of the visible height and the share a
   // keyboard usually leaves, so they are already right before the keyboard arrives and stay put when it does.
-  const est = Math.round(KB.idle*(side ? 0.36 : 0.5)), hs = Math.min(h, est);
+  const est = Math.round(KB.idle*(side ? (framed ? KB_CAP.side : 0.36) : (framed ? KB_CAP.tall : 0.5))), hs = Math.min(h, est);
   const r = document.documentElement.style, b = document.body.classList, short = hs < 150;
   r.setProperty('--vvx', x + 'px'); r.setProperty('--vvy', y + 'px'); r.setProperty('--vvw', w + 'px'); r.setProperty('--vvh', h + 'px');
   b.toggle('kb-side', side); b.toggle('kb-short', short); b.toggle('kb-panned', y > 1); b.toggle('kb-capped', capped);
@@ -821,6 +822,7 @@ function loadRecords(){   // the records of the current capitals setting
   if (s && typeof s === 'object') for (const k of ['w','l','d','giant']) if (Number.isFinite(s[k])) duel.stats[k] = s[k];
   duel.stats.giant = clamp(Math.round(duel.stats.giant), 15, 160);
   duel.ghost = loadGhost(rk('tmr-ghost'));   // urðr races only duels typed under the same setting
+  if (duel.kind === 'ghost' && !duel.ghost) duel.kind = 'giant';
 }
 loadRecords();
 const G_DUEL = 0.9, LOKI_K = 0.33;
@@ -1719,7 +1721,9 @@ $('#jExport').onclick = async () => {
 window.addEventListener('storage', e => {
   if (e.key !== J_KEY && e.key !== null) return;
   jLoad();
-  if (J.cur && !J.raw.some(x => x && x.id === J.cur)) { const acc = J.acc; jUnbind(); J.acc = acc; jSay('the entry in the field was deleted in another tab; the text stays here, unsaved'); }   // deleted elsewhere: the text stays, as a new page
+  const cur = J.cur && J.raw.find(x => x && x.id === J.cur);
+  if (J.cur && !cur) { const acc = J.acc; jUnbind(); J.acc = acc; jSay('the entry in the field was deleted in another tab; the text stays here, unsaved'); }   // deleted elsewhere: the text stays, as a new page
+  else if (cur && typeof cur.text === 'string') J.base = cur.text;   // rewritten elsewhere: unsaved here means unsaved to every guard and to export
   jFeelSync(); jRender();
 });
 jLoad();
@@ -1735,7 +1739,7 @@ function resize(){
     // moving it; only if the field would drop below its minimum does the sphere shrink to the height really there.
     const M = st.mode, step = x => Math.floor(x/8)*8, extra = KB.side ? 0 : M === 'free' ? 0 : M === 'sprint' ? 49 : 61;
     const size = H => KB.side ? clamp(step(H - 44), 40, 140)                // the done and save row sits under it
-      : clamp(step(H - 16 - (M === 'free' ? 144 : M === 'sprint' ? 99 : 181)), 56, Math.min(184, KB.w - 150));
+      : clamp(step(H - 16 - (M === 'free' ? 144 : M === 'sprint' ? 140 : 181)), 56, Math.min(184, KB.w - 150));   // each leaves the field room to shorten
     const field = s => KB.side ? KB.h - 12 : KB.h - 12 - (s + 4) - extra - 6, least = KB.side ? 0 : M === 'free' ? 90 : M === 'sprint' ? 44 : 66;
     h = size(KB.est || KB.h);
     if (KB.side ? h + 44 > KB.h : field(h) < least) h = size(KB.h);
@@ -1880,7 +1884,7 @@ function updateStats(now){
 
 // ── Background: a dim colour field and slow ripples ──────────────────────────
 // Behind the typing and journal tabs the page takes a dim, low-chroma colour opposite the sphere's hue on the
-// wheel (about 180° away), at a fixed lightness and chroma, so its brightness never changes and the sphere stays
+// wheel (about 180° away), at a fixed lightness, with chroma that dips only while the hue eases across, so its brightness never changes and the sphere stays
 // the brightest thing on screen; the hue eases over about three seconds. Keystrokes send slow ripples out from the
 // sphere: quick typing is pooled into at most one ripple every 0.8 s, and each fades in and out, so there is never
 // a flash. With Reduce Motion there are no ripples; the still setting also fixes the colour. Lab and about stay black.
@@ -1932,8 +1936,8 @@ function bgFrame(now, dt){
   const sr = $('.stage').getBoundingClientRect(), geo = `${Math.round(R)}|${Math.round(cx - sr.left)}|${Math.round(cy - sr.top)}`;
   if (!(Math.abs(((BG.hue - BG.cssHue + 540) % 360) - 180) < 1) || !(Math.abs(m - BG.cssM) < 0.01) || geo !== BG.geo) {
     BG.cssHue = BG.hue; BG.cssM = m; BG.geo = geo;
-    const r = document.documentElement.style, [gR, gX, gY] = geo.split('|');
-    r.setProperty('--bgc', stops[2][1]); r.setProperty('--bg0', stops[0][1]); r.setProperty('--bg1', stops[1][1]); r.setProperty('--bg2', stops[2][1]);
+    const r = $('.stage').style, [gR, gX, gY] = geo.split('|');
+    document.documentElement.style.setProperty('--bgc', stops[2][1]); r.setProperty('--bg0', stops[0][1]); r.setProperty('--bg1', stops[1][1]); r.setProperty('--bg2', stops[2][1]);
     r.setProperty('--bgR', gR + 'px'); r.setProperty('--bgX', gX + 'px'); r.setProperty('--bgY', gY + 'px');
   }
 }

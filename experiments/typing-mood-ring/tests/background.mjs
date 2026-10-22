@@ -140,17 +140,17 @@ for (const [label, opts] of [['desktop', {}], ['phone', { viewport: { width: 390
 { const p = await page({ viewport: { width: 390, height: 700 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   await p.tap('#jOpen'); await p.waitForTimeout(100);
   await p.evaluate(() => window.scrollTo(0, 500)); await p.waitForTimeout(400);
-  // straight across the stage's left edge, a third of the way down, where neither the sphere nor any text is drawn
-  const edge = await p.evaluate(() => { const r = document.querySelector('.stage').getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top + r.height/3), h: Math.round(r.bottom) }; });
+  // down the left gutter, from inside the pinned stage (above its faded bottom) to the open field just below it
+  const edge = await p.evaluate(() => { const r = document.querySelector('.stage').getBoundingClientRect(); return { x: 6, y: Math.round(r.bottom - 22), below: Math.round(r.bottom + 4), h: Math.round(r.bottom + 10) }; });
   const png = (await p.screenshot({ clip: { x: 0, y: 0, width: 390, height: edge.h } })).toString('base64');
   const px = await p.evaluate(async ([src, e]) => {
     const i = new Image(); i.src = 'data:image/png;base64,' + src; await i.decode();
     const c = document.createElement('canvas'); c.width = i.width; c.height = i.height; const g = c.getContext('2d'); g.drawImage(i, 0, 0);
     const at = (x, y) => [...g.getImageData(x, y, 1, 1).data].slice(0, 3);
-    return { stage: at(e.x + 3, e.y), field: at(e.x - 3, e.y) };
+    return { stage: at(e.x, e.y), field: at(e.x, e.below) };
   }, [png, edge]);
   const diff = (u, v) => Math.max(...u.map((x, i) => Math.abs(x - v[i])));
-  ok('phone: the pinned sphere\'s backdrop is the same colour field as around it, with no box edge (screenshot pixels across its edge)', diff(px.stage, px.field) <= 4, px);
+  ok('phone: the pinned sphere\'s backdrop is the same colour field as around it, with no box edge (screenshot pixels inside it and just below it)', diff(px.stage, px.field) <= 4, px);
   await p.close(); }
 { const p = await page();
   await p.click('button[data-mode="lab"]');

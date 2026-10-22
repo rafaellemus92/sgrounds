@@ -352,6 +352,9 @@ const FAILING = () => {
   const id = (await stored(a)).entries[0].id;
   await panel(b); await b.click(`[data-open="${id}"]`); await b.click('#input'); await b.keyboard.press('End'); await b.keyboard.type(' and changed in B'); await save(b); await a.waitForTimeout(150);
   ok('another tab rewriting the entry turns this tab to "unsaved", since what is stored is no longer what is here', (await status(a)) === 'unsaved');
+  await panel(a); const xa = await exported(a);
+  ok('…and export and the discard prompts agree: the export carries this tab\'s text, and new entry asks first', xa.unsaved && xa.unsaved.text === 'kept in tab A' && (await a.click('#jNew'), (await a.inputValue('#input')) === 'kept in tab A' && (await a.textContent('#jNew')).includes('tap again')), xa.unsaved);
+  await a.waitForTimeout(5100);
   await panel(b); await b.click(`[data-del="${id}"]`); await b.click(`[data-del-yes="${id}"]`); await a.waitForTimeout(150);
   const st8 = await status(a);
   ok('another tab deleting the entry: this tab says so, keeps the text, and a save makes a new entry', st8.includes('deleted in another tab') && (await a.inputValue('#input')) === 'kept in tab A' && (await save(a), (await stored(a)).entries.length === 1 && (await stored(a)).entries[0].id !== id), st8);
