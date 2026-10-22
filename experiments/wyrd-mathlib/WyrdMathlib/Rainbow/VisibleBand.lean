@@ -5,29 +5,36 @@ import WyrdMathlib.Rainbow.SpectrumSecondary
 /-!
 # Alexander's dark band, across the colours
 
-Light reflected once leaves at under 43°, and light reflected twice at over 50°,
-for every refractive index from red's `1.331` upward. Red is the extreme colour
-at *both* edges: the primary bow's outer edge and the secondary bow's inner
-edge are both red. So the red bounds plus the colour ordering
-(`bowDev_strictMonoOn`) cover every bluer colour (`dark_band_of_red_le`).
+For every refractive index `1.331 ≤ n < 2`, once-reflected rays have
+`π - D < 43°` and twice-reflected rays have `D - π > 50°`
+(`dark_band_of_red_le`). Red is the extreme colour at *both* edges: the primary
+bow's outer edge and the secondary bow's inner edge are both red. So the red
+bounds plus the colour ordering (`bowDev_strictMonoOn`) cover every bluer index.
 
-`1.331` is water's index at about 663 nm (20 °C) or 694 nm (10 °C), and `1.343`
-at about 402–410 nm. The 50° edge is the sensitive one: it holds down to
-`n ≈ 1.3296` (about 726 nm at 20 °C), so the theorems cover essentially all
-visible light, but not the deepest red at 20 °C.
+The indices are inputs, not theorems. Relative to air (IAPWS 1997), `1.331` is
+water at about 663 nm at 20 °C (693 nm at 10 °C) and `1.343` at about 402 nm
+(410 nm). Redder light has `n < 1.331` and is not covered. Numerically, the 50°
+edge fails below `n ≈ 1.3296` (about 726 nm at 20 °C): there, twice-reflected
+rays of the deepest red do reach 43°–50°. Between `1.3296` and `1.331` the gap
+persists, but no theorem here says so.
 
-The band is *darker*, not black. These theorems only exclude refracted light
-reflected once or twice inside the drop (geometric optics, point-like sun).
-Light reflected off the outside of the drop, higher-order bows, diffraction and
-the sun's 0.5° disc all put some light there.
+The bounds are on the signed angles. Read as angles seen from the antisolar
+point, they hold for `1.331 ≤ n < 1.777` (numerically); from `n ≈ 1.777`,
+grazing once-reflected rays have `π - D < 0` and are seen at `D - π ≥ 43°`.
+
+The band is a gap in the once- and twice-reflected ray families, not an absence
+of all light (geometric optics, point-like sun, brightness not modelled). Light
+reflected off the outside of the drop, rays reflected three or more times,
+diffraction and the sun's 0.5° disc all put some light there.
 -/
 
 namespace Wyrd.Rainbow
 
 open Real
 
-/-- **Red governs both edges**: for every index from red's `1.331` up to `2`,
-no once- or twice-reflected light leaves between 43° and 50°. -/
+/-- **Red governs both edges**: for every index `1.331 ≤ n < 2`, once-reflected
+rays have `π - D < 43°` and twice-reflected rays have `D - π > 50°` (signed
+angles; as angles seen in the sky this holds for `n < 1.777`, numerically). -/
 theorem dark_band_of_red_le {n i : ℝ} (hred : 1331 / 1000 ≤ n) (hn2 : n < 2)
     (hi : i ∈ Set.Icc 0 (π / 2)) :
     π - dev 1 n i < 43 * π / 180 ∧ 50 * π / 180 < dev 2 n i - π := by
@@ -57,14 +64,15 @@ theorem dark_band_of_red_le {n i : ℝ} (hred : 1331 / 1000 ≤ n) (hn2 : n < 2)
     linarith
 
 /-- **Alexander's dark band, red to violet**: for every index from `1.331` (red)
-to `1.343` (violet), no once- or twice-reflected light leaves between 43° and 50°. -/
+to `1.343` (violet), the once- and twice-reflected ray families leave a gap
+between 43° and 50°. -/
 theorem dark_band_visible {n i : ℝ} (hn : n ∈ Set.Icc (1331 / 1000) (1343 / 1000))
     (hi : i ∈ Set.Icc 0 (π / 2)) :
     π - dev 1 n i < 43 * π / 180 ∧ 50 * π / 180 < dev 2 n i - π :=
   dark_band_of_red_le hn.1 (by linarith [hn.2]) hi
 
-/-- In real water, red lies outside violet in the primary bow and inside it in
-the secondary bow. -/
+/-- At the indices `1.331` (red) and `1.343` (violet), red lies outside violet
+in the primary bow and inside it in the secondary bow. -/
 theorem water_colour_order :
     π - dev 1 (1343 / 1000) (bowIncidence 1 (1343 / 1000)) <
         π - dev 1 (1331 / 1000) (bowIncidence 1 (1331 / 1000)) ∧

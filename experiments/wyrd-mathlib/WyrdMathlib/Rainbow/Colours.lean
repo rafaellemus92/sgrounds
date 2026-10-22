@@ -6,8 +6,8 @@ import WyrdMathlib.Rainbow.Bow
 The refractive index `n` of water is slightly larger for violet light than for
 red (dispersion). Two simple facts then sort the colours:
 
-1. at a fixed entry angle, a larger `n` bends the ray more, so the deviation
-   `D` grows with `n` (`dev_lt_dev`);
+1. at a fixed slanted entry angle (`sin i > 0`), a larger `n` bends the ray
+   more, so the deviation `D` grows with `n` (`dev_lt_dev`);
 2. the bow is the *minimum* of `D` over entry angles (`dev_isMinOn`). If every
    value grows, so does the minimum (`bowDev_lt`).
 

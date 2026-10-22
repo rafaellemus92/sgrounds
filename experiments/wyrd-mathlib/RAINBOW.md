@@ -1,8 +1,10 @@
-# The rainbow in Lean: a one-page map
+# A Lean formalization of classical rainbow geometry
+
+A one-page map of what is proved, what is assumed and what is left out.
 
 **Status.** The rainbow is 13 Lean files with 73 theorems and lemmas (44 public, 29 private), and none uses `sorry`.
-Every one depends only on `propext`, `Classical.choice` and `Quot.sound`. It builds at commit `fd0d7a6`, with Lean 4.35.0 and
-Mathlib v4.35.0, and the files have not changed since. The files are already on `main` (PR #46) and are byte-identical on every
+Every one depends only on `propext`, `Classical.choice` and `Quot.sound`. The proofs date from commit `fd0d7a6` (Lean 4.35.0,
+Mathlib v4.35.0); only their comments have changed since. The files are already on `main` (PR #46) and are byte-identical on every
 branch that has them.
 
 ## What Lean proves
@@ -74,9 +76,10 @@ lake build WyrdMathlib.Rainbow     # about 5 min with cached Mathlib; no sorry w
 - The scripts behind the decimal figures were never committed.
 - CI builds only imported files, which is why it also passed on those WIP commits.
 
-## Is it the first?
+## Note on prior work
 
-As of 22 October 2026, we have found no earlier machine-checked proof of these results. We searched:
+The mathematics is classical: Descartes (1637) and Newton (1704). A limited search, as of 22 October 2026, found no
+earlier machine-checked proof of these results. It covered:
 - Lean and Mathlib, Physlib and the large Lean archives;
 - Isabelle (the AFP), HOL Light and HOL4;
 - Rocq, Mizar, Metamath, ACL2, PVS and Agda;
@@ -92,7 +95,10 @@ The closest formal work:
 Limits: GitHub code search was unavailable, and some papers could be read only as abstracts. So the wording stays "to
 our knowledge". It is never "the first formal optics" or "the first Snell's law".
 
-## README corrections in this commit
+## Corrections to the prose
+
+**README.**
+
 
 - **Dark band, every index.** The `dark_band_of_red_le` row now gives the theorem's range `1.331 ≤ n < 2`; the README
   had dropped `n < 2`. It also says what lies outside the range:
@@ -107,22 +113,25 @@ our knowledge". It is never "the first formal optics" or "the first Snell's law"
 - **Hypotheses and history.** The hypotheses are now spelled out, and the formula is credited to Newton's *Opticks*.
 - **Other files.** The ROADMAP rainbow items now match, and the "first" wording in `../THEOREMS.md` is narrowed.
 
-Not changed, because these are Lean files and need your go-ahead:
-- `Defs.lean`: the stale "one refractive index" note, the sky-angle convention, and the Halley attribution.
-- `TrigBounds.lean`: the Mathlib claim.
-- `DarkBand.lean`: the "darker sky".
-- `VisibleBand.lean`: "cover essentially all visible light" is wrong, and it omits `n < 2`.
+**Lean comments.** Only comments changed: with comments stripped, the code is identical. The build and the axiom
+audit pass afterwards.
+- `Defs.lean`: the sky-angle convention now separates the signed angle from the angle actually seen. The caustic
+  is marked as background, the stale "one refractive index" note is gone, and the formula is credited to Newton.
+- `TrigBounds.lean`: Mathlib's bounds are described accurately.
+- `DarkBand.lean`: the band is now a gap in the once- and twice-reflected ray families, not proof of a darker sky.
+- `VisibleBand.lean`: it gives the range `1.331 ≤ n < 2`, the signed-versus-seen limit near `n ≈ 1.777`, and the
+  unproved stretch from 1.3296 to 1.331. The wrong claim "covers essentially all visible light" is removed.
+- `Colours.lean`: "bends the ray more" now needs a slanted ray (`sin i > 0`).
 
-## Recommendation: an illustrated teaching demo
+## Teaching demo
 
-Build one interactive page that teaches how refraction and internal reflection make the two bows. You drag the
-incidence angle and watch the deviation curve bottom out at the bow ray. You switch between one and two reflections.
-You slide `n` from red to violet and watch the colours swap order between the bows, with the dark band between them.
+[`rainbow-lab.html`](rainbow-lab.html) is a single file that runs in a browser with no build step.
+- **The drop.** You drag the entry angle and switch between one and two reflections.
+- **The index.** By default the index runs from red (1.331) to violet (1.343), the range the colour theorems use. An
+  "explore" mode widens it to show where the signed angle and the angle actually seen part ways.
+- **Labels.** Every statement is marked proved (naming the theorem), computed, or not modelled.
+- **Self-test.** On load, the page checks its own arithmetic against the six proved bow brackets.
 
-Every mark carries one of three labels: **proved** (with the theorem's name), **computed** (the page's own arithmetic)
-or **not modelled**. So it cannot claim more than the Lean does.
-
-It needs no new theorems, and it shows the part that is new: the rainbow-specific proofs. A Mathlib contribution
-would have to wait until new theorems are allowed. It would also rest on the least distinctive pieces: the Taylor
-bounds, which Isabelle's AFP already has as infinite families (Paulson, 2014), and a derivative test that Mathlib
-nearly has.
+It needs no new theorems. A Mathlib contribution is left for later. It would rest on the least distinctive pieces:
+the Taylor bounds, which Isabelle's AFP already has as infinite families (Paulson, 2014), and a derivative test that
+Mathlib nearly has.

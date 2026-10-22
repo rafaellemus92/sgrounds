@@ -27,7 +27,9 @@ by `D(i) = kπ + 2i − 2(k+1)r`. Angles from the antisolar point are `π − D`
 (primary) and `D − π` (secondary). Physically, rays bunch up where `D` is
 stationary, and that bright fold is the bow; the theorems find that ray but do
 not model brightness.
-[`RAINBOW.md`](RAINBOW.md) maps what is proved, what is assumed and what is left out.
+[`RAINBOW.md`](RAINBOW.md) maps what is proved, what is assumed and what is left out, and
+[`rainbow-lab.html`](rainbow-lab.html) is an interactive demo that labels each statement as proved, computed or not
+modelled.
 
 | Theorem | Statement |
 |---|---|

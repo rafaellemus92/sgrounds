@@ -13,19 +13,24 @@ reflects `k` times inside the drop, and leaves. Each event turns the ray:
 
 So the total deviation is `D(i) = 2(i - r) + k(π - 2r) = kπ + 2i - 2(k+1)r`.
 
-Rays pile up where `D` is stationary. That bright fold (a *caustic*) is the
-rainbow. `k = 1` is the primary bow, `k = 2` the secondary.
+This formula is the model: it is a definition here, not derived from the
+geometry of the drop. Physically, rays bunch up where `D` is stationary, and
+that bright fold (a *caustic*) is the rainbow; brightness is not modelled in
+these files. `k = 1` is the primary bow, `k = 2` the secondary.
 
-`D` is the total turning angle, not reduced mod `2π`, always measured in the
-same rotational sense. Seen from the antisolar point (the shadow of your head),
-a ray leaves at angle `|π - D|` after reducing mod `2π`: that is `π - D` for the
-primary (`D ≈ 138°`, seen at about 42°) and `D - π` for the secondary
-(`D ≈ 231°`, seen at about 51°).
+`D` is the signed total turning angle, not reduced mod `2π`, always measured in
+the same rotational sense. The theorems state bounds on the signed quantities
+`π - D` (primary) and `D - π` (secondary). The angle at which a ray is actually
+seen from the antisolar point (the shadow of your head) is `|π - (D mod 2π)|`.
+Numerically (not proved), that equals `π - D` for every once-reflected ray when
+`n ≤ √2`, and `D - π` for every twice-reflected ray when `1.18 ≤ n ≤ 2`; water
+(`n ≈ 1.33`) satisfies both. At `n = 4/3` the bow rays have `D ≈ 138°` (seen at
+about 42°) and `D ≈ 231°` (seen at about 51°).
 
 Descartes found the bow angles by tracing rays by hand. The closed form
-`cos² i = (n² - 1) / (k(k+2))` for the stationary point is due to Newton and
-Halley (around 1700). Everything here uses one refractive index; the colours of
-a real rainbow come from `n` varying slightly with wavelength (dispersion).
+`cos² i = (n² - 1) / (k(k+2))` for the stationary point appears, for every `k`,
+in Newton's *Opticks* (1704). Each theorem fixes one refractive index;
+`Colours.lean` compares indices, which is how the colours (dispersion) enter.
 -/
 
 namespace Wyrd.Rainbow

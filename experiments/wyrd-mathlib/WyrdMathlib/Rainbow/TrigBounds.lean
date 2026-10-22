@@ -4,7 +4,10 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 /-!
 # Taylor bounds for sin and cos, to degree 7
 
-Mathlib stops at `x - x³/6 ≤ sin x` and `1 - x²/2 ≤ cos x`. Each bound below
+Mathlib's one-sided polynomial bounds stop at `x - x³/6 ≤ sin x` and
+`1 - x²/2 ≤ cos x`. Its two-sided `Real.sin_bound` and `Real.cos_bound` (for
+`|x| ≤ 1`), applied directly, are too loose for most of the rainbow's brackets.
+Each bound below
 follows from the previous one: if `g(0) = 0` and `g' ≥ 0` on `[0, ∞)`, then
 `g ≥ 0` there. Valid for all `x ≥ 0`.
 -/
