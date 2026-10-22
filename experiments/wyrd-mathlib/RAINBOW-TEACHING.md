@@ -2,17 +2,19 @@
 
 **What this is.** A line-by-line walk through one theorem of the rainbow formalization, written so that you can check it yourself. It was produced by an AI assistant (Claude, running as a workflow subagent) on 2026-10-22. It is **not** a human review, and nothing below should be cited as one. Everything quoted was read from the files listed here; everything marked *checked* was run against the built project. Judgement calls (what the theorem "means") are mine and are the part you should distrust most.
 
-**Where things are.** Project `experiments/wyrd-mathlib`, Lean `4.35.0` (`lean-toolchain`; `lean --version` prints commit `eb6cafb`), Mathlib `v4.35.0` (`lakefile.toml` line 8; `lake-manifest.json` line 16 pins it to `56a005855ea17e0b0958f73ec801ae140b0a1679`). I did not run `git`; the task reports the head as `45663a9` on `claude/prime-proof-250-37-uysci8`. Files, all under `WyrdMathlib/Rainbow/`:
+**Where things are.** Project `experiments/wyrd-mathlib`, Lean `4.35.0` (`lean-toolchain`; `lean --version` prints commit `eb6cafb`), Mathlib `v4.35.0` (`lakefile.toml` line 8; `lake-manifest.json` line 16 pins it to `56a005855ea17e0b0958f73ec801ae140b0a1679`). **Pinned to commit `6f60278`** on `claude/prime-proof-250-37-uysci8`, the commit that adds `Viewing.lean` (this guide's own later corrections are in the commit after it, which changes no Lean file). The second column gives each cited file's git blob hash at that commit, from `git rev-parse 6f60278:experiments/wyrd-mathlib/<path>`, so that a citation can still be checked after the files move. Files, all under `WyrdMathlib/Rainbow/` unless marked:
 
-| File | What it holds (lines cited below) |
-|---|---|
-| `Defs.lean` | `refr`, `dev`, `bowIncidence`, `snell` (41, 44, 49, 52) |
-| `Deriv.lean` | `hasDerivAt_refr` (20), `hasDerivAt_dev` (44), `continuous_dev` (54), `deriv_dev_neg_iff` / `_pos_iff` / `_eq_zero_iff` (96, 104, 112) |
-| `MinLemma.lean` | `lt_of_deriv_sign` (13), `isMinOn_of_deriv_sign` (33) |
-| `Bow.lean` | the `bow_aux_*` lemmas (18–40, 80–103), `cos_bowIncidence_sq` (43), `bowIncidence_mem` (49), `deriv_dev_eq_zero_iff_eq` (64), **`dev_lt_of_ne` (106)**, `dev_isMinOn` (115) |
-| `Viewing.lean` | `viewAngle`, `viewAngle_dev_one`, `viewAngle_dev_two`, `viewAngle_lt_bow_one`, `bow_two_lt_viewAngle` (line numbers omitted: the file was revised after this note was drafted) |
+| File | Blob at `6f60278` | What it holds (lines cited below) |
+|---|---|---|
+| `Defs.lean` | `516f5f0a583f` | `refr`, `dev`, `bowIncidence`, `snell` (44, 47, 52, 55) |
+| `Deriv.lean` | `7adaf4b7088e` | `hasDerivAt_refr` (20), `hasDerivAt_dev` (44), `continuous_dev` (54), `deriv_dev_neg_iff` / `_pos_iff` / `_eq_zero_iff` (96, 104, 112) |
+| `MinLemma.lean` | `3fd2486f82e2` | `lt_of_deriv_sign` (13), `isMinOn_of_deriv_sign` (33) |
+| `Bow.lean` | `0157e7e69fa2` | the `bow_aux_*` lemmas (18–40, 80–103), `cos_bowIncidence_sq` (43), `bowIncidence_mem` (49), `deriv_dev_eq_zero_iff_eq` (64), **`dev_lt_of_ne` (106)**, `dev_isMinOn` (115) |
+| `Viewing.lean` | `616e64025922` | `viewAngle` (50), `viewAngle_of_mem_Icc_zero_pi` / `_pi_two_pi` (99, 108), `dev_one_nonneg` (143), `dev_one_le_pi` (155), `viewAngle_dev_one` (190), `viewAngle_dev_one_iff` (217), `viewAngle_dev_two` (293), `dark_band_viewAngle` (309), `viewAngle_lt_bow_one` (359), `bow_two_lt_viewAngle` (370), `dev_one_grazing_gt_pi` (383), `viewAngle_ne_signed_primary` (399), `forall_mem_band_exists_once_reflected_seen` (446), `signed_gap_holds_but_ray_seen_in_band` (481) |
+| `DarkBand.lean`, `Colours.lean`, `VisibleBand.lean` | `34d1b01a0b28`, `e33ffa1d2fa9`, `e98b27790013` | the uses of `dev_isMinOn` (36, 46; 55; 48, 59) |
+| `Audit.lean` (project root) | `5467ff825503` | `#print axioms` for `deriv_dev_eq_zero_iff_eq` (13) and `dev_lt_of_ne` (14) |
 
-Line numbers are from `cat -n` on the files as they stood on 2026-10-22 (Bow/Deriv/MinLemma last modified Oct 20). For `Viewing.lean`, use the theorem names: it gained theorems after this note was drafted, so its line numbers moved.
+Line numbers are from `cat -n` at commit `6f60278`. `Bow.lean`, `Deriv.lean`, `MinLemma.lean`, `DarkBand.lean` and `Colours.lean` are byte-identical to their versions at the earlier head `45663a9` (same blob hashes), so the citations drafted against that head stand unchanged. `Defs.lean` and `VisibleBand.lean` had comment-only edits in `6f60278`, `Audit.lean` gained lines, and `Viewing.lean` gained theorems after the first draft; every citation to those four files was re-checked against `6f60278` on 2026-10-22. Mathlib line numbers are from the pinned `56a00585` checkout under `.lake/packages/mathlib/`.
 
 ---
 
@@ -47,7 +49,7 @@ Note the `↑k`: in `n < k + 1` the natural number `k` is cast to a real. When y
 
 Then the total turning angle at `i₀` is **strictly less** than the total turning angle at `i`: `D(i₀) < D(i)`. Put the other way round: on the closed interval `[0, π/2]`, the function `D` attains its minimum exactly once, at `i₀`, and nowhere else.
 
-The hypotheses are not decoration. Section 6 asks you to find where each is used; the short answers are: `hn` makes the derivative exist (`Deriv.lean` 16–17, 24–27) and makes `q > 0` (`Bow.lean` 23); `hk` makes `k(k+2) > 0` so that the division defining `q` is honest (`Deriv.lean` 72, `Bow.lean` 21); `hnk` makes `q < 1` and so puts `i₀` strictly inside `(0, π/2)` (`Bow.lean` 24, 49–53); `hi` gives `cos i ≥ 0`, which the squaring step needs (`Bow.lean` 39–40, `Deriv.lean` 74, 78); `hne` is what makes the inequality strict rather than `≤`.
+The hypotheses are not decoration. Section 6 asks you to find where each is used; the short answers are: `hn` makes the derivative exist (`Deriv.lean` 16–17, 24–27) and makes `q > 0` (`Bow.lean` 23); `hk` makes `k(k+2) > 0` so that the division defining `q` is honest (`Deriv.lean` 72, `Bow.lean` 21); `hnk` makes `q < 1` and so puts `i₀` strictly inside `(0, π/2)` (`Bow.lean` 24, 49–53); `hi` places `i` in the closed interval on which the monotonicity from `lt_of_deriv_sign` holds (`MinLemma.lean` 28, 30); the `cos ≥ 0` that the squaring step needs (`Deriv.lean` 74, 78) is derived inside the sign lemmas from their own open-interval memberships (`Bow.lean` 89, 98), not from `hi`; `hne` is what makes the inequality strict rather than `≤`.
 
 ---
 
@@ -55,25 +57,25 @@ The hypotheses are not decoration. Section 6 asks you to find where each is used
 
 All three definitions are in `Defs.lean`. Quoted exactly.
 
-**Refraction angle** (line 40–41):
+**Refraction angle** (lines 43–44):
 
 ```lean
 /-- Refraction angle inside the drop, from Snell's law `sin i = n · sin r`. -/
 noncomputable def refr (n i : ℝ) : ℝ := arcsin (sin i / n)
 ```
 
-*Meaning:* `r = refr n i` is the angle the ray makes with the normal once inside the drop, obtained by solving Snell's law `sin i = n sin r` for `r`. It is a definition, so Snell's law is *assumed*; the theorem `snell` (line 52) only confirms that the definition satisfies the equation when `n ≥ 1`. `arcsin` is Mathlib's real arcsine, which clamps outside `[-1, 1]`; with `n ≥ 1` and real `i` the argument never leaves `[-1, 1]`, so no clamping happens here.
+*Meaning:* `r = refr n i` is the angle the ray makes with the normal once inside the drop, obtained by solving Snell's law `sin i = n sin r` for `r`. It is a definition, so Snell's law is *assumed*; the theorem `snell` (line 55) only confirms that the definition satisfies the equation when `n ≥ 1`. `arcsin` is Mathlib's real arcsine, which clamps outside `[-1, 1]`; with `n ≥ 1` and real `i` the argument never leaves `[-1, 1]`, so no clamping happens here.
 
-**Total deviation** (line 43–44):
+**Total deviation** (lines 46–47):
 
 ```lean
 /-- Total deviation of a ray entering at incidence `i` and reflecting `k` times inside. -/
 noncomputable def dev (k : ℕ) (n i : ℝ) : ℝ := k * π + 2 * i - 2 * (k + 1) * refr n i
 ```
 
-*Meaning:* `D(i) = kπ + 2i − 2(k+1)r` is the signed total angle through which the ray has turned by the time it leaves: `i − r` on entry, `π − 2r` at each of the `k` internal reflections, `i − r` on exit. The module docstring (lines 14–17) says plainly: "This formula is the model: it is a definition here, not derived from the geometry of the drop." So the sphere, the law of reflection and the bookkeeping of the turns are all *assumed* in this one line. `D` is not reduced modulo `2π` (lines 21–22); it is the raw accumulated turning, always in the same rotational sense.
+*Meaning:* `D(i) = kπ + 2i − 2(k+1)r` is the signed total angle through which the ray has turned by the time it leaves: `i − r` on entry, `π − 2r` at each of the `k` internal reflections, `i − r` on exit. The module docstring (lines 16–17) says plainly: "This formula is the model: it is a definition here, not derived from the geometry of the drop." So the sphere, the law of reflection and the bookkeeping of the turns are all *assumed* in this one line. `D` is not reduced modulo `2π` (lines 21–22); it is the raw accumulated turning, always in the same rotational sense.
 
-**Bow incidence** (lines 46–49):
+**Bow incidence** (lines 49–52):
 
 ```lean
 /-- The incidence angle of the `k`-th bow: where `cos² i = (n² - 1) / (k(k+2))`.
@@ -82,7 +84,14 @@ the formula clamps to `0` or `π / 2`. -/
 noncomputable def bowIncidence (k : ℕ) (n : ℝ) : ℝ := arccos (√((n ^ 2 - 1) / (k * (k + 2))))
 ```
 
-*Meaning:* `i₀` is the angle whose cosine is `√q`, where `q = (n² − 1)/(k(k+2))`. This is Newton's closed form for the stationary point of `D` (Defs.lean 30–32). Two Lean-specific warnings that the docstring hints at: real division by zero is `0` in Lean, so for `k = 0` the radicand is `(n²−1)/0 = 0` and `bowIncidence 0 n = arccos 0 = π/2`; and `arccos` clamps, so for `n ≥ k + 1` (where `q ≥ 1`) `bowIncidence k n = 0`. That is why `hk` and `hnk` are in the statement.
+*Meaning:* `i₀` is the angle whose cosine is `√q`, where `q = (n² − 1)/(k(k+2))`. This is Newton's closed form for the stationary point of `D` (Defs.lean 33–35). Two Lean-specific warnings that the docstring hints at, and that need more care than the docstring gives them, because in the definition `n` is an arbitrary real and `k` an arbitrary natural number. All five cases below were *checked* by compiling them as `example`s against `Defs.lean` and `Bow.lean` (scratch files `Clamping.lean` and `ClampingNeg.lean`, outside the repository):
+
+- *Division by zero.* Real division by zero is `0` in Lean, so for `k = 0` the radicand is `(n² − 1)/0 = 0` and `bowIncidence 0 n = arccos 0 = π/2` for **every** real `n`, including `n ≥ 1`.
+- *Clamping to `0`.* For `k ≥ 1` and `n ≥ k + 1`, `q ≥ 1`, so `√q ≥ 1` and `arccos` clamps: `bowIncidence k n = 0`. The same holds for `n ≤ −(k + 1)`, since only `n²` enters. The statement "`n ≥ k + 1` gives `0`" is therefore true only with `k ≥ 1`; at `k = 0` the same `n` gives `π/2`.
+- *Clamping to `π/2`.* For `k ≥ 1` and `n² ≤ 1`, the radicand is `≤ 0`, Mathlib's `√` of a nonpositive real is `0`, and `bowIncidence k n = arccos 0 = π/2`.
+- *No clamping for negative `n`.* Only `n²` enters, so `bowIncidence k (−n) = bowIncidence k n`; for `k ≥ 1` and `1 < |n| < k + 1` with `n` negative the formula returns the genuine angle of `|n|`, in `(0, π/2)` (e.g. `bowIncidence 1 (−4/3) ∈ (0, π/2)`), although a negative `n` is no refractive index.
+
+So any sentence about the formula outside `1 < n < k + 1` has to say which of these cases it is in. That is why `hk` and `hnk` are in the statement.
 
 **What the model assumes, in one list** (all of this is upstream of the theorem, none of it is proved):
 
@@ -96,20 +105,20 @@ noncomputable def bowIncidence (k : ℕ) (n : ℝ) : ℝ := arccos (√((n ^ 2 -
 
 ## 3. Geometric interpretation
 
-**The fan.** Think of a sheaf of parallel sunrays hitting the drop, labelled by `i` from `0` (dead centre) to `π/2` (grazing the edge). Each ray leaves turned by `D(i)`. The theorem says: as `i` sweeps from `0` to `π/2`, `D` first falls, bottoms out at `i₀`, and rises again — and it bottoms out *only* at `i₀`. (The falling and rising are literally the content of the two private lemmas `bow_aux_deriv_neg` and `bow_aux_deriv_pos`; the "only" is the strict `<`.)
+**The fan.** Think of a sheaf of parallel sunrays hitting the drop, labelled by `i` from `0` (dead centre) to `π/2` (grazing the edge). Each ray leaves turned by `D(i)`. The proof shows that as `i` sweeps from `0` to `π/2`, `D` first falls and then rises (that is literally the content of the two private lemmas `bow_aux_deriv_neg` and `bow_aux_deriv_pos`), and the theorem records the consequence: `D(i₀) < D(i)` for every other `i`, so `D` bottoms out at `i₀` and *only* there (the "only" is the strict `<`). The statement alone does not say that `D` is monotone on either side; that is in the proof, not the theorem.
 
 **Why that is a bow.** A sweep that falls then rises *folds* the fan of exit directions. Every exit direction slightly above `D(i₀)` is reached twice (once from each side of `i₀`), and no exit direction below `D(i₀)` is reached at all. The edge of the fold, `D(i₀)`, is where the outgoing rays bunch up — this is the direction Descartes found by tracing rays by hand in 1637, and it is where the bright arc appears. For water at `n = 4/3` and `k = 1`, Lean proves `cos² i₀ = 7/27` (`water_primary`, Bow.lean 123); numerically (not proved) `i₀ ≈ 59.4°` and `D(i₀) ≈ 138°`, seen at about `42°` from the antisolar point. For `k = 2`, `cos² i₀ = 7/72`, `D ≈ 231°`, seen at about `51°`.
 
-A useful way to read the hypothesis `n < k + 1`: from the derivative formula (Section 4.4) one gets `D'(0) = 2 − 2(k+1)/n` — I compiled this identity in a scratch file (*checked*; see Section 6, Q1). So `n < k + 1` is *exactly* the statement `D'(0) < 0`: the central rays start by turning *less* as `i` grows, which is what makes a fold possible. At the other end `D'(π/2) = 2 > 0` whatever `n` is. The sign change in between is forced; `i₀` is where it happens.
+A useful way to read the hypothesis `n < k + 1`: from the derivative formula (Section 4.4) one gets `D'(0) = 2 − 2(k+1)/n` — I compiled this identity in a scratch file (*checked*; see Section 6, Q1). So `n < k + 1` is *exactly* the statement `D'(0) < 0`: the central rays start by turning *less* as `i` grows, which is what makes a fold possible. At the other end `D'(π/2) = 2 > 0` for every `n > 1` (the derivative formula is only established for `n > 1`; at `n = 1`, `refr` has a corner at `π/2`). The sign change in between is forced; `i₀` is where it happens.
 
 **What the theorem does not say.**
 
-- *Nothing about brightness.* The fold is bright because the density of exit directions is proportional to `1/|D'(i)|`, which blows up at `i₀`. No such density, weight, or intensity is defined anywhere in these files (Defs.lean 17–19 says so). "Bow = bright arc" is an interpretation you bring, not something Lean proves.
+- *Nothing about brightness.* The fold is bright because exit directions pile up there: at an exit angle `θ` just above `D(i₀)`, the density of exit directions is the sum, over the inverse branches (the two rays `i` with `D(i) = θ`, one on each side of `i₀`), of the incident weight `w(i)` divided by `|D'(i)|`; it blows up at the fold because `D'(i₀) = 0`. What `w` is depends on how the incoming rays are sampled (uniform in `i`, or uniform in the impact parameter `sin i`, which is what uniform illumination gives in the planar model; over the whole disc of the drop the weight is proportional to `sin i cos i`; `RAINBOW-CAUSTIC-PLAN.md` §3 keeps ray counts, power and brightness apart, and the density form `ρ` in its §1(b) is exactly this branch sum). None of this is in the formal proof: no density, weight, or intensity is defined anywhere in these files (Defs.lean 17–19 says so). "Bow = bright arc" is an interpretation you bring, not something Lean proves.
 - *Nothing about the angle you see — until bridged.* `D(i₀) < D(i)` is an inequality between signed turning angles. Whether a smaller `D` means a ray seen further from or closer to the antisolar point depends on where `D` sits relative to `π` and `2π`. Section 5 covers the bridge; it holds for `1 < n ≤ √2` (primary) and fails at, say, `n = 1.9`.
 - *Nothing outside `[0, π/2]`.* The function `dev k n` is defined for every real `i`, but the theorem is silent there. Negative `i` is physically the mirror image; `i > π/2` is no ray at all.
 - *Nothing about which `k` dominates, three-dimensional geometry, the sun's half-degree disc, or `n` as a function of wavelength.* Each theorem fixes one `n`; the colour theorems compare two.
 
-Also note for context: the strict theorem `dev_lt_of_ne` is not consumed by any later file (grep: only its own definition and `Audit.lean` 13). The downstream files (`DarkBand.lean` 36, 46; `VisibleBand.lean` 45, 56; `Colours.lean` 55) use the non-strict `dev_isMinOn` (Bow.lean 115), which is proved from the same two sign lemmas via `isMinOn_of_deriv_sign`.
+Also note for context: the strict theorem `dev_lt_of_ne` is consumed only by `Viewing.lean` (`viewAngle_lt_bow_one`, line 365, and `bow_two_lt_viewAngle`, line 377; `grep -rn dev_lt_of_ne WyrdMathlib/ Audit.lean` finds those two uses, the two docstring mentions just above them (Viewing.lean 358, 369), its definition, and the audit line `Audit.lean` 14). The earlier downstream files (`DarkBand.lean` 36, 46; `VisibleBand.lean` 48, 59; `Colours.lean` 55) use the non-strict `dev_isMinOn` (Bow.lean 115), which is proved from the same two sign lemmas via `isMinOn_of_deriv_sign`.
 
 ---
 
@@ -129,7 +138,7 @@ theorem dev_lt_of_ne {n : ℝ} {k : ℕ} (hn : 1 < n) (hk : 1 ≤ k) (hnk : n < 
     (bow_aux_deriv_neg hn hk hnk) (bow_aux_deriv_pos hn hk hnk) i hi hne
 ```
 
-- **Line 110** `have hmem := bowIncidence_mem hn hk hnk`. Introduces `hmem : bowIncidence k n ∈ Set.Ioo 0 (π / 2)`, i.e. the pair `0 < i₀` and `i₀ < π/2`. This is the only place all three index hypotheses are needed *together*; it is where `n < k + 1` enters. The goal is unchanged.
+- **Line 110** `have hmem := bowIncidence_mem hn hk hnk`. Introduces `hmem : bowIncidence k n ∈ Set.Ioo 0 (π / 2)`, i.e. the pair `0 < i₀` and `i₀ < π/2`. This is where `n < k + 1` first enters; it enters again on lines 111–112, where both sign lemmas take `hn hk hnk` (each re-derives `bowIncidence_mem` and uses `cos_bowIncidence_sq`). The goal is unchanged.
 - **Lines 111–112** `exact lt_of_deriv_sign … i hi hne`. One application of the calculus lemma closes the goal. Lean infers `f := dev k n`, `a := 0`, `b := π/2`, `c := i₀` from the arguments. Reading the arguments in order against the signature of `lt_of_deriv_sign` (Section 4.2): `hmem.1.le : 0 ≤ i₀` is `hac`; `hmem.2.le : i₀ ≤ π/2` is `hcb`; `(continuous_dev hn k).continuousOn : ContinuousOn (dev k n) (Set.Icc 0 (π/2))` is `hf` (continuity everywhere, from `Deriv.lean` 54, restricted to the interval); `bow_aux_deriv_neg hn hk hnk` says `D' < 0` on `(0, i₀)` and is `hneg`; `bow_aux_deriv_pos hn hk hnk` says `0 < D'` on `(i₀, π/2)` and is `hpos`; then `i`, `hi`, `hne` instantiate the final `∀ x ∈ Set.Icc a b, x ≠ c → f c < f x`, whose conclusion is exactly `dev k n i₀ < dev k n i`.
 
 That is the whole proof. Everything substantive is in the three ingredients.
@@ -249,7 +258,7 @@ The asymmetry between the two lemmas (where `cos ≥ 0` comes from) is worth not
 
 ### 4.5 `deriv_dev_eq_zero_iff_eq` (Bow.lean 64–77) — a sibling, not a dependency
 
-The task description listed this as a direct dependency of `dev_lt_of_ne`. **It is not.** `grep -rn deriv_dev_eq_zero_iff_eq WyrdMathlib/` finds only its own definition (Bow.lean 64) and the audit line (`Audit.lean` 12); the proof in 4.1 never mentions it, and neither do the sign lemmas. It is the *uniqueness of the stationary point*, the other half of the module docstring's sentence (lines 7–9): "exactly one stationary point … and it is the strict minimum". `dev_lt_of_ne` implies uniqueness of the *minimum*; this theorem says uniqueness of the *zero of the derivative*, which is a different (and here, stronger-looking but equally easy) fact. Briefly:
+The task description listed this as a direct dependency of `dev_lt_of_ne`. **It is not.** `grep -rn deriv_dev_eq_zero_iff_eq WyrdMathlib/ Audit.lean` finds only its own definition (Bow.lean 64) and the audit line (`Audit.lean` 13); the proof in 4.1 never mentions it, and neither do the sign lemmas. It is the *uniqueness of the stationary point*, the other half of the module docstring's sentence (lines 7–9): "exactly one stationary point … and it is the strict minimum". `dev_lt_of_ne` implies uniqueness of the *minimum*; this theorem says uniqueness of the *zero of the derivative*, which is a different (and here, stronger-looking but equally easy) fact. Briefly:
 
 ```lean
 theorem deriv_dev_eq_zero_iff_eq {n : ℝ} {k : ℕ} (hn : 1 < n) (hk : 1 ≤ k) (hnk : n < k + 1)
@@ -307,7 +316,7 @@ It needs `0 ≤ D₁ ≤ π` for *every* `i ∈ [0, π/2]`: the lower bound hold
 
 > among all once-reflected rays, the bow ray is seen at the **largest** angle from the antisolar point; every other once-reflected ray lands strictly inside it.
 
-That is the outer edge of the primary bow, and the reason there is no once-reflected light just outside it (one side of Alexander's dark band). This corollary is now in the repository as `viewAngle_lt_bow_one` (`Viewing.lean`), in exactly this form (*checked*: it was first compiled in a scratch file, then added to the file and rebuilt):
+That is the outer edge of the primary bow, and the reason there is no once-reflected light just outside it (one side of Alexander's dark band). This corollary is now in the repository as `viewAngle_lt_bow_one` (`Viewing.lean` 359–365) with exactly this statement (*checked*: it was first compiled in a scratch file, then added to `Viewing.lean` in commit `6f60278` and rebuilt). The repository proof differs from the scratch version below in one line: it takes `√2 < 2` from the private lemma `viewing_aux_sqrt_two_lt_two` (line 301) instead of proving it inline:
 
 ```lean
 example {n i : ℝ} (hn : 1 < n) (hn2 : n ≤ √2) (hi : i ∈ Set.Icc 0 (π / 2))
@@ -329,31 +338,39 @@ Re-deriving this yourself, and then the mirror statement for the secondary bow (
 
 Twelve questions. Each names the file and lines to look at. Do not take my answers (where I give any) on trust; the point is that you can produce them.
 
-**Q1. Where is `n < k + 1` used, and what breaks without it?** Look at `Bow.lean` 18–24 (`bow_aux_q_mem`, second conjunct: `q < 1`), 49–53 (`bowIncidence_mem`), and line 110 of the main proof. Then compute `D'(0)` from `Deriv.lean` 44–45 (`sin 0 = 0`, `cos 0 = 1`, `√(n²) = n`): you should get `2 − 2(k+1)/n`, so `hnk` is exactly `D'(0) < 0`. Now ask: at `n ≥ k + 1`, what is `bowIncidence k n` (Defs.lean 46–49, `arccos` clamps)? Which line of the proof fails first? Does the *statement* survive, and if so, does it still describe a bow?
+**Q1. Where is `n < k + 1` used, and what breaks without it?** Look at `Bow.lean` 18–24 (`bow_aux_q_mem`, second conjunct: `q < 1`), 49–53 (`bowIncidence_mem`), and line 110 of the main proof. Then compute `D'(0)` from `Deriv.lean` 44–45 (`sin 0 = 0`, `cos 0 = 1`, `√(n²) = n`): you should get `2 − 2(k+1)/n`, so `hnk` is exactly `D'(0) < 0`. Now ask: at `n ≥ k + 1`, what is `bowIncidence k n` (Defs.lean 49–52, `arccos` clamps; Section 2 lists the cases)? Which line of the proof fails first? Does the *statement* survive, and if so, does it still describe a bow?
 
 **Q2. Where is `1 < n` used, and what happens at `n = 1`?** `Deriv.lean` 16–17 (`n² − sin² i > 0`), 24–27 (`|sin i / n| < 1`, so `arcsin` is differentiable), `Bow.lean` 23 (`q > 0`). At `n = 1`, `i = π/2`: what is `refr 1 (π/2)`, and why does `hasDerivAt_arcsin` (Mathlib `Trigonometric/InverseDeriv.lean` 51) refuse? Physically, what does `n = 1` mean?
 
-**Q3. Why `1 ≤ k`?** `Deriv.lean` 72 and `Bow.lean` 21 need `k(k+2) > 0` for `div_lt_iff₀`. In Lean `x / 0 = 0`; so what is `bowIncidence 0 n`? Compute `D'` for `k = 0` from the formula: is it ever negative for `n > 1`? Is the theorem's conclusion true or false at `k = 0`?
+**Q3. Why `1 ≤ k`?** `k(k+2) > 0` is needed at `Deriv.lean` 72 (for `div_lt_iff₀` on line 78) and at `Bow.lean` 21 (for `div_pos` and `div_lt_one` on lines 23–24). In Lean `x / 0 = 0`; so what is `bowIncidence 0 n`? Compute `D'` for `k = 0` from the formula: is it ever negative for `n > 1`? Is the theorem's conclusion true or false at `k = 0`?
 
 **Q4. Why does `deriv_dev_neg_iff` need `0 ≤ cos i`?** `Deriv.lean` 68–79: line 74 builds `0 ≤ (k+1) cos i`, and line 78's `pow_lt_pow_iff_left₀` (Mathlib `Algebra/Order/GroupWithZero/Basic.lean` 685) requires both sides nonnegative before squaring. Find an `i` with `cos i < 0` and `cos² i > q` and compute the sign of `D'(i)` directly (try `i = π`). Does the `↔` hold there?
 
 **Q5. What happens at the endpoints `i = 0` and `i = π/2`?** They are inside `hi` (closed interval) but outside both sign hypotheses (`MinLemma.lean` 15, open intervals). Trace how `lt_of_deriv_sign` still covers them: `strictAntiOn_of_deriv_neg` (Mathlib `MeanValue.lean` 445) concludes on the closed set from continuity on it plus derivative on the interior; `interior_Icc` (Mathlib `Topology/Order/DenselyOrdered.lean` 104). Also compute `D(0)` (it is `kπ`, since `refr n 0 = arcsin 0 = 0`) and `D'(π/2)` (it is `2`).
 
-**Q6. Why is the minimum strict, and where does the mean value theorem enter?** `MinLemma.lean` 18–24 call `strictAntiOn_of_deriv_neg` and `strictMonoOn_of_deriv_pos`. Open the Mathlib file at lines 377 and 445 and follow them to the mean value theorem. Then compare with `dev_isMinOn` (Bow.lean 115) and `isMinOn_of_deriv_sign` (MinLemma 33): which of the two would you need to claim "there is exactly one bow direction"? Which one do the later files actually use (`DarkBand.lean` 36, 46; `VisibleBand.lean` 45, 56; `Colours.lean` 55)?
+**Q6. Why is the minimum strict, and where does the mean value theorem enter?** `MinLemma.lean` 18–24 call `strictAntiOn_of_deriv_neg` and `strictMonoOn_of_deriv_pos`. Open the Mathlib file at lines 377 and 445 and follow them to the mean value theorem. Then compare with `dev_isMinOn` (Bow.lean 115) and `isMinOn_of_deriv_sign` (MinLemma 33): which of the two would you need to claim "there is exactly one bow direction"? Which one do the later files actually use (`DarkBand.lean` 36, 46; `VisibleBand.lean` 48, 59; `Colours.lean` 55), and which one does `Viewing.lean` use (365, 377)?
 
 **Q7. Is `deriv_dev_eq_zero_iff_eq` used by `dev_lt_of_ne`?** Run `grep -n deriv_dev_eq_zero_iff_eq WyrdMathlib/Rainbow/*.lean`. Then explain, in your own words, the difference between "the unique stationary point" (Bow.lean 64) and "the unique minimum" (Bow.lean 106), and why the second proof does not need the first.
 
-**Q8. Does each docstring match its statement?** Bow.lean 105 says "The bow is the strict minimum of the deviation." Check: "the bow" is `bowIncidence k n`; "strict" is the `<` together with `i ≠ …`; the domain `[0, π/2]` and the window `1 < n < k+1` are *not* in the docstring — decide whether that is acceptable. Do the same for the module docstring (Bow.lean 7–9: map "exactly one stationary point" and "strict minimum" to theorem names) and for `bowIncidence` (Defs.lean 46–48: verify the two clamping claims, `0` and `π/2`, against Mathlib's `arccos` and Lean's division by zero). Note the two meanings of `q` in the docstrings (Bow.lean 16 vs Deriv.lean 58).
+**Q8. Does each docstring match its statement?** Bow.lean 105 says "The bow is the strict minimum of the deviation." Check: "the bow" is `bowIncidence k n`; "strict" is the `<` together with `i ≠ …`; the domain `[0, π/2]` and the window `1 < n < k+1` are *not* in the docstring — decide whether that is acceptable. Do the same for the module docstring (Bow.lean 7–9: map "exactly one stationary point" and "strict minimum" to theorem names) and for `bowIncidence` (Defs.lean 49–51: verify the two clamping claims, `0` and `π/2`, against Mathlib's `arccos`, Mathlib's `√` of a negative number, and Lean's division by zero; which value you get depends on `k` as well as `n`, see Section 2). Note the two meanings of `q` in the docstrings (Bow.lean 16 vs Deriv.lean 58).
 
-**Q9. Confirm the axioms yourself.** From `experiments/wyrd-mathlib`, with `$HOME/.elan/bin` on `PATH`, run `lake env lean Audit.lean` (line 13 is `#print axioms Wyrd.Rainbow.dev_lt_of_ne`). The expected line is exactly
+**Q9. Confirm the axiom dependencies yourself.** From `experiments/wyrd-mathlib`, with `$HOME/.elan/bin` on `PATH`, run `lake env lean Audit.lean` (line 14 is `#print axioms Wyrd.Rainbow.dev_lt_of_ne`), or put `#print axioms Wyrd.Rainbow.dev_lt_of_ne` in any file that imports `WyrdMathlib.Rainbow.Bow`. The expected line is exactly
 
 ```
 'Wyrd.Rainbow.dev_lt_of_ne' depends on axioms: [propext, Classical.choice, Quot.sound]
 ```
 
-(*checked* today for this theorem and for `deriv_dev_eq_zero_iff_eq`, `lt_of_deriv_sign`, `hasDerivAt_dev`, `deriv_dev_neg_iff`, `viewAngle_dev_one`). `propext` is propositional extensionality, `Classical.choice` the axiom of choice (which is how `Real`, `arcsin` and `√` are built), `Quot.sound` quotient soundness; all three are Lean's standard axioms. If you ever see `sorryAx`, a proof is incomplete; if you see an axiom whose name ends in `_native`, something used `native_decide` (Lean 4.35 removed the older `Lean.ofReduceBool` axiom and adds a per-use `_native` axiom instead). Also run `grep -rn "sorry\|native_decide\|^axiom" WyrdMathlib/Rainbow/` and expect nothing.
+(*checked* today for this theorem and for `deriv_dev_eq_zero_iff_eq`, `lt_of_deriv_sign`, `hasDerivAt_dev`, `deriv_dev_neg_iff`, `viewAngle_dev_one`). Read the result against the Lean reference manual's page on validating proofs, <https://lean-lang.org/doc/reference/latest/ValidatingProofs/>, which is the current authority on what the command does and does not tell you:
 
-**Q10. Build it from scratch.** `lean --version` should say `4.35.0`; `lake-manifest.json` line 16 should say `56a005855ea17e0b0958f73ec801ae140b0a1679`. Then `lake exe cache get` and `lake build WyrdMathlib.Rainbow` (README lines 146–148). `WyrdMathlib/Rainbow.lean` imports all thirteen files including `Viewing` (line 9), so this builds everything the note touches. Watch for *warnings* as well as errors: a `declaration uses 'sorry'` warning does not stop the build.
+- `#print axioms` lists every axiom used by the theorem **and by everything it depends on**, Mathlib included. That transitivity is what makes it the check that matters.
+- `propext` (propositional extensionality), `Classical.choice` (choice, which is how `Real`, `arcsin` and `√` are built) and `Quot.sound` (quotient soundness) are Lean's standard axioms; the page calls them benign.
+- `sorryAx` means the theorem or one of its dependencies is incomplete.
+- **Any axiom whose name contains `_native`** means a result was admitted from native evaluation (`decide +native`, `bv_decide`). Since Lean 4.29 each such use adds its own dedicated axiom, and the older `Lean.ofReduceBool` / `trustCompiler` route was removed in 4.35, so looking only for the old name finds nothing even when native evaluation was used.
+- Any other axiom is a custom one, and the theorem holds only relative to it.
+
+Grepping the source (`grep -rn "sorry\|native_decide\|^axiom" WyrdMathlib/Rainbow/`, which does return nothing) is a supplement, not a substitute: it sees only this project's text, while an axiom can enter through an imported lemma or a tactic, and only `#print axioms` follows the dependencies. Two more points from the same page. If a `_native` axiom appears, the trusted base grows to include the Lean compiler and every `implemented_by` / `@[extern]` replacement; the page says those uses do show up in `#print axioms`, so with only the three standard axioms, as here, no compiled code took part in the proof. What `#print axioms` does not re-check is the kernel's own work; that needs an external checker (`lean4checker`, or `comparator` replaying with `nanoda`). None was run on this project (`RAINBOW-AUDIT.md`).
+
+**Q10. Build it from scratch.** `lean --version` should say `4.35.0`; `lake-manifest.json` line 16 should say `56a005855ea17e0b0958f73ec801ae140b0a1679`. Then `lake exe cache get` and `lake build` (README lines 148–153 give the full-project sequence; `lake build WyrdMathlib.Rainbow` builds just the rainbow closure). `WyrdMathlib/Rainbow.lean` imports the nine top-level rainbow files, `Viewing` on line 9, and those pull in `Defs`, `Deriv`, `MinLemma` and `TrigBounds`, so this builds everything the note touches. Watch for *warnings* as well as errors: a `declaration uses 'sorry'` warning does not stop the build.
 
 **Q11. The mutation test.** Copy the proof of `hasDerivAt_dev` (Deriv.lean 44–51) into a scratch file outside the repository, as an `example`, and change the `2 -` in the statement to `3 -`. Run `lake env lean` on it. It should fail at `ring` with an unsolved goal of the form `3 − … = 2 − …` (*checked*). This tells you `convert … using 1` is not hiding an unproved equation. Try the same with the sign of the second term.
 
@@ -363,4 +380,4 @@ Twelve questions. Each names the file and lines to look at. Do not take my answe
 
 ## 7. Provenance
 
-This note was written by an AI assistant (Claude) as a subagent of a workflow run on 2026-10-22, from a direct reading of the files cited and the runs marked *checked* (`#print axioms` on the six-theorem chain; compilation of the scratch corollary and of `D'(0) = 2 − 2(k+1)/n`; the mutation test). No human has reviewed it. It is not a review of the formalization in any formal sense; it is a guide for you to produce your own. The scratch files are in `a scratch file outside the repository` (`AxiomsBow.lean`, `BridgeCorollary.lean`, `Mutation.lean`); nothing in the repository was modified.
+This note was written by an AI assistant (Claude) as a subagent of a workflow run on 2026-10-22, from a direct reading of the files cited and the runs marked *checked* (`#print axioms` on the six-theorem chain; compilation of the scratch corollary and of `D'(0) = 2 − 2(k+1)/n`; the mutation test; the four clamping cases of `bowIncidence`). No human has reviewed it. It is not a review of the formalization in any formal sense; it is a guide for you to produce your own. The scratch files (`AxiomsBow.lean`, `BridgeCorollary.lean`, `Mutation.lean`, `Clamping.lean`, `ClampingNeg.lean`) live outside the repository; this revision's checks modified nothing in the repository. Revised on 2026-10-22 after the owner's reading: Q9 now checks actual axiom dependencies including `_native` names, the clamping cases are qualified by `k`, the density sentence is the branch sum, and the note is pinned to commit `6f60278`. The revision was then checked by three further AI verifiers (citations, mathematics, tooling claims), whose findings are folded in; that is still not a human review.
