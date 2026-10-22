@@ -2,6 +2,9 @@
 
 Side explorations — not part of the app.
 
+For every theorem the two Lean projects prove, with its plain-English meaning, its closest known result, and a
+classification as established mathematics, new formalization or unresolved claim, see [`THEOREMS.md`](THEOREMS.md).
+
 ## `coupled_prime26_pangram.py`
 
 Finds five pairs of primes that share one sum (Goldbach pairs), where the ten
