@@ -6,7 +6,7 @@ import Mathlib.Analysis.Real.Pi.Bounds
 # The primary bow across the spectrum
 
 Water's refractive index is about `1.331` for red light (about 663 nm at 20 °C,
-694 nm at 10 °C) and `1.343` for violet (about 402–410 nm). Numerically, the
+693 nm at 10 °C) and `1.343` for violet (about 402–410 nm). Numerically, the
 primary bow is then at 42.37° (red) and 40.65° (violet), a band about 1.7° wide.
 The theorems below prove 1° brackets around those values.
 -/

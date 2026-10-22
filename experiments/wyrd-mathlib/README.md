@@ -23,10 +23,11 @@ results, and the reverse.
 Descartes' ray model of the rainbow, with its calculus proved. Sunlight enters a
 spherical drop at angle `i`, bends by Snell's law (`sin i = n sin r`, `n` the
 index of water relative to air), reflects `k` times inside, and leaves, turned
-by `D(i) = kπ + 2i − 2(k+1)r`. Angles from the antisolar point are `π − D`
-(primary) and `D − π` (secondary). Physically, rays bunch up where `D` is
-stationary, and that bright fold is the bow; the theorems find that ray but do
-not model brightness.
+by `D(i) = kπ + 2i − 2(k+1)r`. The theorems bound the signed angles `π − D`
+(primary) and `D − π` (secondary); for water these are the angles seen from the
+antisolar point. Physically, rays bunch up where `D` is stationary, and that
+bright fold is the bow; the theorems find that ray but do not model brightness.
+
 [`RAINBOW.md`](RAINBOW.md) maps what is proved, what is assumed and what is left out, and
 [`rainbow-lab.html`](rainbow-lab.html) is an interactive demo that labels each statement as proved, computed or not
 modelled.
@@ -38,9 +39,9 @@ modelled.
 | `deriv_dev_eq_zero_iff_eq` | For `k ≥ 1` and `1 < n < k+1`, the **only** stationary point on `[0, π/2]` is where `cos² i = (n² − 1)/(k(k+2))` (Newton's rule, *Opticks* 1704) |
 | `dev_lt_of_ne`, `dev_isMinOn` | It is the **strict minimum** of the deviation on `[0, π/2]` |
 | `water_primary`, `water_secondary` | Water as `n = 4/3`: `cos² i = 7/27` (primary) and `7/72` (secondary) |
-| `primary_bow_water` | For `n = 4/3`, the primary bow is seen between **41° and 43°** from the antisolar point (numerically 42.03°) |
-| `secondary_bow_water` | The secondary bow between **50° and 52°** (numerically 50.98°) |
-| `alexander_dark_band` | For `n = 4/3`, **no ray** with one or two internal reflections leaves between 43° and 50° |
+| `primary_bow_water` | For `n = 4/3`, the primary bow's signed angle `π − D` lies between **41° and 43°** (numerically 42.03°, which is also the angle seen from the antisolar point) |
+| `secondary_bow_water` | The secondary bow's signed angle `D − π` lies between **50° and 52°** (numerically 50.98°) |
+| `primary_light_inside`, `secondary_light_outside`, `alexander_dark_band` | For `n = 4/3`, once-reflected rays have `π − D < 43°` and twice-reflected rays `D − π > 50°`, so **no ray** with one or two internal reflections has its signed angle between 43° and 50° |
 | `colour_order` | **Colours**: if `1 < n_red < n_violet < 2`, violet's primary bow is smaller and its secondary bow larger, so red is outside in the primary and inside in the secondary |
 | `primary_red`, `primary_violet` | Primary bow at 42–43° for `n = 1.331` (red) and 40–41° for `n = 1.343` (violet) |
 | `secondary_red`, `secondary_violet` | Secondary bow at 50–51° (`n = 1.331`) and 53–54° (`n = 1.343`) |
@@ -65,7 +66,7 @@ The gap between the bows is the geometric reason the sky there looks darker
 (Alexander's band). It is *darker*, not black: external reflection, light
 reflected three or more times, diffraction and the sun's 0.5° disc still put
 some light there. `π − D` and `D − π` are the sky angles of every ray when
-`1.18 ≤ n ≤ √2`, which covers water (not proved); for `n ≥ 1.777`, grazing
+`1.17996 ≤ n ≤ √2`, which covers water (not proved); for `n ≥ 1.777`, grazing
 once-reflected rays do reach 43–50°.
 
 ## Body water (`WyrdMathlib/BodyWater/`)

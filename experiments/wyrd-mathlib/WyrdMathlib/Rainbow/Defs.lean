@@ -23,8 +23,8 @@ the same rotational sense. The theorems state bounds on the signed quantities
 `π - D` (primary) and `D - π` (secondary). The angle at which a ray is actually
 seen from the antisolar point (the shadow of your head) is `|π - (D mod 2π)|`.
 Numerically (not proved), that equals `π - D` for every once-reflected ray when
-`n ≤ √2`, and `D - π` for every twice-reflected ray when `1.18 ≤ n ≤ 2`; water
-(`n ≈ 1.33`) satisfies both. At `n = 4/3` the bow rays have `D ≈ 138°` (seen at
+`n ≤ √2`, and `D - π` for every twice-reflected ray when `1.17996 ≤ n ≤ 2`;
+water (`n ≈ 1.33`) satisfies both. At `n = 4/3` the bow rays have `D ≈ 138°` (seen at
 about 42°) and `D ≈ 231°` (seen at about 51°).
 
 Descartes found the bow angles by tracing rays by hand. The closed form

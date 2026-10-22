@@ -40,7 +40,7 @@ Two files support the rest. `TrigBounds.lean` has one-sided Taylor bounds for si
   Their wavelengths (about 578, 663 and 402 nm at 20 °C, by IAPWS 1997) are not in Lean.
 - A point sun, and incidence angles `i` in `[0, π/2]`.
 - Sky angles from the antisolar point are read as `π − D` and `D − π`. That reading is right for every ray only when
-  `1.18 ≤ n ≤ √2`. Water qualifies, but this is not proved.
+  `1.17996 ≤ n ≤ √2`. Water qualifies, but this is not proved.
 
 ## What it leaves out
 
@@ -128,7 +128,9 @@ audit pass afterwards.
 [`rainbow-lab.html`](rainbow-lab.html) is a single file that runs in a browser with no build step.
 - **The drop.** You drag the entry angle and switch between one and two reflections.
 - **The index.** By default the index runs from red (1.331) to violet (1.343), the range the colour theorems use. An
-  "explore" mode widens it to show where the signed angle and the angle actually seen part ways.
+  "explore" mode widens it to show where the signed angle and the angle actually seen part ways. One button jumps
+  to a case where they differ: at `n = 1.9`, a grazing ray has signed angle −49°, which the theorem allows, but is
+  seen at 49°, inside the band.
 - **Labels.** Every statement is marked proved (naming the theorem), computed, or not modelled.
 - **Self-test.** On load, the page checks its own arithmetic against the six proved bow brackets.
 

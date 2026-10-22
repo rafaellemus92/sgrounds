@@ -9,19 +9,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap">
 <style>
-/* Layout: a lab bench. One drop and its angle chart side by side, the sky below, then the ledger of what is proved. */
+/* Layout: a lab bench. Controls and live numbers first, then the drop beside its angle chart, the sky, and the ledger of what is proved. */
 :root {
   color-scheme: dark;
   --ink: #09090a;          /* sgrounds near-black */
   --loom: #111113;
   --rule: rgba(236, 230, 214, 0.09);
   --fg: #ece6d6;
-  --fg-2: rgba(236, 230, 214, 0.68);
-  --fg-3: rgba(236, 230, 214, 0.44);
+  --fg-2: rgba(236, 230, 214, 0.70);
+  --fg-3: rgba(236, 230, 214, 0.56);
   --gold: #c9a96e;         /* proved in Lean */
   --frost: #8fb0cf;        /* computed by this page */
   --ash: #8a857c;          /* not modelled */
-  --ember: #e0915f;        /* the signed angle and the seen angle disagree */
+  --ember: #e0915f;        /* the signed angle and the viewing angle disagree */
   --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
   --sans: "DM Sans", "Helvetica Neue", Arial, sans-serif;
   --mono: "DM Mono", ui-monospace, Menlo, Consolas, monospace;
@@ -31,94 +31,116 @@ html { background: var(--ink); }
 body { margin: 0; background: var(--ink); color: var(--fg); font: 400 1rem/1.6 var(--sans); -webkit-font-smoothing: antialiased; padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px); }
 a { color: var(--gold); text-underline-offset: 3px; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .eyebrow { font: 500 0.78rem/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-3); }
 h1, h2, h3 { font-family: var(--serif); font-weight: 400; margin: 0; text-wrap: balance; }
 h1 { font-size: clamp(2.2rem, 5.4vw, 3.9rem); line-height: 1.04; max-width: 19ch; }
-h1 em { color: var(--gold); }
 h2 { font-size: 1.85rem; line-height: 1.15; }
 h3 { font-size: 1.25rem; line-height: 1.2; }
 p { margin: 0; }
-.lede { color: var(--fg-2); max-width: 64ch; font-size: 1.0625rem; }
+.lede { color: var(--fg-2); max-width: 66ch; font-size: 1.0625rem; }
+.small { font-size: 0.8125rem; color: var(--fg-3); }
 section { padding-block: 44px 8px; }
 header.top { padding-block: 26px 8px; display: grid; gap: 18px; }
 .mast { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
 .mark { font: italic 400 1.8rem/1 var(--serif); color: var(--gold); text-decoration: none; }
 .mark span { font-style: normal; }
 
-/* the three labels */
+/* the labels */
 .legend { display: flex; flex-wrap: wrap; gap: 8px; }
-.lab { display: inline-flex; align-items: center; gap: 7px; font: 500 0.72rem/1 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; border: 1px solid; border-radius: 18px; padding: 6px 10px; white-space: nowrap; }
+.lab { display: inline-flex; align-items: center; gap: 7px; font: 500 0.72rem/1 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; border: 1px solid; border-radius: 18px; padding: 6px 10px; white-space: nowrap; vertical-align: 0.1em; }
 .lab::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .lab.proved { color: var(--gold); border-color: rgba(201, 169, 110, 0.5); }
 .lab.computed { color: var(--frost); border-color: rgba(143, 176, 207, 0.45); }
 .lab.omitted { color: var(--ash); border-color: rgba(138, 133, 124, 0.5); border-style: dashed; }
 .lab.omitted::before { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
 .lab.warn { color: var(--ember); border-color: rgba(224, 145, 95, 0.5); }
+.lab.none { color: var(--fg-2); border-color: var(--rule); }
+.lab.none::before { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; border-radius: 2px; }
 .thm { font: 400 0.8125rem/1.3 var(--mono); color: var(--gold); }
 
+/* steps */
+.steps { margin: 12px 0 0; padding-left: 22px; color: var(--fg-2); display: grid; gap: 4px; max-width: 74ch; font-size: 0.9375rem; }
+.steps b { color: var(--fg); font-weight: 500; }
+
 /* controls */
-.bench { display: grid; gap: 18px; margin-top: 22px; }
-.controls { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.3fr); gap: 18px 28px; align-items: start; padding: 18px; background: var(--loom); border: 1px solid var(--rule); border-radius: 12px; }
+.bench { display: grid; gap: 16px; margin-top: 20px; }
+.controls { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.35fr); gap: 18px 28px; align-items: start; padding: 18px; background: var(--loom); border: 1px solid var(--rule); border-radius: 12px; }
 .ctl { display: grid; gap: 8px; min-width: 0; }
 .ctl label, .ctl .lbl { font-size: 0.8125rem; color: var(--fg-2); display: flex; justify-content: space-between; gap: 10px; }
 .ctl output { font: 500 0.875rem/1 var(--mono); color: var(--fg); font-variant-numeric: tabular-nums; }
-.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 18px; padding: 3px; gap: 2px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 18px; padding: 3px; gap: 2px; justify-self: start; }
 .seg button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 15px; font-size: 0.875rem; color: var(--fg-2); white-space: nowrap; }
 .seg button[aria-pressed="true"] { background: rgba(236, 230, 214, 0.1); color: var(--fg); }
 .seg button:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
-input[type="range"] { width: 100%; accent-color: var(--gold); }
-.n-track { position: relative; }
-.n-track input { position: relative; z-index: 1; }
-.spectrum { height: 6px; border-radius: 3px; margin-top: -2px; }
+input[type="range"] { width: 100%; accent-color: var(--gold); margin: 0; }
+.spectrum { height: 6px; border-radius: 3px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .btn { all: unset; cursor: pointer; font-size: 0.8125rem; color: var(--fg-2); border: 1px solid var(--rule); border-radius: 16px; padding: 5px 11px; }
 .btn:hover { color: var(--fg); border-color: rgba(236, 230, 214, 0.3); }
 .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-.btn[aria-pressed="true"] { color: var(--ember); border-color: rgba(224, 145, 95, 0.55); }
+.btn[aria-pressed="true"] { color: var(--fg); border-color: rgba(236, 230, 214, 0.45); background: rgba(236, 230, 214, 0.06); }
+.btn.alt[aria-pressed="true"] { color: var(--ember); border-color: rgba(224, 145, 95, 0.55); background: transparent; }
+.btn[aria-disabled="true"] { opacity: 0.45; cursor: default; }
 .check { display: inline-flex; gap: 8px; align-items: center; font-size: 0.8125rem; color: var(--fg-2); cursor: pointer; }
 .check input { accent-color: var(--gold); }
-.banner { display: none; border: 1px dashed rgba(224, 145, 95, 0.55); color: var(--ember); border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; }
-.banner.on { display: block; }
+.banner { border: 1px dashed rgba(224, 145, 95, 0.55); color: var(--ember); border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; }
 
-.panes { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr); gap: 18px; }
+/* readouts */
+.read { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; }
+.read > div { padding: 14px 16px; display: grid; gap: 6px; align-content: start; border-right: 1px solid var(--rule); min-width: 0; }
+.read > div:last-child { border-right: 0; }
+.read .k { font-size: 0.8125rem; color: var(--fg-2); }
+.read .v { font: 500 1.35rem/1.15 var(--mono); font-variant-numeric: tabular-nums; }
+.read .s { font-size: 0.8125rem; color: var(--fg-3); }
+.read .hot { background: rgba(224, 145, 95, 0.06); }
+
+.panes { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr); gap: 16px; }
 .pane { background: var(--loom); border: 1px solid var(--rule); border-radius: 12px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
 .pane-h { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .pane-h h3 { font-size: 1.15rem; }
 svg { display: block; width: 100%; height: auto; max-width: 100%; }
 svg text { font-family: var(--sans); }
 
-/* readouts */
-.read { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; }
-.read > div { padding: 14px 16px; display: grid; gap: 6px; align-content: start; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 0 -1px -1px 0; min-width: 0; }
-.read .k { font-size: 0.8125rem; color: var(--fg-3); }
-.read .v { font: 500 1.35rem/1.15 var(--mono); font-variant-numeric: tabular-nums; }
-.read .s { font-size: 0.8125rem; color: var(--fg-2); }
 .status { display: grid; gap: 10px; }
 .stat { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 10px; background: rgba(255, 255, 255, 0.015); }
 .stat p { color: var(--fg-2); font-size: 0.9375rem; }
 .stat p b { color: var(--fg); font-weight: 500; }
 
+.facts { display: grid; gap: 10px; margin-top: 12px; max-width: 76ch; }
+.facts p { color: var(--fg-2); }
+
 /* ledger */
-.ledger { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-top: 22px; }
-.col { display: grid; gap: 0; align-content: start; }
+.ledger { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 18px; margin-top: 22px; }
+.col { display: grid; gap: 0; align-content: start; min-width: 0; }
 .col h3 { margin-bottom: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .item { padding: 12px 0; border-top: 1px solid var(--rule); display: grid; gap: 4px; }
 .item p { color: var(--fg-2); font-size: 0.9375rem; }
 .item .when { font: 400 0.75rem/1.3 var(--mono); color: var(--fg-3); }
-.item.live { background: linear-gradient(90deg, rgba(201, 169, 110, 0.08), transparent 70%); }
 .item.live .when { color: var(--gold); }
-.note { margin-top: 26px; border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; color: var(--fg-2); font-size: 0.9375rem; display: grid; gap: 8px; }
+.item.live { background: linear-gradient(90deg, rgba(201, 169, 110, 0.08), transparent 70%); }
+.note { margin-top: 22px; border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; color: var(--fg-2); font-size: 0.9375rem; display: grid; gap: 8px; }
 .note b { color: var(--fg); font-weight: 500; }
+.note ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 footer { padding-block: 48px 40px; color: var(--fg-3); font-size: 0.8125rem; }
 footer .wrap { border-top: 1px solid var(--rule); padding-top: 18px; display: grid; gap: 6px; }
 code { font-family: var(--mono); font-size: 0.85em; }
 
-@media (max-width: 860px) {
+@media (max-width: 900px) {
   .controls { grid-template-columns: 1fr; }
   .panes { grid-template-columns: 1fr; }
+  .read { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .read > div { border-bottom: 1px solid var(--rule); }
+  .read > div:nth-child(2n) { border-right: 0; }
 }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 640px) {
+  #chart text { font-size: 17px; }
+  #skysvg text { font-size: 22px; }
+  #drop text { font-size: 17px; }
+  .read .v { font-size: 1.15rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
 <body>
@@ -131,83 +153,101 @@ code { font-family: var(--mono); font-size: 0.85em; }
     <div id="top" style="display:grid;gap:16px">
       <span class="eyebrow">Rainbow Ray Lab</span>
       <h1>A Lean formalization of classical rainbow geometry</h1>
-      <p class="lede">Sunlight enters a raindrop, bends, reflects once or twice inside, and leaves. Lean proves where that turning is smallest. That ray is the bow, and from it come the colour order and a gap between the two bows. Drag the ray and slide the colour to see each result. Every statement on this page carries one of three labels:</p>
-      <div class="legend" aria-label="Labels used on this page">
-        <span class="lab proved">Proved in Lean</span>
-        <span class="lab computed">Computed by this page</span>
-        <span class="lab omitted">Not modelled</span>
+      <p class="lede">Sunlight enters a raindrop, bends, reflects once or twice inside, and leaves. Lean proves which ray turns least, and that ray marks the bow. From it follow the order of the colours and a gap between the bows in the rays reflected once or twice. Move the sliders to see each result. Every statement on this page carries one of three labels:</p>
+      <div class="legend" role="list">
+        <span class="lab proved" role="listitem">Proved in Lean</span>
+        <span class="lab computed" role="listitem">Computed by this page</span>
+        <span class="lab omitted" role="listitem">Not modelled</span>
       </div>
+      <p class="small">Names in gold type, such as <span class="thm">dev_lt_of_ne</span>, are the names of Lean theorems in <code>WyrdMathlib/Rainbow</code>.</p>
     </div>
   </header>
 
   <section id="lab" aria-labelledby="lab-h">
     <span class="eyebrow">The drop</span>
     <h2 id="lab-h" style="margin-top:8px">One ray, traced through the drop</h2>
+    <ol class="steps">
+      <li>Move <b>Entry angle i</b>. However you move it, the viewing angle of a once-reflected ray never passes about 42°. That ceiling is the primary bow.</li>
+      <li>Press <b>Go to the bow ray</b>, then choose <b>2 · secondary</b> and press it again. The secondary bow is about 51°, and no ray reflected once or twice lands in between.</li>
+      <li>Press <b>Red</b>, then <b>Violet</b>. The bows move in opposite directions, so the colours swap order between the two bows.</li>
+      <li>Press <b>Show where the angles differ</b>. There the signed angle that the theorems bound is −49°, which the theorems allow, yet the ray is seen at 49°, inside the 43°–50° band.</li>
+    </ol>
     <div class="bench">
       <div class="controls">
         <div class="ctl">
-          <span class="lbl">Reflections inside the drop</span>
-          <div class="seg" role="group" aria-label="Reflections inside the drop">
+          <span class="lbl" id="k-lbl">Reflections inside the drop</span>
+          <div class="seg" role="group" aria-labelledby="k-lbl">
             <button type="button" id="k1" aria-pressed="true">1 · primary</button>
             <button type="button" id="k2" aria-pressed="false">2 · secondary</button>
           </div>
         </div>
         <div class="ctl">
-          <label for="ang"><span>Entry angle <i>i</i></span> <output id="ang-out">59.4°</output></label>
-          <input type="range" id="ang" min="0" max="90" step="0.1" value="59.4">
+          <label for="ang"><span>Entry angle <i>i</i></span> <output id="ang-out" for="ang">35.0°</output></label>
+          <input type="range" id="ang" min="0" max="90" step="0.1" value="35">
           <div class="row"><button type="button" class="btn" id="tobow">Go to the bow ray</button><label class="check"><input type="checkbox" id="fan" checked>Show a fan of 40 rays</label></div>
         </div>
         <div class="ctl">
-          <label for="idx"><span>Refractive index <i>n</i></span> <output id="idx-out">1.3333</output></label>
-          <div class="n-track"><input type="range" id="idx" min="1.331" max="1.343" step="0.0001" value="1.3333"><div class="spectrum" id="spec" aria-hidden="true"></div></div>
+          <label for="idx"><span>Refractive index <i>n</i></span> <output id="idx-out" for="idx">4/3</output></label>
+          <input type="range" id="idx" min="1.331" max="1.343" step="0.0001" value="1.3333">
+          <div class="spectrum" id="spec" aria-hidden="true"></div>
           <div class="row">
-            <button type="button" class="btn" data-n="1.331">Red 1.331</button>
-            <button type="button" class="btn" data-n="4/3">Water 4/3</button>
-            <button type="button" class="btn" data-n="1.343">Violet 1.343</button>
-            <button type="button" class="btn" id="wide" aria-pressed="false">Explore outside this range</button>
+            <button type="button" class="btn" data-n="1.331" aria-pressed="false">Red 1.331 · 663 nm</button>
+            <button type="button" class="btn" data-n="4/3" aria-pressed="true">Water 4/3</button>
+            <button type="button" class="btn" data-n="1.343" aria-pressed="false">Violet 1.343 · 402 nm</button>
           </div>
-          <span class="s" id="wl" style="font-size:0.8125rem;color:var(--fg-3)"></span>
+          <div class="row">
+            <button type="button" class="btn alt" id="wide" aria-pressed="false">Explore outside this range</button>
+            <button type="button" class="btn" id="differ">Show where the angles differ</button>
+          </div>
+          <span class="small" id="wl"></span>
         </div>
       </div>
-      <div class="banner" id="banner" role="status">You are outside the red-to-violet range, 1.331–1.343. Here the signed angle that the theorems bound and the angle you would actually see can differ. Watch the readouts for the warning.</div>
+      <div class="banner" id="banner" hidden>You are outside 1.331–1.343, the red-to-violet range the colour theorems use. Below n ≈ 1.180 or above √2, the signed angle that the theorems bound and the viewing angle differ for some rays. Watch the readouts.</div>
+
+      <div class="read" id="read">
+        <div><span class="k">Refraction angle r</span><span class="v" id="r-v"></span><span class="s">from sin i = n sin r <span class="thm">snell</span></span></div>
+        <div><span class="k">Turning angle D</span><span class="v" id="d-v"></span><span class="s">Lean's <code>dev k n i</code>: the total turn, not reduced mod 360°</span></div>
+        <div><span class="k" id="sg-k">Signed angle π − D</span><span class="v" id="sg-v"></span><span class="s">The quantity the theorems bound</span></div>
+        <div id="vw-cell"><span class="k">Viewing angle</span><span class="v" id="vw-v"></span><span class="s" id="vw-s"></span></div>
+      </div>
+      <p id="live" class="sr" aria-live="polite"></p>
 
       <div class="panes">
         <div class="pane">
           <div class="pane-h"><h3>The ray in the drop</h3><span class="lab computed">Computed</span></div>
-          <svg id="drop" viewBox="0 0 520 520" role="img" aria-label="A ray entering a circular drop, reflecting inside and leaving"></svg>
-          <p class="s" style="font-size:0.8125rem;color:var(--fg-3)">Sunlight travels left to right, which is also the direction of the antisolar point, the shadow of your head. The page traces the ray with Snell's law and the law of reflection, the same model the Lean definitions use.</p>
+          <svg id="drop" viewBox="0 0 520 520" role="img" aria-labelledby="drop-cap"></svg>
+          <p class="small" id="drop-cap">Sunlight travels left to right, toward the antisolar point (the shadow of your head). The page traces the ray with Snell's law and the law of reflection, the same model the Lean definitions use. The dot marks you, looking back along the ray. The arc there is the viewing angle, measured from the direction of the antisolar point.</p>
         </div>
         <div class="pane">
-          <div class="pane-h"><h3>Every ray's angle, by entry angle</h3><span class="lab computed">Curves computed</span></div>
-          <svg id="chart" viewBox="0 0 600 420" role="img" aria-label="Signed angle and seen angle of once- and twice-reflected rays against entry angle"></svg>
-          <p class="s" style="font-size:0.8125rem;color:var(--fg-3)">Solid lines are the signed angles Lean bounds: π − D after one reflection and D − π after two. Dashed lines show the angle actually seen, |π − (D mod 2π)|, wherever it differs from the signed one. The bars on the right count where 2,000 evenly spaced rays land. They show rays bunching at the bow, but they are not a brightness model.</p>
+          <div class="pane-h"><h3>Every ray's angle, by entry angle</h3><span class="lab computed">Computed</span></div>
+          <svg id="chart" viewBox="0 0 600 420" role="img" aria-labelledby="chart-cap"></svg>
+          <p class="small" id="chart-cap">Solid lines are the signed angles the theorems bound: π − D after one reflection and D − π after two. Dashed lines show the viewing angle, |π − (D mod 360°)|, only where it differs from the signed angle. The bars count, by viewing angle, where 2,000 rays land, evenly spaced in height across the drop. They show rays bunching at the bow, but they are not a model of brightness.</p>
         </div>
       </div>
 
-      <div class="read" aria-live="polite">
-        <div><span class="k">Refraction angle r</span><span class="v" id="r-v"></span><span class="s">sin i = n sin r <span class="thm">snell</span></span></div>
-        <div><span class="k">Signed turning angle D</span><span class="v" id="d-v"></span><span class="s">Lean's <code>dev k n i</code>, not reduced mod 360°</span></div>
-        <div><span class="k" id="sg-k">Signed angle π − D</span><span class="v" id="sg-v"></span><span class="s">The quantity the theorems bound</span></div>
-        <div><span class="k">Angle seen from the antisolar point</span><span class="v" id="vw-v"></span><span class="s" id="vw-s"></span></div>
-      </div>
-
-      <div class="status" id="status" aria-live="polite"></div>
+      <div class="status" id="status"></div>
     </div>
   </section>
 
   <section id="sky" aria-labelledby="sky-h">
     <span class="eyebrow">The sky</span>
     <h2 id="sky-h" style="margin-top:8px">Two bows, two colour orders, and a gap</h2>
-    <p class="lede" style="margin-top:8px">Each arc is the bow ray for one index between red (1.331) and violet (1.343), drawn at its computed angle. Lean proves the order of the arcs and the 1° brackets at the two ends. Between 43° and 50° the once- and twice-reflected ray families leave a gap. That is a gap in those two families, not an absence of all light.</p>
+    <div class="facts">
+      <p>Each arc is the bow ray for one index from red (1.331, about 663 nm in water at 20 °C) to violet (1.343, about 402 nm), drawn at its viewing angle. <span class="lab computed">Computed</span></p>
+      <p>Lean proves the order of the arcs, red outside violet in the primary bow and inside it in the secondary, and 1° brackets at the two ends, all as signed angles. <span class="lab proved">Proved</span> <span class="thm">colour_order · primary_red · secondary_violet …</span> From red to violet, those signed angles are also the viewing angles. <span class="lab computed">Computed</span></p>
+      <p>The gold band: for n = 4/3 and for every 1.331 ≤ n &lt; 2, no once- or twice-reflected ray has its signed angle between 43° and 50°. <span class="lab proved">Proved</span> <span class="thm">dark_band_of_red_le</span> It is a gap in those two families of rays, not an absence of all light. Why the sky there looks darker is a question of brightness. <span class="lab omitted">Not modelled</span></p>
+      <p>Light redder than n = 1.331 is not covered by any gap theorem. In this model, below n ≈ 1.3296 (beyond about 726 nm), twice-reflected rays do reach 43°–50°. <span class="lab computed">Computed</span></p>
+    </div>
     <div class="pane" style="margin-top:18px">
-      <svg id="skysvg" viewBox="0 0 680 400" role="img" aria-label="The primary and secondary bows as arcs around the antisolar point, with the gap between them"></svg>
+      <svg id="skysvg" viewBox="0 0 680 390" role="img" aria-label="The primary and secondary bows as coloured arcs around the antisolar point, with the gold 43° to 50° gap between them"></svg>
+      <p class="small">Dotted white arcs mark the bows for the index set in the lab, at their viewing angles, labelled by reflection count. Arcs beyond 68° are off the scale.</p>
     </div>
   </section>
 
   <section id="proved" aria-labelledby="proved-h">
     <span class="eyebrow">What stands behind each statement</span>
     <h2 id="proved-h" style="margin-top:8px">Proved, computed, not modelled</h2>
-    <p class="lede" style="margin-top:8px">Rows marked “applies now” hold for the index and reflection count currently set in the lab.</p>
+    <p class="lede" style="margin-top:8px">A Lean row marked “applies now” holds at the index and reflection count currently set in the lab.</p>
     <div class="ledger">
       <div class="col" id="col-proved"><h3><span class="lab proved">Proved in Lean</span></h3></div>
       <div class="col" id="col-computed"><h3><span class="lab computed">Computed by this page</span></h3></div>
@@ -215,24 +255,23 @@ code { font-family: var(--mono); font-size: 0.85em; }
     </div>
     <div class="note">
       <b>The model behind the proofs.</b>
-      <p>Lean takes the turning angle D(i) = kπ + 2i − 2(k+1)·arcsin(sin i / n) as a definition. It assumes a perfect spherical drop, ray optics, a point sun, one real index per colour, and entry angles from 0° to 90°. The indices 1.331 (red), 4/3 (water) and 1.343 (violet) are inputs. The theorems bound the signed angles π − D and D − π. Those equal the angle you see for every ray only when 1.18 ≤ n ≤ √2, which this page computes but Lean does not prove.</p>
+      <p>Lean takes the turning angle D(i) = kπ + 2i − 2(k+1)·arcsin(sin i / n) as a definition. It assumes ray optics in one plane through a perfect sphere, a point sun, one real index per colour with no absorption, and entry angles from 0° to 90°. The indices 1.331 (red), 4/3 (water) and 1.343 (violet) are inputs. The theorems bound the signed angles π − D and D − π. These equal the viewing angle for every ray only when 1.17996 ≤ n ≤ √2. This page computes that range; Lean does not prove it.</p>
     </div>
     <div class="note">
       <b>Note on prior work.</b>
-      <div>The mathematics is classical: Descartes (1637) and Newton (<i>Opticks</i>, 1704). As of 22 October 2026, we found no earlier machine-checked proof of these rainbow results.
-        <ul style="margin:0;padding-left:20px">
-          <li>We searched Lean and Mathlib, Physlib, Isabelle, HOL Light, HOL4, Rocq, Mizar, Metamath, ACL2, PVS and Agda.</li>
-          <li>The closest formal work is the HOL Light optics library of Siddique, Aravantinos and Tahar, which treats refraction only in the small-angle approximation. In Lean, FormalPhysics derives Snell's law at a flat surface.</li>
-          <li>GitHub code search was unavailable to us, and some papers could only be read as abstracts.</li>
-        </ul>
-      </div>
+      <div>The mathematics is classical: Descartes (1637) and Newton (<i>Opticks</i>, 1704). A limited search, as of 22 October 2026, found no earlier machine-checked proof of these rainbow results, to our knowledge.</div>
+      <ul>
+        <li>We searched Lean and Mathlib, Physlib and large Lean archives, Isabelle, HOL Light, HOL4, Rocq, Mizar, Metamath, ACL2, PVS and Agda, and the published literature.</li>
+        <li>The closest formal work is the HOL Light optics library of Siddique, Aravantinos and Tahar, which treats refraction only in the small-angle approximation. In Lean, FormalPhysics derives Snell's law at a flat surface.</li>
+        <li>GitHub code search was unavailable to us, and some papers could only be read as abstracts.</li>
+      </ul>
     </div>
   </section>
 </div>
 
 <footer>
   <div class="wrap">
-    <span>Source: <code>experiments/wyrd-mathlib/WyrdMathlib/Rainbow/</code>, 13 files and 73 theorems, built with Lean 4.35.0 and Mathlib v4.35.0. The proofs date from commit <code>fd0d7a6</code>; their comments were revised later. The full map is in <code>RAINBOW.md</code>.</span>
+    <span>Source: <code>experiments/wyrd-mathlib/WyrdMathlib/Rainbow/</code>, 13 files with 73 theorems and lemmas (44 public), built with Lean 4.35.0 and Mathlib v4.35.0. The proofs date from commit <code>fd0d7a6</code>, and only their comments have changed since. The one-page map is <code>RAINBOW.md</code>.</span>
     <span id="selftest"></span>
   </div>
 </footer>
@@ -242,18 +281,18 @@ code { font-family: var(--mono); font-size: 0.85em; }
   "use strict";
   const PI = Math.PI, D2R = PI / 180, R2D = 180 / PI;
   const NS = "http://www.w3.org/2000/svg";
-  const N43 = 1331 / 1000, N13 = 1343 / 1000, NW = 4 / 3;
+  const NR = 1331 / 1000, NV = 1343 / 1000, NW = 4 / 3;
 
-  // ---- the model (the same formulas as Defs.lean) ----
+  // ---- the model: the same formulas as Defs.lean ----
   const refr = (n, i) => Math.asin(Math.sin(i) / n);
   const dev = (k, n, i) => k * PI + 2 * i - 2 * (k + 1) * refr(n, i);
   const signed = (k, D) => (k === 1 ? PI - D : D - PI);            // what the theorems bound
   const mod2pi = x => x - 2 * PI * Math.floor(x / (2 * PI));
-  const seen = D => Math.abs(PI - mod2pi(D));                       // angle from the antisolar point, 0..180°
+  const viewing = D => Math.abs(PI - mod2pi(D));                     // angle from the antisolar point, 0..180°
   const bowInc = (k, n) => (n > 1 && n < k + 1) ? Math.acos(Math.sqrt((n * n - 1) / (k * (k + 2)))) : null;
   const near = (a, b) => Math.abs(a - b) < 1e-9;
 
-  // ---- data: water's index relative to air at 20 °C (IAPWS R9-97, Birch–Downs air), used only to colour and label ----
+  // ---- data: water's index relative to air at 20 °C (IAPWS R9-97, Birch–Downs air), for colour and labels only ----
   const A = [0.244257733, 9.74634476e-3, -3.73234996e-3, 2.68678472e-4, 1.58920570e-3, 2.45934259e-3, 0.900704920, -1.66626219e-2];
   function nWater(lamUm) {
     const T = 293.15 / 273.15, r = 998.2063 / 1000, L = lamUm / 0.589, L2 = L * L;
@@ -264,7 +303,7 @@ code { font-family: var(--mono); font-size: 0.85em; }
     return Math.sqrt((1 + 2 * rhs) / (1 - rhs)) / nAir;
   }
   function lambdaFor(n) {               // nm, or null outside 380–780 nm
-    let lo = 0.36, hi = 0.80;
+    let lo = 0.38, hi = 0.78;
     if (n > nWater(lo) || n < nWater(hi)) return null;
     for (let j = 0; j < 60; j++) { const m = (lo + hi) / 2; if (nWater(m) > n) lo = m; else hi = m; }
     return (lo + hi) / 2 * 1000;
@@ -280,29 +319,33 @@ code { font-family: var(--mono); font-size: 0.85em; }
     return `rgb(${Math.max(c(r), 40)},${Math.max(c(g), 30)},${Math.max(c(b), 30)})`;
   }
 
+  // ---- facts about both ray families at one index (computed) ----
+  const famCache = new Map();
+  function family(n) {
+    if (famCache.has(n)) return famCache.get(n);
+    let s1max = -Infinity, s2min = Infinity, hit = false, differ = false, seen1max = 0;
+    const look = (k, i) => {
+      const D = dev(k, n, i), s = signed(k, D), v = viewing(D);
+      if (k === 1) { s1max = Math.max(s1max, s); seen1max = Math.max(seen1max, v); } else s2min = Math.min(s2min, s);
+      if (v >= 43 * D2R && v <= 50 * D2R) hit = true;
+      if (Math.abs(v - s) > 1e-9) differ = true;
+    };
+    const M = 3000;
+    for (let j = 0; j <= M; j++) { const i = (j / M) * PI / 2; look(1, i); look(2, i); }
+    for (const k of [1, 2]) { const b = bowInc(k, n); if (b != null) look(k, b); }
+    const f = { s1max, s2min, seen1max, signedGap: s1max < 43 * D2R && s2min > 50 * D2R, seenGap: !hit, differ };
+    if (famCache.size > 400) famCache.clear();
+    famCache.set(n, f);
+    return f;
+  }
+
   // ---- state ----
-  const st = { k: 1, n: NW, i: 59.4 * D2R, fan: true, wide: false };
+  const st = { k: 1, n: NW, i: 35 * D2R, fan: true, wide: false };
   const $ = id => document.getElementById(id);
   const ang = $("ang"), idx = $("idx");
   const fmt = (x, d = 2) => (Math.abs(x) < 5e-13 ? 0 : x).toFixed(d);
   const deg = x => fmt(x * R2D, 2) + "°";
-
-  // ---- family facts for an index (computed) ----
-  function family(n) {
-    let s1max = -Infinity, s2min = Infinity, hitSeen = false, signedSeenDiffer = false;
-    const M = 3000;
-    for (let j = 0; j <= M; j++) {
-      const i = (j / M) * PI / 2;
-      for (const k of [1, 2]) {
-        const D = dev(k, n, i), s = signed(k, D), v = seen(D);
-        if (k === 1) s1max = Math.max(s1max, s); else s2min = Math.min(s2min, s);
-        if (v >= 43 * D2R && v <= 50 * D2R) hitSeen = true;
-        if (Math.abs(v - s) > 1e-7) signedSeenDiffer = true;
-      }
-    }
-    for (const k of [1, 2]) { const b = bowInc(k, n); if (b != null) { const s = signed(k, dev(k, n, b)); if (k === 1) s1max = Math.max(s1max, s); else s2min = Math.min(s2min, s); } }
-    return { s1max, s2min, signedGap: s1max < 43 * D2R && s2min > 50 * D2R, seenGap: !hitSeen, signedSeenDiffer };
-  }
+  const nTxt = n => near(n, NW) ? "4/3" : n.toFixed(st.wide ? 3 : 4);
 
   // ---- svg helpers ----
   function el(name, attrs, parent) { const e = document.createElementNS(NS, name); for (const a in attrs) e.setAttribute(a, attrs[a]); if (parent) parent.appendChild(e); return e; }
@@ -312,202 +355,224 @@ code { font-family: var(--mono); font-size: 0.85em; }
   const drop = $("drop");
   function drawDrop() {
     drop.textContent = "";
-    const cx = 250, cy = 250, R = 140, n = st.n, k = st.k, col = rgbFor(lambdaFor(n));
-    const P = (phi) => [cx + R * Math.cos(phi), cy - R * Math.sin(phi)];
-    el("circle", { cx, cy, r: R, fill: "rgba(143,176,207,0.06)", stroke: "rgba(236,230,214,0.35)", "stroke-width": 1.2 }, drop);
-    // antisolar direction arrow
-    el("line", { x1: 18, y1: 488, x2: 150, y2: 488, stroke: "var(--fg-3)", "stroke-width": 1, "marker-end": "url(#arr)" }, drop);
+    const cx = 250, cy = 230, R = 130, n = st.n, k = st.k, col = rgbFor(lambdaFor(n));
+    const P = phi => [cx + R * Math.cos(phi), cy - R * Math.sin(phi)];
     const defs = el("defs", {}, drop);
     const mk = el("marker", { id: "arr", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto" }, defs);
     el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--fg-3)" }, mk);
-    txt(drop, 18, 478, "sunlight → toward the antisolar point", { "font-size": 12 });
+    el("circle", { cx, cy, r: R, fill: "rgba(143,176,207,0.06)", stroke: "rgba(236,230,214,0.35)", "stroke-width": 1.2 }, drop);
+    el("line", { x1: 18, y1: 505, x2: 170, y2: 505, stroke: "var(--fg-3)", "stroke-width": 1, "marker-end": "url(#arr)" }, drop);
+    txt(drop, 18, 494, "sunlight, toward the antisolar point", { "font-size": 12 });
 
-    function path(i, strong) {
+    function trace(i, strong) {
       const r = refr(n, i), D = dev(k, n, i);
       const pts = []; for (let j = 0; j <= k + 1; j++) pts.push(P((PI - i) - j * (PI - 2 * r)));
-      const [x0, y0] = pts[0];
-      const g = el("g", { opacity: strong ? 1 : 0.28 }, drop);
+      const [x0, y0] = pts[0], [xe, ye] = pts[pts.length - 1];
+      const dx = Math.cos(D), dy = Math.sin(D);              // exit direction in screen coordinates: math angle −D
+      const g = el("g", { opacity: strong ? 1 : 0.26 }, drop);
       el("line", { x1: 0, y1: y0, x2: x0, y2: y0, stroke: strong ? "#f5efe0" : "rgba(245,239,224,0.6)", "stroke-width": strong ? 2 : 1 }, g);
       el("polyline", { points: pts.map(p => p.join(",")).join(" "), fill: "none", stroke: col, "stroke-width": strong ? 2.2 : 1 }, g);
-      const [xe, ye] = pts[pts.length - 1];
-      const L = 340, dx = Math.cos(-D), dy = -Math.sin(-D);
-      el("line", { x1: xe, y1: ye, x2: xe + L * dx, y2: ye + L * dy, stroke: col, "stroke-width": strong ? 2.2 : 1 }, g);
-      return { pts, D, r, xe, ye, dx, dy };
+      el("line", { x1: xe, y1: ye, x2: xe + 600 * dx, y2: ye + 600 * dy, stroke: col, "stroke-width": strong ? 2.2 : 1 }, g);
+      return { pts, D, xe, ye, dx, dy };
     }
-    if (st.fan) { const N = 40; for (let j = 0; j < N; j++) path(Math.asin((j + 0.5) / N), false); }
-    const main = path(st.i, true);
-    // entry normal and labels
-    const [x0, y0] = main.pts[0];
-    el("line", { x1: x0 - 46 * (x0 - cx) / R, y1: y0 - 46 * (y0 - cy) / R, x2: cx, y2: cy, stroke: "rgba(236,230,214,0.25)", "stroke-dasharray": "3 4" }, drop);
-    txt(drop, x0 - 40, y0 - 10, "i", { fill: "var(--fg-2)", "font-style": "italic", "font-size": 15 });
-    // seen angle at the exit: angle between the direction back along the ray and the antisolar direction (+x)
-    // the reversed ray (from you toward the drop) has math angle atan2(dy, -dx); its size is the seen angle
-    const v = seen(main.D), ex = main.xe, ey = main.ye, rr = 46;
-    el("line", { x1: ex, y1: ey, x2: ex + 70, y2: ey, stroke: "var(--frost)", "stroke-dasharray": "4 4", "stroke-width": 1.2 }, drop);
-    const sweep = v;
-    const dir = Math.sign(Math.atan2(main.dy, -main.dx)) || 1;
-    const endx = ex + rr * Math.cos(dir * sweep), endy = ey - rr * Math.sin(dir * sweep);
-    el("path", { d: `M ${ex + rr} ${ey} A ${rr} ${rr} 0 0 ${dir > 0 ? 0 : 1} ${endx} ${endy}`, fill: "none", stroke: "var(--frost)", "stroke-width": 1.4 }, drop);
-    el("line", { x1: ex, y1: ey, x2: ex - 90 * main.dx, y2: ey - 90 * main.dy, stroke: "var(--frost)", "stroke-width": 1.2, "stroke-dasharray": "2 3" }, drop);
-    const lx = ex + (rr + 14) * Math.cos(dir * sweep / 2), ly = ey - (rr + 14) * Math.sin(dir * sweep / 2);
-    txt(drop, lx, ly, fmt(v * R2D, 1) + "° seen", { fill: "var(--frost)", "font-size": 12, "text-anchor": "middle" });
+    if (st.fan) { const N = 40; for (let j = 0; j < N; j++) trace(Math.asin((j + 0.5) / N), false); }
+    const m = trace(st.i, true);
+    // the entry normal and the angle i
+    const [x0, y0] = m.pts[0], ux = (x0 - cx) / R, uy = (y0 - cy) / R;
+    el("line", { x1: x0 + 44 * ux, y1: y0 + 44 * uy, x2: cx, y2: cy, stroke: "rgba(236,230,214,0.3)", "stroke-dasharray": "3 4" }, drop);
+    txt(drop, x0 - 26, y0 - 8, "i", { fill: "var(--fg-2)", "font-style": "italic", "font-size": 15 });
+    // you: a point along the outgoing ray, looking back at the drop
+    let L = 170;
+    const inside = t => { const x = m.xe + t * m.dx, y = m.ye + t * m.dy; return x > 30 && x < 490 && y > 30 && y < 470; };
+    while (L > 40 && !inside(L)) L -= 5;
+    const ox = m.xe + L * m.dx, oy = m.ye + L * m.dy;
+    const v = viewing(m.D);
+    // the line of sight runs from you back to the drop: screen direction (−dx, −dy), math angle atan2(dy, −dx)
+    const sight = Math.atan2(m.dy, -m.dx), dir = Math.sign(sight) || 1, rr = 34;
+    el("line", { x1: ox, y1: oy, x2: ox + 64, y2: oy, stroke: "var(--frost)", "stroke-dasharray": "4 4", "stroke-width": 1.2 }, drop);
+    const ex = ox + rr * Math.cos(dir * v), ey = oy - rr * Math.sin(dir * v);
+    el("path", { d: `M ${ox + rr} ${oy} A ${rr} ${rr} 0 0 ${dir > 0 ? 0 : 1} ${ex} ${ey}`, fill: "none", stroke: "var(--frost)", "stroke-width": 1.6 }, drop);
+    el("circle", { cx: ox, cy: oy, r: 5, fill: "#f5efe0" }, drop);
+    const lx = ox + (rr + 16) * Math.cos(dir * v / 2), ly = oy - (rr + 16) * Math.sin(dir * v / 2) + 4;
+    txt(drop, lx, ly, fmt(v * R2D, 1) + "°", { fill: "var(--frost)", "font-size": 13, "text-anchor": "start" });
+    txt(drop, ox - 10, oy + (oy > 440 ? -12 : 20), "you", { fill: "var(--fg-2)", "font-size": 12, "text-anchor": "end" });
   }
 
   // ---- the chart ----
   const chart = $("chart");
   function drawChart(fam) {
     chart.textContent = "";
-    const W = 600, H = 420, m = { l: 46, r: 92, t: 16, b: 40 };
-    const n = st.n;
-    const samples = [];
-    let ymin = 0;
-    for (let j = 0; j <= 360; j++) { const i = (j / 360) * PI / 2; for (const k of [1, 2]) { const s = signed(k, dev(k, n, i)) * R2D; ymin = Math.min(ymin, s); } }
-    ymin = Math.min(0, Math.floor((ymin - 5) / 30) * 30);
-    const ymax = 180;
+    const W = 600, H = 420, m = { l: 56, r: 92, t: 16, b: 44 }, n = st.n;
+    let lo = 0, hi = 180;
+    for (let j = 0; j <= 360; j++) { const i = (j / 360) * PI / 2; for (const k of [1, 2]) { const s = signed(k, dev(k, n, i)) * R2D; lo = Math.min(lo, s); hi = Math.max(hi, s); } }
+    const ymin = lo < -0.5 ? Math.floor((lo - 5) / 30) * 30 : 0, ymax = hi > 180.5 ? Math.ceil((hi + 5) / 30) * 30 : 180;
     const X = i => m.l + (i / 90) * (W - m.l - m.r), Y = a => m.t + (1 - (a - ymin) / (ymax - ymin)) * (H - m.t - m.b);
-    // grid
     for (let a = ymin; a <= ymax; a += 30) { el("line", { x1: m.l, x2: W - m.r, y1: Y(a), y2: Y(a), stroke: "var(--rule)" }, chart); txt(chart, m.l - 8, Y(a) + 4, a + "°", { "text-anchor": "end", "font-size": 11 }); }
-    for (let i = 0; i <= 90; i += 15) txt(chart, X(i), H - m.b + 18, i + "°", { "text-anchor": "middle", "font-size": 11 });
-    txt(chart, (m.l + W - m.r) / 2, H - 6, "entry angle i", { "text-anchor": "middle", "font-size": 12 });
+    for (let i = 0; i <= 90; i += 30) txt(chart, X(i), H - m.b + 18, i + "°", { "text-anchor": "middle", "font-size": 11 });
+    txt(chart, (m.l + W - m.r) / 2, H - 8, "entry angle i", { "text-anchor": "middle", "font-size": 12 });
     // the 43–50° band
-    const proved = (st.wide ? (n >= N43 && n < 2) : true) || near(n, NW);
-    const bandCol = fam.signedGap ? (proved ? "rgba(201,169,110,0.16)" : "rgba(143,176,207,0.14)") : "rgba(224,145,95,0.16)";
-    el("rect", { x: m.l, y: Y(50), width: W - m.l - m.r, height: Y(43) - Y(50), fill: bandCol }, chart);
-    txt(chart, m.l + 6, Y(50) + 13, "43°–50°", { "text-anchor": "start", "font-size": 11, fill: fam.signedGap ? (proved ? "var(--gold)" : "var(--frost)") : "var(--ember)" });
-    // curves
+    const thm = gapTheorem(n);
+    const bs = !fam.signedGap ? "none" : !fam.seenGap ? "signedOnly" : thm ? "proved" : "computed";
+    const bandFill = { none: "rgba(224,145,95,0.16)", signedOnly: "rgba(224,145,95,0.12)", proved: "rgba(201,169,110,0.18)", computed: "rgba(143,176,207,0.16)" }[bs];
+    const bandTxt = { none: "43°–50°: no gap here", signedOnly: "43°–50°: signed gap holds, but rays are seen inside", proved: "43°–50°: signed gap proved", computed: "43°–50°: gap computed, no theorem" }[bs];
+    const bandCol = { none: "var(--ember)", signedOnly: "var(--ember)", proved: "var(--gold)", computed: "var(--frost)" }[bs];
+    el("rect", { x: m.l, y: Y(50), width: W - m.l - m.r, height: Y(43) - Y(50), fill: bandFill }, chart);
+    txt(chart, m.l + 6, Y(43) + 15, bandTxt, { "font-size": 11, fill: bandCol });
+    // curves: solid signed; dashed viewing angle only where it differs
     for (const k of [1, 2]) {
-      let ds = "", dv = "", differ = false;
+      let ds = "", dv = "", pen = false;
       for (let j = 0; j <= 360; j++) {
-        const id = j / 4, i = id * D2R, D = dev(k, n, i), s = signed(k, D) * R2D, v = seen(D) * R2D;
+        const id = j / 4, i = id * D2R, D = dev(k, n, i), s = signed(k, D) * R2D, v = viewing(D) * R2D;
         ds += (j ? "L" : "M") + X(id).toFixed(1) + "," + Y(s).toFixed(1);
-        dv += (j ? "L" : "M") + X(id).toFixed(1) + "," + Y(v).toFixed(1);
-        if (Math.abs(v - s) > 1e-6) differ = true;
+        if (Math.abs(v - s) > 1e-6) { dv += (pen ? "L" : "M") + X(id).toFixed(1) + "," + Y(v).toFixed(1); pen = true; } else pen = false;
       }
       const on = k === st.k;
       el("path", { d: ds, fill: "none", stroke: on ? "#f5efe0" : "rgba(245,239,224,0.38)", "stroke-width": on ? 2 : 1.3 }, chart);
-      if (differ) el("path", { d: dv, fill: "none", stroke: "var(--ember)", "stroke-width": 1.4, "stroke-dasharray": "5 4", opacity: on ? 1 : 0.55 }, chart);
+      if (dv) el("path", { d: dv, fill: "none", stroke: "var(--ember)", "stroke-width": 1.5, "stroke-dasharray": "5 4", opacity: on ? 1 : 0.55 }, chart);
       const b = bowInc(k, n);
       if (b != null) {
-        const s = signed(k, dev(k, n, b)) * R2D;
-        el("circle", { cx: X(b * R2D), cy: Y(s), r: 4.5, fill: "var(--gold)" }, chart);
-        txt(chart, X(b * R2D) + (k === 1 ? -8 : 8), Y(s) + (k === 1 ? 20 : -10), (k === 1 ? "primary bow " : "secondary bow ") + fmt(s, 2) + "°", { fill: "var(--gold)", "font-size": 11.5, "text-anchor": k === 1 ? "end" : "start" });
+        const s = signed(k, dev(k, n, b)) * R2D, bx = X(b * R2D), left = k === 1 || bx > 380;
+        el("circle", { cx: bx, cy: Y(s), r: 4.5, fill: "var(--gold)" }, chart);
+        txt(chart, bx + (left ? -8 : 8), Y(s) + (k === 1 ? 22 : -10), (k === 1 ? "primary bow ≈ " : "secondary bow ≈ ") + fmt(s, 2) + "°", { fill: "var(--frost)", "font-size": 11.5, "text-anchor": left ? "end" : "start" });
       }
       const last = signed(k, dev(k, n, PI / 2)) * R2D;
       txt(chart, X(90) + 4, Y(last) + 4, k === 1 ? "π − D" : "D − π", { "font-size": 11, fill: on ? "var(--fg)" : "var(--fg-3)" });
     }
-    // current ray
-    const D = dev(st.k, n, st.i), s = signed(st.k, D) * R2D;
+    // the current ray, on the signed curve and, if different, on the viewing curve
+    const D = dev(st.k, n, st.i), s = signed(st.k, D) * R2D, v = viewing(D) * R2D;
     el("line", { x1: X(st.i * R2D), x2: X(st.i * R2D), y1: m.t, y2: H - m.b, stroke: "rgba(236,230,214,0.25)", "stroke-dasharray": "2 4" }, chart);
     el("circle", { cx: X(st.i * R2D), cy: Y(s), r: 5, fill: "none", stroke: "#f5efe0", "stroke-width": 2 }, chart);
-    // where 2,000 evenly spaced rays land (seen angle), current k
-    const bins = new Array(181).fill(0), NR = 2000;
-    for (let j = 0; j < NR; j++) { const i = Math.asin((j + 0.5) / NR), v = Math.round(seen(dev(st.k, n, i)) * R2D); bins[v]++; }
+    if (Math.abs(v - s) > 1e-6) el("circle", { cx: X(st.i * R2D), cy: Y(v), r: 5, fill: "none", stroke: "var(--ember)", "stroke-width": 2 }, chart);
+    // where 2,000 rays land, by viewing angle (current k)
+    const bins = new Array(181).fill(0), NRAYS = 2000;
+    for (let j = 0; j < NRAYS; j++) { const i = Math.asin((j + 0.5) / NRAYS); bins[Math.round(viewing(dev(st.k, n, i)) * R2D)]++; }
     const bmax = Math.max(...bins), x0 = W - m.r + 42;
-    for (let a = 0; a <= 180; a++) if (bins[a] && a >= ymin) { const w = 44 * bins[a] / bmax; el("rect", { x: x0, y: Y(a + 0.5), width: Math.max(w, 0.8), height: Math.max(1, Y(a - 0.5) - Y(a + 0.5) - 0.4), fill: "var(--frost)", opacity: 0.75 }, chart); }
-    txt(chart, x0, m.t + 10, "rays per °", { "font-size": 10.5, fill: "var(--frost)" });
+    for (let a = 0; a <= 180; a++) if (bins[a] && a >= ymin && a <= ymax) { const w = 44 * bins[a] / bmax; el("rect", { x: x0, y: Y(a + 0.5), width: Math.max(w, 0.8), height: Math.max(1, Y(a - 0.5) - Y(a + 0.5) - 0.4), fill: "var(--frost)", opacity: 0.75 }, chart); }
+    txt(chart, x0, H - m.b + 18, "rays", { "font-size": 11, fill: "var(--frost)" });
   }
 
   // ---- the sky ----
   const sky = $("skysvg");
   function drawSky() {
     sky.textContent = "";
-    const cx = 340, cy = 352, sc = 5.0;           // 5 px per degree
+    const cx = 340, cy = 350, sc = 4.9;
     const arc = (a, attrs) => { const r = a * sc; return el("path", Object.assign({ d: `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`, fill: "none" }, attrs), sky); };
     el("line", { x1: 0, x2: 680, y1: cy, y2: cy, stroke: "var(--rule)" }, sky);
-    // the proved gap 43–50
     const r43 = 43 * sc, r50 = 50 * sc;
     el("path", { d: `M ${cx - r50} ${cy} A ${r50} ${r50} 0 0 1 ${cx + r50} ${cy} L ${cx + r43} ${cy} A ${r43} ${r43} 0 0 0 ${cx - r43} ${cy} Z`, fill: "rgba(201,169,110,0.10)", stroke: "rgba(201,169,110,0.55)", "stroke-dasharray": "4 4" }, sky);
-    // spectrum arcs, red to violet
     for (let j = 0; j <= 12; j++) {
-      const n = N43 + j * (N13 - N43) / 12, c = rgbFor(lambdaFor(n));
-      arc(signed(1, dev(1, n, bowInc(1, n))) * R2D, { stroke: c, "stroke-width": 2.2, opacity: 0.95 });
-      arc(signed(2, dev(2, n, bowInc(2, n))) * R2D, { stroke: c, "stroke-width": 2.2, opacity: 0.8 });
+      const n = NR + j * (NV - NR) / 12, c = rgbFor(lambdaFor(n));
+      arc(viewing(dev(1, n, bowInc(1, n))) * R2D, { stroke: c, "stroke-width": 2.2, opacity: 0.95 });
+      arc(viewing(dev(2, n, bowInc(2, n))) * R2D, { stroke: c, "stroke-width": 2.2, opacity: 0.8 });
     }
-    // the current index
-    const n = st.n, b1 = bowInc(1, n), b2 = bowInc(2, n);
-    if (b1 != null) { const a = seen(dev(1, n, b1)) * R2D; if (a * sc < 340) arc(a, { stroke: "#fff", "stroke-width": 1, "stroke-dasharray": "2 3" }); }
-    if (b2 != null) { const a = seen(dev(2, n, b2)) * R2D; if (a * sc < 340) arc(a, { stroke: "#fff", "stroke-width": 1, "stroke-dasharray": "2 3" }); }
+    for (const k of [1, 2]) {
+      const b = bowInc(k, st.n); if (b == null) continue;
+      const a = viewing(dev(k, st.n, b)) * R2D; if (a * sc > 335) continue;
+      arc(a, { stroke: "#fff", "stroke-width": 1.2, "stroke-dasharray": "2 3" });
+      txt(sky, k === 1 ? cx - a * sc - 6 : cx + a * sc + 6, cy - 6, "k = " + k, { "font-size": 11, fill: "#f5efe0", "text-anchor": k === 1 ? "end" : "start" });
+    }
     el("circle", { cx, cy, r: 4, fill: "var(--fg-2)" }, sky);
-    txt(sky, cx, cy + 20, "antisolar point (the shadow of your head)", { "text-anchor": "middle", "font-size": 12 });
+    txt(sky, cx, cy + 24, "antisolar point (the shadow of your head)", { "text-anchor": "middle", "font-size": 12 });
     txt(sky, cx, cy - 46.5 * sc + 4, "gap: 43°–50°", { "text-anchor": "middle", "font-size": 12, fill: "var(--gold)" });
-    txt(sky, cx, cy - 40 * sc + 16, "primary bow: red on the outside", { "text-anchor": "middle", "font-size": 12, fill: "var(--fg-2)" });
-    txt(sky, cx, cy - 54 * sc - 10, "secondary bow: red on the inside", { "text-anchor": "middle", "font-size": 12, fill: "var(--fg-2)" });
-    txt(sky, cx, cy + 40, "Gold band: the gap proved for once- and twice-reflected rays. Dotted white: the index set in the lab.", { "text-anchor": "middle", "font-size": 11, fill: "var(--fg-3)" });
+    txt(sky, cx, cy - 34 * sc, "primary (k = 1): red outside", { "text-anchor": "middle", "font-size": 12, fill: "var(--fg-2)" });
+    txt(sky, cx, cy - 55.5 * sc - 8, "secondary (k = 2): red inside", { "text-anchor": "middle", "font-size": 12, fill: "var(--fg-2)" });
+  }
+
+  // ---- which gap theorem covers an index ----
+  function gapTheorem(n) {
+    if (near(n, NW)) return "dark_band_visible · primary_light_inside · secondary_light_outside";
+    if (n >= NR && n <= NV) return "dark_band_visible";
+    if (n >= NR && n < 2) return "dark_band_of_red_le";
+    return null;
   }
 
   // ---- readouts and status ----
-  function stat(cls, label, html) { return `<div class="stat"><span class="lab ${cls}">${label}</span><p>${html}</p></div>`; }
+  const stat = (cls, label, html) => `<div class="stat"><span class="lab ${cls}">${label}</span><p>${html}</p></div>`;
   function update() {
     const n = st.n, k = st.k, i = st.i;
-    const D = dev(k, n, i), s = signed(k, D), v = seen(D), r = refr(n, i);
-    const wl = lambdaFor(n);
+    const D = dev(k, n, i), s = signed(k, D), v = viewing(D), r = refr(n, i);
+    const wl = lambdaFor(n), fam = family(n);
     $("ang-out").textContent = fmt(i * R2D, 1) + "°";
-    $("idx-out").textContent = near(n, NW) ? "4/3" : n.toFixed(4);
-    $("wl").textContent = wl ? `About ${Math.round(wl)} nm in water at 20 °C, relative to air (IAPWS 1997 data, used only for colour; Lean uses the index alone)` : "Outside water's visible range: no wavelength";
+    $("idx-out").textContent = nTxt(n);
+    ang.setAttribute("aria-valuetext", fmt(i * R2D, 1) + " degrees");
+    idx.setAttribute("aria-valuetext", near(n, NW) ? "4 over 3" : nTxt(n));
+    $("wl").textContent = wl ? `About ${Math.round(wl)} nm in water at 20 °C, relative to air. These are IAPWS 1997 data, used only for colour; Lean works with the index alone.` : "Outside water's visible range: there is no wavelength to show.";
     $("r-v").textContent = deg(r);
     $("d-v").textContent = deg(D);
     $("sg-k").textContent = k === 1 ? "Signed angle π − D" : "Signed angle D − π";
     $("sg-v").textContent = deg(s);
     $("vw-v").textContent = deg(v);
     const differ = Math.abs(v - s) > 1e-7;
+    $("vw-cell").classList.toggle("hot", differ);
     $("vw-v").style.color = differ ? "var(--ember)" : "";
-    $("vw-s").innerHTML = differ ? `<span style="color:var(--ember)">Differs from the signed angle. A theorem about the signed angle says nothing about what you see for this ray.</span>` : "Same as the signed angle for this ray (computed)";
-    const fam = family(n);
-    const out = [];
-    // bow ray
+    $("vw-s").innerHTML = differ
+      ? `<span style="color:var(--ember)">Differs from the signed angle. A bound on the signed angle says nothing about where this ray is seen.</span>`
+      : "Seen from the antisolar point, |π − (D mod 360°)|. Here it equals the signed angle.";
+    $("banner").hidden = !(st.wide && (n < NR || n > NV));
+    document.querySelectorAll("[data-n]").forEach(bt => bt.setAttribute("aria-pressed", String(near(n, bt.dataset.n === "4/3" ? NW : +bt.dataset.n))));
     const b = bowInc(k, n);
+    const tb = $("tobow"); tb.setAttribute("aria-disabled", String(b == null)); tb.title = b == null ? `No bow ray: the theorems need 1 < n < ${k + 1}` : "";
+
+    const out = [];
     if (b != null) {
-      out.push(stat("proved", "Proved", `<b>The bow ray.</b> For k ≥ 1 and 1 &lt; n &lt; k + 1, the only flat point of D on 0°–90° is where cos² i = (n² − 1)/(k(k+2)), and it is the strict minimum there. Here that is i ≈ ${fmt(b * R2D, 2)}° (computed). <span class="thm">deriv_dev_eq_zero_iff_eq · dev_lt_of_ne</span>`));
-      const slope = 2 - 2 * (k + 1) * Math.cos(i) / Math.sqrt(n * n - Math.sin(i) ** 2);
-      out.push(stat("proved", "Proved", `<b>Slope at this ray:</b> D is ${Math.abs(i - b) < 0.0005 ? "flat" : slope < 0 ? "falling" : "rising"}, since cos² i is ${Math.abs(i - b) < 0.0005 ? "equal to" : slope < 0 ? "above" : "below"} (n² − 1)/(k(k+2)). <span class="thm">deriv_dev_neg_iff · deriv_dev_pos_iff</span>`));
+      out.push(stat("proved", "Proved", `<b>The bow ray.</b> For k ≥ 1 and 1 &lt; n &lt; k + 1, the only flat point of D for entry angles 0°–90° is where cos² i = (n² − 1)/(k(k+2)). It is the strict minimum of D there. At this index that is i ≈ ${fmt(b * R2D, 2)}° (computed). <span class="thm">deriv_dev_eq_zero_iff_eq · dev_lt_of_ne</span>`));
+      const q = (n * n - 1) / (k * (k + 2)), c2 = Math.cos(i) ** 2, atBow = i === b;
+      const word = atBow ? "flat" : c2 > q ? "falling" : "rising", rel = atBow ? "equal to" : c2 > q ? "above" : "below";
+      const nearTxt = !atBow && Math.abs(i - b) < 0.002 ? ` This ray is ${fmt(Math.abs(i - b) * R2D, 3)}° from the bow ray, so the slope is tiny (computed).` : "";
+      out.push(stat("proved", "Proved", `<b>Slope at this ray:</b> D is ${word} here, because cos² i is ${rel} (n² − 1)/(k(k+2)).${nearTxt} <span class="thm">${atBow ? "deriv_dev_eq_zero_iff" : c2 > q ? "deriv_dev_neg_iff" : "deriv_dev_pos_iff"}</span>`));
     } else {
-      out.push(stat("warn", "No bow", `<b>No bow ray for k = ${k} at this index.</b> The theorems need 1 &lt; n &lt; ${k + 1}. Here D has no flat point between 0° and 90° (computed).`));
+      out.push(stat("none", "No theorem", `<b>No bow ray for k = ${k} at this index.</b> The bow theorems need 1 &lt; n &lt; ${k + 1}. Here D has no flat point strictly between 0° and 90° (computed).`));
     }
-    // brackets at the named indices
-    if (near(n, NW)) out.push(stat("proved", "Proved", `<b>Water as n = 4/3:</b> the primary bow lies between 41° and 43°, and the secondary between 50° and 52°. Here they compute to ${fmt(signed(1, dev(1, n, bowInc(1, n))) * R2D, 2)}° and ${fmt(signed(2, dev(2, n, bowInc(2, n))) * R2D, 2)}°. <span class="thm">primary_bow_water · secondary_bow_water</span>`));
-    if (near(n, N43)) out.push(stat("proved", "Proved", `<b>Red, n = 1.331:</b> the primary bow lies between 42° and 43°, and the secondary between 50° and 51°. <span class="thm">primary_red · secondary_red</span>`));
-    if (near(n, N13)) out.push(stat("proved", "Proved", `<b>Violet, n = 1.343:</b> the primary bow lies between 40° and 41°, and the secondary between 53° and 54°. <span class="thm">primary_violet · secondary_violet</span>`));
-    // the gap
-    let thm = null;
-    if (n >= N43 && n <= N13) thm = "dark_band_visible";
-    if (near(n, NW)) thm = "alexander_dark_band";
-    if (!thm && n >= N43 && n < 2) thm = "dark_band_of_red_le";
-    if (thm) out.push(stat("proved", "Proved", `<b>The gap, in signed form:</b> every once-reflected ray has π − D &lt; 43°, and every twice-reflected ray has D − π &gt; 50°. <span class="thm">${thm}</span>`));
-    else out.push(stat("omitted", "No theorem", `<b>No gap theorem covers n = ${n.toFixed(4)}.</b> They need n = 4/3 or 1.331 ≤ n &lt; 2.`));
-    const gapTxt = fam.signedGap ? (fam.seenGap ? "The once- and twice-reflected rays leave the 43°–50° gap, both as signed angles and as seen angles." : "The signed angles leave the gap, but some seen angles fall inside 43°–50°: grazing once-reflected rays wrap around.")
-      : (fam.seenGap ? "The signed angles enter 43°–50°, though no ray is seen there." : "Once- or twice-reflected rays reach the 43°–50° band here, so there is no gap at this index.");
-    out.push(stat(fam.signedGap && fam.seenGap ? "computed" : "warn", fam.signedGap && fam.seenGap ? "Computed" : "Computed", gapTxt + ` Highest once-reflected π − D: ${fmt(fam.s1max * R2D, 2)}°. Lowest twice-reflected D − π: ${fmt(fam.s2min * R2D, 2)}°.`));
+    if (near(n, NW)) out.push(stat("proved", "Proved", `<b>Water as n = 4/3:</b> the signed angle of the primary bow lies between 41° and 43°, and that of the secondary between 50° and 52°. <span class="thm">primary_bow_water · secondary_bow_water</span>`));
+    if (near(n, NR)) out.push(stat("proved", "Proved", `<b>Red, n = 1.331:</b> the primary bow's signed angle lies between 42° and 43°, and the secondary's between 50° and 51°. <span class="thm">primary_red · secondary_red</span>`));
+    if (near(n, NV)) out.push(stat("proved", "Proved", `<b>Violet, n = 1.343:</b> the primary bow's signed angle lies between 40° and 41°, and the secondary's between 53° and 54°. <span class="thm">primary_violet · secondary_violet</span>`));
+    const thm = gapTheorem(n);
+    if (thm) out.push(stat("proved", "Proved", `<b>The gap, as signed angles:</b> every once-reflected ray has π − D &lt; 43°, and every twice-reflected ray has D − π &gt; 50°. <span class="thm">${thm}</span>`));
+    else out.push(stat("none", "No theorem", `<b>No gap theorem covers n = ${nTxt(n)}.</b> They need 1.331 ≤ n &lt; 2.${n < NR ? " Light this red is outside every gap theorem." : ""}`));
+    let gapTxt, gapCls = "computed";
+    if (fam.signedGap && fam.seenGap) gapTxt = "Both ray families leave 43°–50° empty, as signed angles and as viewing angles.";
+    else if (fam.signedGap) { gapCls = "warn"; gapTxt = `The signed angles leave 43°–50° empty, but some rays are seen inside it. Near grazing, once-reflected rays turn past 180°, so π − D &lt; 0. They arrive from the other side of the antisolar point and are seen at D − π, up to ${fmt(fam.seen1max * R2D, 2)}°.`; }
+    else { gapCls = "warn"; gapTxt = (fam.s1max >= 43 * D2R ? "Once-reflected rays reach 43° here. " : "") + (fam.s2min <= 50 * D2R ? "Twice-reflected rays come down to 50° here. " : "") + "There is no gap at this index."; }
+    out.push(stat(gapCls, "Computed", `${gapTxt} Highest once-reflected π − D: ${fmt(fam.s1max * R2D, 2)}°. Lowest twice-reflected D − π: ${fmt(fam.s2min * R2D, 2)}°.`));
     $("status").innerHTML = out.join("");
     drawDrop(); drawChart(fam); drawSky(); ledger();
-    ang.value = (i * R2D).toFixed(1);
+  }
+  let raf = 0;
+  const schedule = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; update(); }); };
+  function announce() {
+    const D = dev(st.k, st.n, st.i), s = signed(st.k, D), v = viewing(D);
+    $("live").textContent = `Entry angle ${fmt(st.i * R2D, 1)} degrees, index ${nTxt(st.n)}. Signed angle ${fmt(s * R2D, 1)} degrees, viewing angle ${fmt(v * R2D, 1)} degrees${Math.abs(v - s) > 1e-7 ? ", which differ" : ""}.`;
   }
 
   // ---- the ledger ----
   const PROVED = [
-    ["snell", "For n ≥ 1, the refraction angle satisfies sin i = n sin r. It checks the definition; Snell's law itself is assumed.", n => n >= 1],
+    ["snell", "For n ≥ 1, the refraction angle satisfies sin i = n sin r. This checks the definition; Snell's law itself is assumed.", n => n >= 1],
     ["hasDerivAt_dev", "For n > 1, D′(i) = 2 − 2(k+1) cos i / √(n² − sin² i).", n => n > 1],
-    ["deriv_dev_eq_zero_iff_eq · dev_lt_of_ne · dev_isMinOn", "For k ≥ 1 and 1 < n < k + 1, the bow ray is the only flat point and the strict minimum of D on 0°–90°.", (n, k) => n > 1 && n < k + 1],
-    ["primary_bow_water · secondary_bow_water", "For n = 4/3, the bows lie between 41° and 43° and between 50° and 52°.", n => near(n, NW)],
-    ["alexander_dark_band", "For n = 4/3, no once- or twice-reflected ray has its signed angle between 43° and 50°.", n => near(n, NW)],
-    ["colour_order · bowDev_strictMonoOn", "If 1 < n_red < n_violet < 2, violet's primary bow is smaller and its secondary bow larger.", n => n > 1 && n < 2],
-    ["primary_red · primary_violet · secondary_red · secondary_violet", "1° brackets at n = 1.331 and n = 1.343: 42–43° and 40–41° for the primary, 50–51° and 53–54° for the secondary.", n => near(n, N43) || near(n, N13)],
-    ["primary_spread · secondary_spread", "From 1.331 to 1.343, the primary bow moves by more than 1° and the secondary by more than 2°.", () => true],
-    ["dark_band_of_red_le", "For 1.331 ≤ n < 2, π − D < 43° after one reflection and D − π > 50° after two. These are signed angles.", n => n >= N43 && n < 2],
-    ["dark_band_visible", "The same, for 1.331 ≤ n ≤ 1.343.", n => n >= N43 && n <= N13],
+    ["deriv_dev_neg_iff · deriv_dev_pos_iff · deriv_dev_eq_zero_iff", "For n > 1, k ≥ 1 and cos i ≥ 0, D is falling, flat or rising exactly as cos² i is above, equal to or below (n² − 1)/(k(k+2)).", n => n > 1],
+    ["deriv_dev_eq_zero_iff_eq · dev_lt_of_ne · dev_isMinOn", "For k ≥ 1 and 1 < n < k + 1, the bow ray is the only flat point and the strict minimum of D for entry angles 0°–90°.", (n, k) => n > 1 && n < k + 1],
+    ["primary_bow_water · secondary_bow_water", "For n = 4/3, the bows' signed angles lie between 41° and 43° and between 50° and 52°.", n => near(n, NW)],
+    ["primary_light_inside · secondary_light_outside", "For n = 4/3, every once-reflected ray has π − D < 43°, and every twice-reflected ray has D − π > 50°.", n => near(n, NW)],
+    ["alexander_dark_band", "For n = 4/3, no once- or twice-reflected ray has its signed angle equal to any angle from 43° to 50°.", n => near(n, NW)],
+    ["bowDev_strictMonoOn", "For k ≥ 1, the bow's turning angle strictly increases with n on 1 < n < k + 1.", (n, k) => n > 1 && n < k + 1],
+    ["colour_order", "If 1 < n_red < n_violet < 2, violet's primary bow has the smaller signed angle and its secondary bow the larger.", n => n > 1 && n < 2],
+    ["primary_red · primary_violet · secondary_red · secondary_violet", "1° brackets on the signed bow angles at n = 1.331 and n = 1.343: 42–43° and 40–41° for the primary, 50–51° and 53–54° for the secondary.", n => near(n, NR) || near(n, NV)],
+    ["primary_spread · secondary_spread", "Between the fixed indices 1.331 and 1.343, the primary bow moves by more than 1° and the secondary by more than 2°.", n => n >= NR && n <= NV],
+    ["dark_band_of_red_le", "For 1.331 ≤ n < 2, π − D < 43° after one reflection and D − π > 50° after two. These are signed angles.", n => n >= NR && n < 2],
+    ["dark_band_visible", "The same, for 1.331 ≤ n ≤ 1.343.", n => n >= NR && n <= NV],
   ];
   const COMPUTED = [
-    "Every decimal angle on this page: 42.03° and 50.98° at n = 4/3, and the band widths of about 1.7° and 3.1°.",
-    "The angle you see, |π − (D mod 2π)|. It equals the signed angle for every ray only when 1.18 ≤ n ≤ √2.",
-    "Thresholds. The gap closes below n ≈ 1.3296, where the secondary bow drops under 50°. From n ≈ 1.777, grazing once-reflected rays are seen at 43°–50°.",
-    "The ray counts per degree, which show rays bunching at the bow.",
-    "Wavelengths and colours, from the IAPWS 1997 water data at 20 °C.",
+    "Every decimal angle on this page, such as 42.03° and 50.98° at n = 4/3, and the bows' colour spreads of about 1.7° and 3.1°.",
+    "The viewing angle, |π − (D mod 360°)|. It equals the signed angle for every once- and twice-reflected ray only when 1.17996 ≤ n ≤ √2.",
+    "Thresholds. Below n ≈ 1.3296 (light redder than about 726 nm at 20 °C), the secondary bow drops under 50°, and twice-reflected rays enter 43°–50°. From n ≈ 1.777, some once-reflected rays are seen at 43°–50°.",
+    "The ray counts by viewing angle, which show rays bunching at the bow.",
+    "Wavelengths and colours, from the IAPWS 1997 water data at 20 °C, relative to air.",
   ];
   const OMITTED = [
     "Brightness of any kind. That covers why the bow looks bright and why the sky between the bows looks darker.",
     "Wave optics: Airy theory, and the faint supernumerary bows inside the primary.",
-    "Polarization, and how much light each reflection keeps (Fresnel).",
+    "Polarization, absorption, and how much light each reflection keeps (Fresnel).",
     "Light reflected off the outside of the drop, and rays reflected three or more times.",
-    "The sun's 0.5° disc, the drop's size and shape, and the full 3-D cone of the bow.",
+    "The sun's 0.5° disc, the drop's size and shape, and the full 3-D cone of the bow. The model is one plane through the drop's centre.",
     "How the index depends on wavelength. Lean compares indices, not colours.",
   ];
   function ledger() {
@@ -522,38 +587,45 @@ code { font-family: var(--mono); font-size: 0.85em; }
   $("col-omitted").insertAdjacentHTML("beforeend", OMITTED.map(s => `<div class="item"><p>${s}</p></div>`).join(""));
 
   // ---- controls ----
-  function setK(k) { st.k = k; $("k1").setAttribute("aria-pressed", String(k === 1)); $("k2").setAttribute("aria-pressed", String(k === 2)); update(); }
+  function setK(k) { st.k = k; $("k1").setAttribute("aria-pressed", String(k === 1)); $("k2").setAttribute("aria-pressed", String(k === 2)); schedule(); announce(); }
   $("k1").addEventListener("click", () => setK(1));
   $("k2").addEventListener("click", () => setK(2));
-  ang.addEventListener("input", () => { st.i = +ang.value * D2R; update(); });
-  idx.addEventListener("input", () => { st.n = +idx.value; update(); });
-  $("fan").addEventListener("change", e => { st.fan = e.target.checked; update(); });
-  $("tobow").addEventListener("click", () => { const b = bowInc(st.k, st.n); if (b != null) { st.i = b; update(); } });
+  ang.addEventListener("input", () => { st.i = +ang.value * D2R; schedule(); });
+  idx.addEventListener("input", () => { const v = +idx.value; st.n = Math.abs(v - NW) < 6e-5 ? NW : v; schedule(); });
+  ang.addEventListener("change", announce);
+  idx.addEventListener("change", announce);
+  $("fan").addEventListener("change", e => { st.fan = e.target.checked; schedule(); });
+  $("tobow").addEventListener("click", () => { const b = bowInc(st.k, st.n); if (b == null) return; st.i = b; ang.value = (b * R2D).toFixed(1); schedule(); announce(); });
   document.querySelectorAll("[data-n]").forEach(bt => bt.addEventListener("click", () => {
-    const v = bt.dataset.n === "4/3" ? NW : +bt.dataset.n;
-    if (!st.wide && (v < N43 || v > N13)) return;
-    st.n = v; idx.value = v; update();
+    st.n = bt.dataset.n === "4/3" ? NW : +bt.dataset.n; idx.value = st.n; schedule(); announce();
   }));
+  function setWide(on) {
+    st.wide = on;
+    $("wide").setAttribute("aria-pressed", String(on));
+    if (on) { idx.min = "1.05"; idx.max = "2.5"; idx.step = "0.001"; }
+    else { idx.min = "1.331"; idx.max = "1.343"; idx.step = "0.0001"; if (st.n < NR || st.n > NV) st.n = NW; }
+    idx.value = st.n; spectrumBar();
+  }
+  $("wide").addEventListener("click", () => { setWide(!st.wide); schedule(); announce(); });
+  $("differ").addEventListener("click", () => {
+    setWide(true); st.n = 1.9; idx.value = 1.9; setK(1); st.i = 88 * D2R; ang.value = 88; schedule(); announce();
+  });
   function spectrumBar() {
     const lo = +idx.min, hi = +idx.max, stops = [];
-    for (let j = 0; j <= 20; j++) { const n = lo + j * (hi - lo) / 20; stops.push(rgbFor(lambdaFor(n)) + " " + (j * 5) + "%"); }
+    for (let j = 0; j <= 120; j++) { const n = lo + j * (hi - lo) / 120, l = lambdaFor(n); stops.push((l ? rgbFor(l) : "rgba(236,230,214,0.18)") + " " + (j * 100 / 120).toFixed(2) + "%"); }
     $("spec").style.background = `linear-gradient(90deg, ${stops.join(",")})`;
   }
-  $("wide").addEventListener("click", () => {
-    st.wide = !st.wide;
-    $("wide").setAttribute("aria-pressed", String(st.wide));
-    $("banner").classList.toggle("on", st.wide);
-    if (st.wide) { idx.min = "1.05"; idx.max = "2.5"; idx.step = "0.001"; }
-    else { idx.min = "1.331"; idx.max = "1.343"; idx.step = "0.0001"; if (st.n < N43 || st.n > N13) st.n = NW; }
-    idx.value = st.n; spectrumBar(); update();
-  });
 
-  // ---- self-test: this page's arithmetic against the six proved brackets ----
-  const checks = [[NW, 1, 41, 43], [NW, 2, 50, 52], [N43, 1, 42, 43], [N43, 2, 50, 51], [N13, 1, 40, 41], [N13, 2, 53, 54]];
-  const pass = checks.every(([n, k, lo, hi]) => { const a = signed(k, dev(k, n, bowInc(k, n))) * R2D; return a > lo && a < hi; });
-  const gaps = [NW, N43, N13].every(n => family(n).signedGap);
-  $("selftest").textContent = pass && gaps ? "Self-test: this page's arithmetic lands inside all six proved bow brackets and leaves the 43°–50° gap at 4/3, 1.331 and 1.343." : "Self-test FAILED: this page's arithmetic disagrees with a proved bracket.";
-  $("selftest").style.color = pass && gaps ? "var(--frost)" : "var(--ember)";
+  // ---- self-test: this page's arithmetic against the proved brackets and the computed thresholds ----
+  const checks = [[NW, 1, 41, 43], [NW, 2, 50, 52], [NR, 1, 42, 43], [NR, 2, 50, 51], [NV, 1, 40, 41], [NV, 2, 53, 54]];
+  const bracketsOk = checks.every(([n, k, lo, hi]) => { const a = signed(k, dev(k, n, bowInc(k, n))) * R2D; return a > lo && a < hi; });
+  const gapsOk = [NW, NR, NV].every(n => family(n).signedGap);
+  const thresholdsOk = family(1.3297).signedGap && !family(1.3295).signedGap && family(1.776).seenGap && !family(1.778).seenGap;
+  const okAll = bracketsOk && gapsOk && thresholdsOk;
+  $("selftest").textContent = okAll
+    ? "Self-test passed. This page's arithmetic lands inside all six proved bow brackets, leaves the signed 43°–50° gap at 4/3, 1.331 and 1.343, and reproduces the thresholds 1.3296 and 1.777."
+    : "Self-test failed: " + [!bracketsOk && "a bow angle falls outside its proved bracket", !gapsOk && "the signed gap fails at a proved index", !thresholdsOk && "a threshold moved"].filter(Boolean).join("; ") + ".";
+  $("selftest").style.color = okAll ? "var(--frost)" : "var(--ember)";
 
   spectrumBar();
   update();

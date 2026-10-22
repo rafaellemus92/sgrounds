@@ -5,7 +5,7 @@ import Mathlib.Analysis.Real.Pi.Bounds
 /-!
 # The secondary bow across the spectrum
 
-With `n ≈ 1.331` (red, about 663–694 nm) and `1.343` (violet, about 402–410 nm),
+With `n ≈ 1.331` (red, about 663–693 nm) and `1.343` (violet, about 402–410 nm),
 the secondary bow is numerically at 50.37° (red) and 53.48° (violet): a band
 about 3.1° wide, with the colours reversed. The theorems below prove 1° brackets.
 The red bracket is the sensitive one: it holds only for `n` between about
