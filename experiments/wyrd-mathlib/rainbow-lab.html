@@ -255,7 +255,7 @@ code { font-family: var(--mono); font-size: 0.85em; }
     </div>
     <div class="note">
       <b>The model behind the proofs.</b>
-      <p>Lean takes the turning angle D(i) = kπ + 2i − 2(k+1)·arcsin(sin i / n) as a definition. It assumes ray optics in one plane through a perfect sphere, a point sun, one real index per colour with no absorption, and entry angles from 0° to 90°. The indices 1.331 (red), 4/3 (water) and 1.343 (violet) are inputs. The theorems bound the signed angles π − D and D − π. These equal the viewing angle for every ray exactly when n is between about 1.17996 and √2. This page computes that range; Lean does not prove it.</p>
+      <p>Lean takes the turning angle D(i) = kπ + 2i − 2(k+1)·arcsin(sin i / n) as a definition. It assumes ray optics in one plane through a perfect sphere, a point sun, one real index per colour with no absorption, and entry angles from 0° to 90°. The indices 1.331 (red), 4/3 (water) and 1.343 (violet) are inputs. The theorems bound the signed angles π − D and D − π. Viewing.lean (22 October 2026) proves that π − D is the viewing angle of every once-reflected ray exactly when n ≤ √2, and that D − π is the viewing angle of every twice-reflected ray when 1.331 ≤ n &lt; 2. Numerically the secondary identity holds down to n ≈ 1.17996; that stretch is not proved.</p>
     </div>
     <div class="note">
       <b>Note on prior work.</b>
@@ -271,7 +271,7 @@ code { font-family: var(--mono); font-size: 0.85em; }
 
 <footer>
   <div class="wrap">
-    <span>Source: <code>experiments/wyrd-mathlib/WyrdMathlib/Rainbow/</code>, 13 files with 73 theorems and lemmas (44 public), built with Lean 4.35.0 and Mathlib v4.35.0. The proofs date from commit <code>fd0d7a6</code>, and only their comments have changed since. The one-page map is <code>RAINBOW.md</code>.</span>
+    <span>Source: <code>experiments/wyrd-mathlib/WyrdMathlib/Rainbow/</code>, 14 files with 103 theorems and lemmas (73 public), built with Lean 4.35.0 and Mathlib v4.35.0. The bow proofs date from commit <code>fd0d7a6</code>; <code>Viewing.lean</code>, the bridge from signed to seen angles, was added on 22 October 2026. The one-page map is <code>RAINBOW.md</code>.</span>
     <span id="selftest"></span>
   </div>
 </footer>
@@ -522,7 +522,7 @@ code { font-family: var(--mono); font-size: 0.85em; }
     $("vw-v").style.color = differ ? "var(--ember)" : "";
     $("vw-s").innerHTML = differ
       ? `<span style="color:var(--ember)">Differs from the signed angle. A bound on the signed angle says nothing about where this ray is seen.</span>`
-      : "Seen from the antisolar point, |π − (D mod 360°)|. Here it equals the signed angle.";
+      : (k === 1 && n >= 1 && n <= Math.SQRT2) || (k === 2 && n >= NR && n < 2) ? `Seen from the antisolar point, |π − (D mod 360°)|. Equal to the signed angle for every ray at this index: proved, <span class="thm">${k === 1 ? "viewAngle_dev_one" : "viewAngle_dev_two"}</span>.` : "Seen from the antisolar point, |π − (D mod 360°)|. Here it equals the signed angle (computed; no theorem covers this index).";
     $("banner").hidden = !(st.wide && (n < NR || n > NV));
     document.querySelectorAll("[data-n]").forEach(bt => bt.setAttribute("aria-pressed", String(near(n, bt.dataset.n === "4/3" ? NW : +bt.dataset.n))));
     const b = bowInc(k, n);
@@ -543,6 +543,8 @@ code { font-family: var(--mono); font-size: 0.85em; }
     if (near(n, NV)) out.push(stat("proved", "Proved", `<b>Violet, n = 1.343:</b> the primary bow's signed angle lies between 40° and 41°, and the secondary's between 53° and 54°. <span class="thm">primary_violet · secondary_violet</span>`));
     const thm = gapTheorem(n);
     if (thm) out.push(stat("proved", "Proved", `<b>The gap, as signed angles:</b> every once-reflected ray has π − D &lt; 43°, and every twice-reflected ray has D − π &gt; 50°. <span class="thm">${thm}</span>`));
+    if (n >= NR && n <= Math.SQRT2) out.push(stat("proved", "Proved", `<b>The gap, as viewing angles:</b> for 1.331 ≤ n ≤ √2 the signed angles are the angles seen, so every once-reflected ray is seen below 43° and every twice-reflected ray above 50°. <span class="thm">dark_band_viewAngle</span>`));
+    else if (n > Math.SQRT2 && n < 2) out.push(stat("warn", "Proved · differs", `<b>Beyond √2 the signed reading is not the viewing angle</b> for grazing once-reflected rays (<span class="thm">dev_one_grazing_gt_pi_of_sqrt_two_lt</span>); at n = 1.9 every angle of 43°–50° is seen (<span class="thm">forall_mem_band_exists_once_reflected_seen</span>).`));
     else out.push(stat("none", "No theorem", `<b>No gap theorem covers n = ${nTxt(n)}.</b> They need 1.331 ≤ n &lt; 2.${n < NR ? " Light this red is outside every gap theorem." : ""}`));
     let gapTxt, gapCls = "computed";
     if (fam.signedGap && fam.seenGap) gapTxt = "Both ray families leave 43°–50° empty, as signed angles and as viewing angles.";
@@ -581,10 +583,15 @@ code { font-family: var(--mono); font-size: 0.85em; }
     ["primary_spread · secondary_spread", "Between the fixed indices 1.331 and 1.343, the primary bow moves by more than 1° and the secondary by more than 2°.", n => n >= NR && n <= NV],
     ["dark_band_of_red_le", "For 1.331 ≤ n < 2, π − D < 43° after one reflection and D − π > 50° after two. These are signed angles.", n => n >= NR && n < 2],
     ["dark_band_visible", "The same, for 1.331 ≤ n ≤ 1.343.", n => n >= NR && n <= NV],
+    ["viewAngle_dev_one_iff", "For n ≥ 1, the viewing angle |π − (D mod 360°)| of every once-reflected ray equals the signed π − D if and only if n ≤ √2.", n => n >= 1],
+    ["viewAngle_dev_two", "For 1.331 ≤ n < 2, the viewing angle of every twice-reflected ray equals the signed D − π.", n => n >= NR && n < 2],
+    ["dark_band_viewAngle · colour_order_viewAngle", "For 1.331 ≤ n ≤ √2, every once-reflected ray is seen below 43° and every twice-reflected ray above 50°, and violet's bows are seen inside (primary) and outside (secondary) red's.", n => n >= NR && n <= Math.SQRT2],
+    ["viewAngle_lt_bow_one · bow_two_lt_viewAngle", "As seen, the primary bow ray is the outermost once-reflected ray (1 < n ≤ √2) and the secondary bow ray the innermost twice-reflected ray (1.331 ≤ n < 2).", n => n > 1 && n < 2],
+    ["signed_gap_holds_but_ray_seen_in_band · forall_mem_band_exists_once_reflected_seen", "At n = 1.9 the signed dark-band theorem holds, yet every angle in [43°, 50°] is the viewing angle of some once-reflected ray.", n => Math.abs(n - 1.9) < 1e-9],
   ];
   const COMPUTED = [
     "Every decimal angle on this page, such as 42.03° and 50.98° at n = 4/3, and the bows' colour spreads of about 1.7° and 3.1°.",
-    "The viewing angle, |π − (D mod 360°)|. It equals the signed angle for every once- and twice-reflected ray exactly when n is between about 1.17996 and √2.",
+    "Where the viewing angle |π − (D mod 360°)| equals the signed angle outside the proved ranges: numerically the secondary identity D − π holds down to n ≈ 1.17996, below the proved 1.331.",
     "Thresholds. Below n ≈ 1.3296 (light redder than about 726 nm at 20 °C), the secondary bow drops under 50°, and twice-reflected rays enter 43°–50°. From n ≈ 1.777, some once-reflected rays are seen at 43°–50°.",
     "The ray counts by viewing angle, which show rays bunching at the bow.",
     "Wavelengths and colours, from the IAPWS 1997 water data at 20 °C, relative to air.",

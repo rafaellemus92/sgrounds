@@ -2,8 +2,9 @@
 
 A one-page map of what is proved, what is assumed and what is left out.
 
-**Status.** The rainbow is 13 Lean files with 73 theorems and lemmas (44 public, 29 private), and none uses `sorry`.
-Every one depends only on `propext`, `Classical.choice` and `Quot.sound`. The proofs date from commit `fd0d7a6` (Lean 4.35.0,
+**Status.** The rainbow is 14 Lean files with 103 theorems and lemmas (73 public, 30 private), and none uses `sorry`.
+Every one depends only on `propext`, `Classical.choice` and `Quot.sound`. The 14th file, `Viewing.lean` (30
+declarations, 22 October 2026), is the observer-angle bridge described below. The proofs date from commit `fd0d7a6` (Lean 4.35.0,
 Mathlib v4.35.0); only their comments have changed since. The files are already on `main` (PR #46) and are byte-identical on every
 branch that has them.
 
@@ -29,6 +30,18 @@ The model is one formula, taken as a definition in `Defs.lean`. A ray enters a s
 7. **Spectrum.** There are 1° brackets at `n = 1.331` and `n = 1.343`: 42–43° and 40–41° for the primary, 50–51° and
    53–54° for the secondary. Between them, the bows spread by more than 1° and 2° (`primary_red` … `secondary_spread`).
 
+8. **The angle actually seen** (`Viewing.lean`). `viewAngle D = |π − (D mod 2π)|` is the angle from the antisolar
+   point in the planar model (`viewAngle_neg` shows it is the same for the mirror path). It equals the signed primary
+   reading `π − D₁` for every ray exactly when `1 ≤ n ≤ √2` (`viewAngle_dev_one_iff`; `dev_one_grazing_gt_pi_of_sqrt_two_lt`
+   gives the failure above `√2`), and the signed secondary reading `D₂ − π` for `1.331 ≤ n < 2`
+   (`viewAngle_dev_two`; `dev_two_grazing_gt_two_pi_of_two_lt` fails above 2). Hence, for the angle seen: the dark
+   band on `1.331 ≤ n ≤ √2` (`dark_band_viewAngle`), the colour order (`colour_order_viewAngle`,
+   `water_colour_order_viewAngle`), and the bows as the extreme rays of their families (`viewAngle_lt_bow_one`,
+   `bow_two_lt_viewAngle`). At `n = 1.9` the signed dark-band theorem still holds but every angle in `[43°, 50°]` is
+   the viewing angle of some once-reflected ray (`signed_gap_holds_but_ray_seen_in_band`,
+   `forall_mem_band_exists_once_reflected_seen`); at `n = 1.1` the signed secondary reading is negative
+   (`dev_two_grazing_lt_pi`).
+
 Two files support the rest. `TrigBounds.lean` has one-sided Taylor bounds for sin and cos, of degree 4 to 7, on `x ≥ 0`.
 `MinLemma.lean` has a strict first-derivative test.
 
@@ -39,8 +52,10 @@ Two files support the rest. `TrigBounds.lean` has one-sided Taylor bounds for si
 - One real index `n` per colour, relative to air, with no absorption. The values 4/3, 1.331 and 1.343 are inputs.
   Their wavelengths (about 578, 663 and 402 nm at 20 °C, by IAPWS 1997) are not in Lean.
 - A point sun, and incidence angles `i` in `[0, π/2]`.
-- Sky angles from the antisolar point are read as `π − D` and `D − π`. That reading is right for every ray only when
-  `1.17996 ≤ n ≤ √2`. Water qualifies, but this is not proved.
+- Sky angles from the antisolar point are `|π − (D mod 2π)|` in the planar model. Reading them as `π − D` and
+  `D − π` is now proved for `n ≤ √2` (primary, exact) and `1.331 ≤ n < 2` (secondary); numerically the secondary
+  reading holds down to `n ≈ 1.17996`, which is not proved. The 3-D cone and the far-field identification remain
+  assumptions (`RAINBOW-GEOMETRY.md`, A8).
 
 ## What it leaves out
 
@@ -51,6 +66,8 @@ Two files support the rest. `TrigBounds.lean` has one-sided Taylor bounds for si
 - The sun's 0.5° disc, and the drop's shape and size.
 - `n` as a function of wavelength.
 - Anything for `i` outside `[0, π/2]`.
+- The geometry itself: the sphere, the law of reflection, equal chords and the turning bookkeeping are encoded in
+  the definition of `D`, not derived (`RAINBOW-GEOMETRY.md` lists assumptions A1–A10 and a derivation plan).
 - The decimal angles (42.03°, 50.98°) and band widths (about 1.7° and 3.1°). These are numerical only.
 
 ## Reproducing it
@@ -63,11 +80,14 @@ lake build WyrdMathlib.Rainbow     # about 5 min with cached Mathlib; no sorry w
 ```
 
 **Files.**
-- Lean: `WyrdMathlib/Rainbow.lean` and the 12 files under `WyrdMathlib/Rainbow/`.
+- Lean: `WyrdMathlib/Rainbow.lean` and the 13 files under `WyrdMathlib/Rainbow/` (`Viewing.lean` is the newest).
 - Configuration: `lakefile.toml`, `lean-toolchain` and `lake-manifest.json`, plus the config of the `../wyrd` path
   dependency.
-- Audit: `Audit.lean` lines 9–29 print the axioms of 21 public theorems. A sweep of all 101 rainbow constants found
-  only the three standard axioms.
+- Audit: `Audit.lean` prints the axioms of 21 earlier public theorems and all 29 public theorems of `Viewing.lean`
+  (110 lines in all for the Mathlib project; every line shows at most `propext`, `Classical.choice`, `Quot.sound`).
+  A sweep of all 101 pre-`Viewing` rainbow constants found only those axioms.
+- Independent checking: not run. `RAINBOW-AUDIT.md` explains what `leanchecker`, `lean4lean`, `nanoda` and
+  `lake check --paranoid` would check, and why the last cannot run on this machine (no `bwrap`).
 
 **Excluded drafts.**
 - The WIP commits `7dd4693` and `7406a6a` hold the same statements with `sorry`. Nothing imported them, and every
@@ -92,8 +112,10 @@ The closest formal work:
   folder is a placeholder.
 - **Isabelle:** its AFP "Optics" entry is about lenses in programming, not light.
 
-Limits: GitHub code search was unavailable, and some papers could be read only as abstracts. So the wording stays "to
-our knowledge". It is never "the first formal optics" or "the first Snell's law".
+Limits: GitHub code search was unavailable, and some papers could be read only as abstracts. A keyword search also
+missed the FormalPhysics optical items 85, 182 and 185 (Snell's law from Fermat's principle, the two-media travel-time
+derivative), which were found only by reading the dataset; `RAINBOW-AUDIT.md` lists what else such a search can miss.
+So the wording stays "to our knowledge". It is never "the first formal optics" or "the first Snell's law".
 
 ## Corrections to the prose
 
@@ -137,3 +159,22 @@ audit pass afterwards.
 It needs no new theorems. A Mathlib contribution is left for later. It would rest on the least distinctive pieces:
 the Taylor bounds, which Isabelle's AFP already has as infinite families (Paulson, 2014), and a derivative test that
 Mathlib nearly has.
+
+## Further documents
+
+- `RAINBOW-TEACHING.md`: a line-by-line teaching note on `dev_lt_of_ne`, with questions to answer before claiming
+  to have checked it. Written by an AI assistant; not a human review.
+- `RAINBOW-CAUSTIC-PLAN.md`: the next theorem, prepared but not implemented: a weighted-fold result that would make
+  "rays bunch at the bow" a theorem, with the correct ray weighting and the distinction between ray counts, power and
+  brightness.
+- `RAINBOW-GEOMETRY.md`: what is still assumed about the sphere, Snell's law and ray geometry, and a plan to derive
+  the deviation formula from them.
+- `RAINBOW-AUDIT.md`: independent-checker compatibility and the limits of the prior-art search.
+
+## Limits of this check
+
+`#print axioms` and a green build establish that Lean's kernel accepted the proofs. That is not the end of the
+question: kernel soundness bugs, the missing consistency proof for Lean's type theory, independent re-checking, and a
+human audit that each statement says what the prose says all remain. See Thomas Hales, "What mathematicians should
+know about the Lean Theorem Prover: questions of reliability and AI", a guest post on Terence Tao's blog *What's new*,
+9 October 2026. No independent checker was run on this project.

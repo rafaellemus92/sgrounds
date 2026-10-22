@@ -47,6 +47,9 @@ modelled.
 | `secondary_red`, `secondary_violet` | Secondary bow at 50–51° (`n = 1.331`) and 53–54° (`n = 1.343`) |
 | `primary_spread`, `secondary_spread` | From `n = 1.331` to `n = 1.343` the bow moves by more than 1° (primary) and more than 2° (secondary) |
 | `dark_band_of_red_le` | For **every** `n` with `1.331 ≤ n < 2` and every ray, `π − D < 43°` after one reflection and `D − π > 50°` after two: red, the smallest index covered, sets both edges. `dark_band_visible` is the case `1.331 ≤ n ≤ 1.343` |
+| `viewAngle_dev_one_iff`, `viewAngle_dev_two` | **The angle seen** (`Viewing.lean`): `viewAngle D = π − (D mod 2π)` in absolute value. It equals the signed `π − D` for every once-reflected ray **iff** `n ≤ √2`, and the signed `D − π` for every twice-reflected ray when `1.331 ≤ n < 2` |
+| `dark_band_viewAngle`, `colour_order_viewAngle` | For `1.331 ≤ n ≤ √2`, the dark band and the colour order hold for the angle seen; `viewAngle_lt_bow_one` and `bow_two_lt_viewAngle` make each bow the extreme ray of its family as seen |
+| `signed_gap_holds_but_ray_seen_in_band` | At `n = 1.9` the signed dark-band theorem holds, yet every angle in `[43°, 50°]` is the viewing angle of some once-reflected ray: the signed reading is not the physical one beyond `√2` |
 
 The brackets need sin to about four decimal places. Mathlib's one-sided bounds
 stop at `x − x³/6 ≤ sin x`, and its two-sided `Real.sin_bound` (error `|x|⁵/100`
@@ -66,7 +69,8 @@ The gap between the bows is the geometric reason the sky there looks darker
 (Alexander's band). It is *darker*, not black: external reflection, light
 reflected three or more times, diffraction and the sun's 0.5° disc still put
 some light there. `π − D` and `D − π` are the sky angles of every ray when
-`1.17996 ≤ n ≤ √2`, which covers water (not proved); for `n ≥ 1.777`, grazing
+`1.17996 ≤ n ≤ √2`, which covers water; `Viewing.lean` proves the primary half for `n ≤ √2` and the secondary
+half for `1.331 ≤ n < 2` (the stretch down to 1.17996 is numerical only); for `n ≥ 1.777`, grazing
 once-reflected rays do reach 43–50°.
 
 ## Body water (`WyrdMathlib/BodyWater/`)

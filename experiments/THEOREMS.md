@@ -6,7 +6,8 @@ and genuinely unresolved claims. A separate section lists the computer searches.
 
 **Scope.** The file covers two lines of work. Both build with green CI.
 
-- `claude/prime-proof-250-37-uysci8` at `2a1daf2` (this branch): the core Lean project `experiments/wyrd`, the
+- `claude/prime-proof-250-37-uysci8` at `45663a9` plus the uncommitted-at-time-of-writing `Viewing.lean` revision of
+  22 October 2026 (this branch): the core Lean project `experiments/wyrd`, the
   Mathlib project `experiments/wyrd-mathlib`, and the 250 = 37 files (`Wyrd/Lock.lean`, `WyrdMathlib/Lock.lean`,
   `WyrdMathlib/Key.lean`).
 - `claude/new-session-sbrl43` at `dcc29e2` (not merged): Periodic Navier–Stokes, Limits, the full Shared Air
@@ -15,12 +16,19 @@ and genuinely unresolved claims. A separate section lists the computer searches.
 Entries marked "new-session branch only" give paths on that branch. Entries marked "both branches" are byte-identical
 on both and are built on both. In the entries, NS abbreviates Navier–Stokes.
 
-**How it was checked** (21–22 October 2026).
+**How it was checked** (21–22 October 2026; the 30 `Viewing.lean` declarations were added, built, audited and
+adversarially reviewed on 22 October).
 
 - **Build.** The new-session branch was rebuilt from scratch.
 - **Axioms.** `#print axioms` was run on every theorem in the four `Audit.lean` files: 136 + 14 on new-session, 81 + 27
   here. They use only `propext`, `Classical.choice` and `Quot.sound`. None uses `sorryAx` or `Lean.ofReduceBool`.
-- **Counting.** Every `theorem` and `lemma` declaration was counted by grep: 675 in all. Of these, 654 are proved and
+- **Limits of this check.** `#print axioms` and a green build establish that the kernel accepted the proofs. On why
+  kernel acceptance is not the end of the question (kernel soundness bugs, the missing consistency proof for Lean's
+  type theory, independent re-checking, and a human audit that each Lean statement says what the prose says), see
+  Thomas Hales, "What mathematicians should know about the Lean Theorem Prover: questions of reliability and AI",
+  guest post on Terence Tao's blog *What's new*, 9 October 2026. No independent checker was run on this project;
+  `wyrd-mathlib/RAINBOW-AUDIT.md` says what one would involve.
+- **Counting.** Every `theorem` and `lemma` declaration was counted by grep: 705 in all. Of these, 684 are proved and
   built. The other 21 are drafts on this branch that still contain `sorry` and are not imported. The new-session branch
   proves all 21 with identical statements.
 - **Review.** Each group of files was read by one agent and then re-checked by an independent adversarial reviewer. The
@@ -47,14 +55,14 @@ on both and are built on both. In the entries, NS abbreviates Navier–Stokes.
 
 - **No theorem here is new mathematics.** Every extractor and every adversarial reviewer looked for a statement that
   is neither implied by a known result nor a routine consequence of the definitions. None survived.
-- **Established mathematics (171 theorems).** Most are numeric instances and restatements of Mathlib. This includes
+- **Established mathematics (184 theorems).** Most are numeric instances and restatements of Mathlib. This includes
   59 of the 62 theorems behind 250 = 37. That identity holds exactly in the sense that 213 = 3 · 71 divides
   250 − 37. Every other reading in those files follows from this: congruence modulo 3, 71 or 213, equality in
   `ZMod 213`, rings of characteristic dividing 213, complex tones sampled at rates dividing 213, and Dirichlet
   characters mod 71.
-- **New formalizations (483 theorems).**
-  - 58 are known results that Mathlib does not have (section 2a).
-  - 425 are facts about the project's own objects (section 2b). 235 of these concern the prime-pangram encoding and its
+- **New formalizations (500 theorems).**
+  - 48 are known results that Mathlib does not have (section 2a).
+  - 452 are facts about the project's own objects (section 2b). 235 of these concern the prime-pangram encoding and its
     kernel-checked minimality search, and 188 of those are generated table rows.
 - **Unresolved.** No Lean statement is left open once the two branches are combined: the 21 `sorry` drafts here are
   proved on new-session. What remains open is the prose. Section 3b lists the claims made around the theorems that
@@ -70,16 +78,47 @@ on both and are built on both. In the entries, NS abbreviates Navier–Stokes.
    - brackets of 41–43° and 50–52° for the two bows at n = 4/3;
    - Alexander's dark band as a gap in the once- and twice-reflected rays between 43° and 50°, in signed form, for
      n = 4/3 (`alexander_dark_band`) and for 1.331 ≤ n < 2 (`dark_band_of_red_le`);
-   - Newton's colour order (`colour_order`).
+   - Newton's colour order (`colour_order`);
+   - the observer-angle bridge (`Viewing.lean`, added 22 October 2026): the angle actually seen,
+     `viewAngle D = |π − (D mod 2π)|`, equals the signed primary reading π − D₁ for every ray exactly when
+     n ≤ √2 (`viewAngle_dev_one_iff`) and the signed secondary reading D₂ − π for 1.331 ≤ n < 2
+     (`viewAngle_dev_two`); hence the dark band and the colour order for the angle seen, on 1.331 ≤ n ≤ √2
+     (`dark_band_viewAngle`, `colour_order_viewAngle`), and the failure of the signed reading beyond it
+     (`signed_gap_holds_but_ray_seen_in_band`).
 
    The mathematics dates from 1637–1704. A note in `RAINBOW.md` records a limited search for earlier
    machine-checked proofs, with its scope.
-2. **Small gaps in Mathlib filled.** These are candidates for upstreaming:
-   - one-sided Taylor bounds of degree 4–7 for sin and cos on x ≥ 0 (`Rainbow/TrigBounds.lean`);
-   - Grönwall's inequality with a variable coefficient (`PeriodicNS/Gronwall.lean`, new-session);
-   - the Routh–Hurwitz test for cubics (`Limits/Bistability.lean`: `cubic_hurwitz`, new-session);
-   - orthogonality of real trigonometric polynomials on the 3-torus, and the Fourier-orthogonality lemma behind
-     first-order resonance averaging (`resonant_average_vanishes`).
+2. **Possible small gaps in Mathlib (provisional).** Each of these is proved here and was not found by a grep of the
+   pinned Mathlib (v4.35.0) or by reading the corresponding files on Mathlib master (22 October 2026). None is
+   claimed as a gap until its exact statement has been compared with the nearest existing results, listed below; two
+   already have more general formal proofs in Isabelle/HOL, so none is a first formalization.
+   - one-sided Taylor bounds of degree 4–7 for sin and cos on x ≥ 0 (`Rainbow/TrigBounds.lean`). Mathlib's one-sided
+     bounds stop at degree 3 (`Real.sin_ge_sub_cube`, `Real.one_sub_sq_div_two_le_cos`) and its two-sided bounds hold
+     only for |x| ≤ 1 (`Real.sin_bound`, `Real.cos_bound`). All four are instances of the infinite families in the
+     Isabelle AFP entry *Special_Function_Bounds* (Paulson, 2014). Still to compare: whether
+     `taylor_mean_remainder_lagrange` or the alternating-series lemmas give them in a few lines, and whether a family
+     statement would be the right upstream form;
+   - Grönwall's inequality with a variable coefficient (`PeriodicNS/Gronwall.lean`, new-session). Mathlib's
+     `Analysis/ODE/Gronwall.lean` has only a constant rate and lists the variable-rate case as a TODO, but its general
+     fencing theorem `image_le_of_deriv_right_le_deriv_boundary` with B(t) = Z(0)·exp(∫₀ᵗ a) appears to give both
+     project statements directly. Still to compare: that instantiation, and `discrete_gronwall_prod_general`;
+   - the Routh–Hurwitz test for cubics (`Limits/Bistability.lean`: `cubic_hurwitz`, new-session), sufficiency only,
+     degree 3 only. No Mathlib hit for Routh or Hurwitz beyond the Hurwitz zeta function; Mathlib has `Cubic`, Vieta
+     and the fundamental theorem of algebra. Root counting in a half-plane is formalised in Isabelle/HOL (Li and
+     Paulson, *J. Autom. Reasoning* 64, 2020). Still to compare: any Mathlib root-location lemma;
+   - the Fourier-orthogonality lemma behind first-order resonance averaging (`Limits/Ratios.lean`:
+     `resonant_average_vanishes`, new-session). It follows from `orthonormal_fourier` with
+     `fourierCoeff_eq_intervalIntegral`; no statement of this form was found. Still to compare: whether Mathlib relates
+     the Fourier coefficients of s ↦ P(ms + b) to those of P.
+
+   Not a gap: orthogonality of trigonometric polynomials on the 3-torus. An earlier version of this list counted the
+   private lemmas `Averages_I3_cos` and `Averages_I3_sin` and their mode-sum wrappers (`PeriodicNS/Averages.lean`,
+   duplicated in `PhaseFamily.lean` and `Scaling.lean`) as a Mathlib gap. The pinned Mathlib already has
+   multidimensional Fourier orthonormality: `UnitAddTorus.orthonormal_mFourier` and the Hilbert basis
+   `UnitAddTorus.mFourierBasis` (`Mathlib/Analysis/Fourier/AddCircleMulti.lean`), for complex exponentials on
+   `UnitAddTorus d`, with `mFourierCoeff`. The project's lemmas are the real and imaginary parts of the d = 3 case
+   with one index zero, rescaled to [0, 2π]³ and written as iterated interval integrals. They are now listed as direct
+   instances (section 1b) and the wrappers as project facts (section 2b), as their `Scaling_` copies already were.
 3. **A kernel-checked exhaustive search.** 4296 is the smallest sum for which a five-pair prime pangram exists under
    the coupled base-26 naming rule (`smallest_pangram_sum`, with the 188 table theorems). The fact is new because the
    puzzle is new. It is a finite computation, but every candidate list is recomputed inside the proof rather than
@@ -101,8 +140,8 @@ on both and are built on both. In the entries, NS abbreviates Navier–Stokes.
 
    These are routine mathematics, made exact.
 
-Items 1–3 are the strongest. Items 1 and 2 add formal proofs of known mathematics that did not have them. Item 3 is
-a new fact about a new object.
+Items 1 and 3 are the strongest. Item 1 adds formal proofs of known mathematics; item 3 is a new fact about a new
+object. Item 2 is provisional until the comparisons listed there are done.
 
 ## Corrections this check found in the project's own prose
 
@@ -138,13 +177,13 @@ Theorem counts (a family entry counts every theorem in it). "Unresolved" Lean en
 |---|---:|---:|---:|---:|
 | Core wyrd: pangram encoding, primes, √2, minimality search; Mathlib bridge | 20 | 235 | 0 | 6 |
 | 250 = 37 phase lock and the mirror keys (prime-proof branch) | 59 | 3 | 0 | 12 |
-| Rainbow geometry (Descartes, Alexander’s dark band, spectrum) | 21 | 52 | 0 | 3 |
+| Rainbow geometry (Descartes, Alexander’s dark band, spectrum) | 30 | 73 | 0 | 3 |
 | Body-water physiology models and Limits models | 19 | 64 | 0 | 19 |
-| Periodic Navier–Stokes I: the phase family, symmetries, selection rules, averages | 20 | 40 | 0 | 18 |
+| Periodic Navier–Stokes I: the phase family, symmetries, selection rules, averages | 24 | 36 | 0 | 18 |
 | Periodic Navier–Stokes II: scaling, blow-up rescalings, sign flip, Galerkin, Grönwall, quantifiers | 24 | 32 | 0 | 13 |
 | Shared Air feedback model | 8 | 57 | 0 | 11 |
 | Computer searches, numerics and leftover WIP | 0 | 0 | 21 | 9 |
-| **Total** | **171** | **483** | **21** | **91** |
+| **Total** | **184** | **500** | **21** | **91** |
 
 
 ## 1. Established mathematics
@@ -735,6 +774,60 @@ Specialisations of Mathlib lemmas, and decide or norm_num facts about standard n
   - Means: If g : ℝ → ℝ has derivative g' everywhere, g(0) = 0 and g' ≥ 0 on [0, ∞), then g(x) ≥ 0 for all x ≥ 0. (Private theorem.)
   - Closest known: The mean value theorem / monotonicity from a nonnegative derivative.
   - In Mathlib: partial: monotoneOn_of_deriv_nonneg (this is a direct specialization on Set.Ici 0)
+- **`Wyrd.Rainbow.viewAngle_nonneg`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:55` · prime-proof branch only
+  - Lean: `(D : ℝ) : 0 ≤ viewAngle D`
+  - Means: The viewing angle of any total turning D is nonnegative.
+  - Closest known: Mathlib toIcoMod and abs lemmas on the project definition viewAngle = |π − (D mod 2π)|.
+  - In Mathlib: partial: toIcoMod_eq_self, toIcoMod_add_right, toIcoMod_eq_iff and abs lemmas; viewAngle itself is a project definition
+  - Caveat: Pure definition-level fact: |·| ≥ 0. Physically meaningful wherever viewAngle is; no model assumption beyond the planar reduction built into the definition. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_le_pi`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:60` · prime-proof branch only
+  - Lean: `(D : ℝ) : viewAngle D ≤ π`
+  - Means: The viewing angle is at most π.
+  - Closest known: Mathlib toIcoMod and abs lemmas on the project definition viewAngle = |π − (D mod 2π)|.
+  - In Mathlib: partial: toIcoMod_eq_self, toIcoMod_add_right, toIcoMod_eq_iff and abs lemmas; viewAngle itself is a project definition
+  - Caveat: Since D mod 2π ∈ [0, 2π), the distance from π is at most π. Holds for every D; the value π means 'straight back towards the sun' in the planar model. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_add_two_pi`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:67` · prime-proof branch only
+  - Lean: `(D : ℝ) : viewAngle (D + 2 * π) = viewAngle D`
+  - Means: Adding a full turn to D does not change the viewing angle (wrapping).
+  - Closest known: Mathlib toIcoMod and abs lemmas on the project definition viewAngle = |π − (D mod 2π)|.
+  - In Mathlib: partial: toIcoMod_eq_self, toIcoMod_add_right, toIcoMod_eq_iff and abs lemmas; viewAngle itself is a project definition
+  - Caveat: Exactly the mod-2π invariance of the definition (via toIcoMod_add_right). Only the one-step shift by 2π is stated; integer multiples follow by iteration but are not stated. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_neg`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:74` · prime-proof branch only
+  - Lean: `(D : ℝ) : viewAngle (-D) = viewAngle D`
+  - Means: The viewing angle of −D equals that of D: the mirror-image path (entering the other half of the drop) is seen at the same angle.
+  - Closest known: Evenness of |π − (D mod 2π)|; toIcoMod arithmetic (Mathlib).
+  - In Mathlib: partial: toIcoMod_eq_self, toIcoMod_add_right, toIcoMod_eq_iff and abs lemmas; viewAngle itself is a project definition
+  - Caveat: Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_of_mem_Icc_zero_pi`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:99` · prime-proof branch only
+  - Lean: `{D : ℝ} (h0 : 0 ≤ D) (hπ : D ≤ π) : viewAngle D = π - D`
+  - Means: When D lies in [0, π], the viewing angle equals π − D (the signed primary reading).
+  - Closest known: Mathlib toIcoMod and abs lemmas on the project definition viewAngle = |π − (D mod 2π)|.
+  - In Mathlib: partial: toIcoMod_eq_self, toIcoMod_add_right, toIcoMod_eq_iff and abs lemmas; viewAngle itself is a project definition
+  - Caveat: This is the bridge used for once-reflected rays. It says nothing about D outside [0, π]; for D slightly above π the formula π − D is negative and wrong (see viewAngle_ne_of_pi_lt). Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_of_mem_Icc_pi_two_pi`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:108` · prime-proof branch only
+  - Lean: `{D : ℝ} (hπ : π ≤ D) (h2 : D ≤ 2 * π) : viewAngle D = D - π`
+  - Means: When D lies in [π, 2π], the viewing angle equals D − π (the signed secondary reading). The endpoint D = 2π is included: toIcoMod sends it to 0 and |π − 0| = π = 2π − π.
+  - Closest known: Mathlib toIcoMod and abs lemmas on the project definition viewAngle = |π − (D mod 2π)|.
+  - In Mathlib: partial: toIcoMod_eq_self, toIcoMod_add_right, toIcoMod_eq_iff and abs lemmas; viewAngle itself is a project definition
+  - Caveat: This is the bridge used for twice-reflected rays. Outside [π, 2π] the formula D − π is not the viewing angle (negative below π; for D > 2π wrapping changes it). Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_ne_of_pi_lt`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:125` · prime-proof branch only
+  - Lean: `{D : ℝ} (h : π < D) : viewAngle D ≠ π - D`
+  - Means: If D exceeds π, the signed primary reading π − D is not the viewing angle (it is negative while the viewing angle is ≥ 0).
+  - Closest known: Mathlib toIcoMod and abs lemmas on the project definition viewAngle = |π − (D mod 2π)|.
+  - In Mathlib: partial: toIcoMod_eq_self, toIcoMod_add_right, toIcoMod_eq_iff and abs lemmas; viewAngle itself is a project definition
+  - Caveat: Stated without the planned extra hypothesis D ≤ 2π, which the proof does not need; this is a strictly stronger statement. It is the general form of the primary-side failure. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.refr_le_self`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:134` · prime-proof branch only
+  - Lean: `{n i : ℝ} (hn : 1 ≤ n) (hi : i ∈ Set.Icc 0 (π / 2)) : refr n i ≤ i`
+  - Means: The refraction angle arcsin(sin i / n) is at most the incidence angle i.
+  - Closest known: Monotonicity of arcsin (Mathlib Real.arcsin_le_arcsin, Real.arcsin_sin).
+  - In Mathlib: yes: Real.arcsin_le_arcsin with Real.arcsin_sin
+  - Caveat: Snell's law as encoded in refr (a definition, not derived from geometry). Physically: entering a denser medium (n ≥ 1) bends the ray towards the normal. For n < 1 the inequality can fail and is not claimed. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewing_aux_sqrt_two_lt_two (private lemma)`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:301` · prime-proof branch only
+  - Lean: `: √2 < 2`
+  - Means: √2 < 2.
+  - Closest known: Real.sqrt_lt' (Mathlib).
+  - In Mathlib: yes: Real.sqrt_lt'
+  - Caveat: Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
 
 #### Body-water physiology models and Limits models
 
@@ -889,6 +982,18 @@ Specialisations of Mathlib lemmas, and decide or norm_num facts about standard n
   - Closest known: Orthogonality of the trigonometric system on a period.
   - In Mathlib: partial: intervalIntegral.integral_comp_add_mul, integral_sin, Real.cos_add_int_mul_two_pi
   - Caveat: Private helper. Duplicated as PhaseFamily_int_sin.
+- **`Wyrd.PeriodicNS.Averages_I3_cos (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:82` · new-session branch only
+  - Lean: `(p q r : ℤ) : Averages_I3 (fun x y z => cos (p * x + q * y + r * z)) = if (p, q, r) = (0, 0, 0) then (2 * π) ^ 3 else 0`
+  - Means: For integers p, q and r, the iterated integral over [0,2π]³ of cos(px + qy + rz) is (2π)³ if (p,q,r) = (0,0,0) and 0 otherwise.
+  - Closest known: Fourier orthonormality on the torus: UnitAddTorus.orthonormal_mFourier (Mathlib), i.e. orthogonality of characters on T³.
+  - In Mathlib: yes, in equivalent form: UnitAddTorus.orthonormal_mFourier (Analysis/Fourier/AddCircleMulti.lean:227) and the Hilbert basis UnitAddTorus.mFourierBasis (:267), d = Fin 3 with one index 0, via mFourierCoeff_eq_integral; the project proves the real, (2π)³-scaled, iterated-intervalIntegral variant by hand from intervalIntegral.integral_comp_add_mul, integral_cos / integral_sin and Real.sin_add_int_mul_two_pi
+  - Caveat: Private helper. The same fact as Mathlib's, in a different normalisation and integral form; Mathlib has no iterated-interval-integral statement in dimension 3, so the hand proof is a convenience, not a gap. Duplicated as PhaseFamily_/Scaling_ copies.
+- **`Wyrd.PeriodicNS.Averages_I3_sin (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:101` · new-session branch only
+  - Lean: `(p q r : ℤ) : Averages_I3 (fun x y z => sin (p * x + q * y + r * z)) = 0`
+  - Means: For all integers p, q and r, the iterated integral over [0,2π]³ of sin(px + qy + rz) is 0.
+  - Closest known: Fourier orthonormality on the torus: UnitAddTorus.orthonormal_mFourier (Mathlib), i.e. orthogonality of characters on T³.
+  - In Mathlib: yes, in equivalent form: UnitAddTorus.orthonormal_mFourier (Analysis/Fourier/AddCircleMulti.lean:227) and the Hilbert basis UnitAddTorus.mFourierBasis (:267), d = Fin 3 with one index 0, via mFourierCoeff_eq_integral; the project proves the real, (2π)³-scaled, iterated-intervalIntegral variant by hand from intervalIntegral.integral_comp_add_mul, integral_cos / integral_sin and Real.sin_add_int_mul_two_pi
+  - Caveat: Private helper. The same fact as Mathlib's, in a different normalisation and integral form; Mathlib has no iterated-interval-integral statement in dimension 3, so the hand proof is a convenience, not a gap. Duplicated as PhaseFamily_/Scaling_ copies.
 - **`Wyrd.PeriodicNS.Averages_tm_cont (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:129` · new-session branch only
   - Lean: `(m : ℝ × ℝ × ℤ × ℤ × ℤ) : Continuous fun p : ℝ × ℝ × ℝ => Averages_tm m p.1 p.2.1 p.2.2`
   - Means: A single encoded Fourier mode a cos(k·x) + b sin(k·x), with k ∈ ℤ³, is jointly continuous on ℝ³.
@@ -942,6 +1047,18 @@ Specialisations of Mathlib lemmas, and decide or norm_num facts about standard n
   - Closest known: Orthogonality of the trigonometric system.
   - In Mathlib: partial: intervalIntegral.integral_comp_add_mul, integral_sin, Real.cos_add_int_mul_two_pi
   - Caveat: Duplicate of Averages_int_sin.
+- **`Wyrd.PeriodicNS.PhaseFamily_I3_cos (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:161` · new-session branch only
+  - Lean: `(p q r : ℤ) : PhaseFamily_I3 (fun x y z => cos (p * x + q * y + r * z)) = if (p, q, r) = (0, 0, 0) then (2 * π) ^ 3 else 0`
+  - Means: The iterated integral over [0,2π]³ of cos(px+qy+rz), for p, q, r ∈ ℤ, is (2π)³ at the zero frequency and 0 otherwise (a duplicate).
+  - Closest known: Fourier orthonormality on the torus: UnitAddTorus.orthonormal_mFourier (Mathlib), i.e. orthogonality of characters on T³.
+  - In Mathlib: yes, in equivalent form: UnitAddTorus.orthonormal_mFourier (Analysis/Fourier/AddCircleMulti.lean:227) and the Hilbert basis UnitAddTorus.mFourierBasis (:267), d = Fin 3 with one index 0, via mFourierCoeff_eq_integral; the project proves the real, (2π)³-scaled, iterated-intervalIntegral variant by hand from intervalIntegral.integral_comp_add_mul, integral_cos / integral_sin and Real.sin_add_int_mul_two_pi
+  - Caveat: Private helper. The same fact as Mathlib's, in a different normalisation and integral form; Mathlib has no iterated-interval-integral statement in dimension 3, so the hand proof is a convenience, not a gap. Duplicated as PhaseFamily_/Scaling_ copies.
+- **`Wyrd.PeriodicNS.PhaseFamily_I3_sin (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:180` · new-session branch only
+  - Lean: `(p q r : ℤ) : PhaseFamily_I3 (fun x y z => sin (p * x + q * y + r * z)) = 0`
+  - Means: The iterated integral over [0,2π]³ of sin(px+qy+rz) is 0 for all integers p, q, r (a duplicate).
+  - Closest known: Fourier orthonormality on the torus: UnitAddTorus.orthonormal_mFourier (Mathlib), i.e. orthogonality of characters on T³.
+  - In Mathlib: yes, in equivalent form: UnitAddTorus.orthonormal_mFourier (Analysis/Fourier/AddCircleMulti.lean:227) and the Hilbert basis UnitAddTorus.mFourierBasis (:267), d = Fin 3 with one index 0, via mFourierCoeff_eq_integral; the project proves the real, (2π)³-scaled, iterated-intervalIntegral variant by hand from intervalIntegral.integral_comp_add_mul, integral_cos / integral_sin and Real.sin_add_int_mul_two_pi
+  - Caveat: Private helper. The same fact as Mathlib's, in a different normalisation and integral form; Mathlib has no iterated-interval-integral statement in dimension 3, so the hand proof is a convenience, not a gap. Duplicated as PhaseFamily_/Scaling_ copies.
 - **`Wyrd.PeriodicNS.PhaseFamily_tm_cont (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:208` · new-session branch only
   - Lean: `(m : ℝ × ℝ × ℤ × ℤ × ℤ) : Continuous fun p : ℝ × ℝ × ℝ => PhaseFamily_tm m p.1 p.2.1 p.2.2`
   - Means: One encoded Fourier mode is jointly continuous on ℝ³ (a duplicate).
@@ -1474,69 +1591,6 @@ The mathematics is published; the Lean proof is the new part.
   - In Mathlib: no
   - Caveat: A specific instance with a chosen test pulse, cos 5ψ.
 
-#### Periodic Navier–Stokes I: the phase family, symmetries, selection rules, averages
-
-- **`Wyrd.PeriodicNS.Averages_I3_cos (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:82` · new-session branch only
-  - Lean: `(p q r : ℤ) : Averages_I3 (fun x y z => cos (p * x + q * y + r * z)) = if (p, q, r) = (0, 0, 0) then (2 * π) ^ 3 else 0`
-  - Means: For integers p, q and r, the iterated integral over [0,2π]³ of cos(px + qy + rz) is (2π)³ if (p,q,r) = (0,0,0) and 0 otherwise.
-  - Closest known: Orthogonality of characters on the 3-torus.
-  - In Mathlib: partial: orthonormal_mFourier / mFourierCoeff (Analysis/Fourier/AddCircleMulti.lean), which covers complex exponentials on UnitAddTorus with Haar measure, not iterated real interval integrals over [0,2π]³
-  - Caveat: Private helper with a routine proof that iterates the 1-D lemma. Duplicated as PhaseFamily_I3_cos.
-- **`Wyrd.PeriodicNS.Averages_I3_sin (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:101` · new-session branch only
-  - Lean: `(p q r : ℤ) : Averages_I3 (fun x y z => sin (p * x + q * y + r * z)) = 0`
-  - Means: For all integers p, q and r, the iterated integral over [0,2π]³ of sin(px + qy + rz) is 0.
-  - Closest known: Orthogonality of characters on the 3-torus.
-  - In Mathlib: partial: orthonormal_mFourier (UnitAddTorus, complex exponentials)
-  - Caveat: Private helper. Duplicated as PhaseFamily_I3_sin.
-- **`Wyrd.PeriodicNS.Averages_I3_tm (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:141` · new-session branch only
-  - Lean: `(m : ℝ × ℝ × ℤ × ℤ × ℤ) : Averages_I3 (Averages_tm m) = (2 * π) ^ 3 * (if m.2.2 = (0, 0, 0) then m.1 else 0)`
-  - Means: The iterated integral over [0,2π]³ of one mode a cos(k·x) + b sin(k·x) is (2π)³·a if k = 0 and 0 otherwise.
-  - Closest known: Orthogonality of the trigonometric system on the 3-torus.
-  - In Mathlib: partial: orthonormal_mFourier (different setting)
-  - Caveat: Private helper stated for the project's mode encoding. Routine corollary of I3_cos and I3_sin. Duplicated as PhaseFamily_I3_tm.
-- **`Wyrd.PeriodicNS.Averages_I3_tp (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:163` · new-session branch only
-  - Lean: `(L : List (ℝ × ℝ × ℤ × ℤ × ℤ)) : Averages_I3 (Averages_tp L) = (2 * π) ^ 3 * Averages_c0 L`
-  - Means: The iterated integral over [0,2π]³ of a trigonometric polynomial, encoded as a list of modes, is (2π)³ times its constant coefficient.
-  - Closest known: The mean of a trigonometric polynomial over a period is its zeroth Fourier coefficient.
-  - In Mathlib: partial: mFourierCoeff / orthonormal_mFourier on UnitAddTorus (complex form, Haar measure)
-  - Caveat: Private helper. Duplicated as PhaseFamily_I3_tp.
-- **`Wyrd.PeriodicNS.Averages_avg_eq (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:177` · new-session branch only
-  - Lean: `{f : ℝ → ℝ → ℝ → ℝ} (L : List (ℝ × ℝ × ℤ × ℤ × ℤ)) (h : ∀ x y z, f x y z = Averages_tp L x y z) : avg f = Averages_c0 L`
-  - Means: If f agrees pointwise on ℝ³ with an encoded trigonometric polynomial L, then the normalised average of f over [0,2π]³ equals the constant coefficient of L.
-  - Closest known: The mean of a trigonometric polynomial over a period is its zeroth Fourier coefficient.
-  - In Mathlib: partial: mFourierCoeff at 0 / orthonormal_mFourier (different setting)
-  - Caveat: Private helper. This is the engine behind every exact-average theorem here. Each use supplies the list L by hand and checks the pointwise identity with ring_nf. Duplicated as PhaseFamily_avg_eq.
-- **`Wyrd.PeriodicNS.PhaseFamily_I3_cos (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:161` · new-session branch only
-  - Lean: `(p q r : ℤ) : PhaseFamily_I3 (fun x y z => cos (p * x + q * y + r * z)) = if (p, q, r) = (0, 0, 0) then (2 * π) ^ 3 else 0`
-  - Means: The iterated integral over [0,2π]³ of cos(px+qy+rz), for p, q, r ∈ ℤ, is (2π)³ at the zero frequency and 0 otherwise (a duplicate).
-  - Closest known: Orthogonality of characters on the 3-torus.
-  - In Mathlib: partial: orthonormal_mFourier (UnitAddTorus, complex exponentials)
-  - Caveat: Duplicate of Averages_I3_cos.
-- **`Wyrd.PeriodicNS.PhaseFamily_I3_sin (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:180` · new-session branch only
-  - Lean: `(p q r : ℤ) : PhaseFamily_I3 (fun x y z => sin (p * x + q * y + r * z)) = 0`
-  - Means: The iterated integral over [0,2π]³ of sin(px+qy+rz) is 0 for all integers p, q, r (a duplicate).
-  - Closest known: Orthogonality of characters on the 3-torus.
-  - In Mathlib: partial: orthonormal_mFourier
-  - Caveat: Duplicate of Averages_I3_sin.
-- **`Wyrd.PeriodicNS.PhaseFamily_I3_tm (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:220` · new-session branch only
-  - Lean: `(m : ℝ × ℝ × ℤ × ℤ × ℤ) : PhaseFamily_I3 (PhaseFamily_tm m) = (2 * π) ^ 3 * (if m.2.2 = (0, 0, 0) then m.1 else 0)`
-  - Means: The integral over [0,2π]³ of one mode is (2π)³·a at k = 0 and 0 otherwise (a duplicate).
-  - Closest known: Orthogonality of the trigonometric system on the 3-torus.
-  - In Mathlib: partial: orthonormal_mFourier
-  - Caveat: Duplicate of Averages_I3_tm.
-- **`Wyrd.PeriodicNS.PhaseFamily_I3_tp (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:242` · new-session branch only
-  - Lean: `(L : List (ℝ × ℝ × ℤ × ℤ × ℤ)) : PhaseFamily_I3 (PhaseFamily_tp L) = (2 * π) ^ 3 * PhaseFamily_c0 L`
-  - Means: The integral over [0,2π]³ of an encoded trigonometric polynomial is (2π)³ times its constant coefficient (a duplicate).
-  - Closest known: The mean of a trigonometric polynomial is its zeroth Fourier coefficient.
-  - In Mathlib: partial: mFourierCoeff / orthonormal_mFourier
-  - Caveat: Duplicate of Averages_I3_tp.
-- **`Wyrd.PeriodicNS.PhaseFamily_avg_eq (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:257` · new-session branch only
-  - Lean: `{f : ℝ → ℝ → ℝ → ℝ} (L : List (ℝ × ℝ × ℤ × ℤ × ℤ)) (h : ∀ x y z, f x y z = PhaseFamily_tp L x y z) : avg f = PhaseFamily_c0 L`
-  - Means: If f equals an encoded trigonometric polynomial pointwise, then its normalised average over [0,2π]³ is the constant coefficient (a duplicate).
-  - Closest known: The mean of a trigonometric polynomial is its zeroth Fourier coefficient.
-  - In Mathlib: partial: mFourierCoeff / orthonormal_mFourier
-  - Caveat: Duplicate of Averages_avg_eq. Here the lists have φ-dependent coefficients.
-
 #### Periodic Navier–Stokes II: scaling, blow-up rescalings, sign flip, Galerkin, Grönwall, quantifiers
 
 - **`Wyrd.PeriodicNS.gronwall_variable`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Gronwall.lean:15` · new-session branch only
@@ -2048,7 +2102,7 @@ New statements about objects this project defines. Their truth is machine-checke
   - Caveat: A computation; 1.343 is a modelling input.
 - **`Wyrd.Rainbow.dark_band_of_red_le`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/VisibleBand.lean:31` · both branches
   - Lean: `{n i : ℝ} (hred : 1331 / 1000 ≤ n) (hn2 : n < 2) (hi : i ∈ Set.Icc 0 (π / 2)) : π - dev 1 n i < 43 * π / 180 ∧ 50 * π / 180 < dev 2 n i - π`
-  - Means: For every real n with 1.331 ≤ n < 2 and every i ∈ [0, π/2], π − dev 1 n i < 43° and dev 2 n i − π > 50°. These are signed angles. Read as angles seen in the sky, once- and twice-reflected rays avoid the 43–50° band for 1.331 ≤ n < 1.777. From n ≈ 1.777, grazing once-reflected rays have π − D < 0 and are seen at D − π ≥ 43°.
+  - Means: For every real n with 1.331 ≤ n < 2 and every i ∈ [0, π/2], π − dev 1 n i < 43° and dev 2 n i − π > 50°. These are signed angles. dark_band_viewAngle (Viewing.lean) proves the same for the angle actually seen when 1.331 ≤ n ≤ √2; numerically the gap in viewing angle persists to n ≈ 1.777. From n ≈ 1.777, grazing once-reflected rays have π − D < 0 and are seen at D − π ≥ 43°.
   - Closest known: Newton, Opticks (1704), Book I Part II, Prop. IX: the gap between the bows is bounded by the red limits of both bows (42°2′ inner, 50°57′ outer), and bluer light lies further from the gap. This is Descartes' minimum-deviation argument with dispersion added. The Lean form, uniform over n ∈ [1.331, 2) via bowDev_strictMonoOn, is the project's own packaging of that classical fact.
   - In Mathlib: no
   - Caveat: It combines the red brackets at n = 1.331 with bowDev_strictMonoOn. 'Every colour from red up' rests on identifying colours with n ≥ 1.331, a modelling input; the 726 nm deep-red exception is prose. Lean has the extra hypothesis n < 2, which is harmless for water.
@@ -2081,6 +2135,152 @@ New statements about objects this project defines. Their truth is machine-checke
   - Closest known: Newton, Opticks, Book I Part II, Prop. IX gives the breadth of the exterior bow as 3°10′ (point sun). With the project's endpoints 1.331 and 1.343 the width is 3.11° numerically.
   - In Mathlib: no
   - Caveat: Follows from secondary_red and secondary_violet. The ~3.1° width is numerical only.
+- **`Wyrd.Rainbow.dev_one_nonneg`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:143` · prime-proof branch only
+  - Lean: `{n i : ℝ} (hn : 1 ≤ n) (hi : i ∈ Set.Icc 0 (π / 2)) : 0 ≤ dev 1 n i`
+  - Means: The signed total turning D₁ = π + 2i − 4r of a once-reflected ray is nonnegative.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Uses only r ≤ i and i ≤ π/2. Holds for every n ≥ 1 (no upper bound on n needed). This is the lower half of the condition 0 ≤ D₁ ≤ π needed for the primary bridge. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.dev_one_le_pi`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:155` · prime-proof branch only
+  - Lean: `{n i : ℝ} (hn : 1 ≤ n) (hn2 : n ≤ √2) (hi : i ∈ Set.Icc 0 (π / 2)) : dev 1 n i ≤ π`
+  - Means: For indices up to √2, the signed turning of every once-reflected ray is at most π; equivalently i ≤ 2·refr n i.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: The proof reduces to n ≤ 2 cos(i/2), which at grazing incidence reads n ≤ √2; Lean proves the bound is sufficient. That √2 is the exact threshold is NOT proved in general (only numerically checked, and the explicit failure at n = 1.9 is proved by dev_one_grazing_gt_pi). Water (1.331–1.343) is well inside. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_dev_one`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:190` · prime-proof branch only
+  - Lean: `{n i : ℝ} (hn : 1 ≤ n) (hn2 : n ≤ √2) (hi : i ∈ Set.Icc 0 (π / 2)) : viewAngle (dev 1 n i) = π - dev 1 n i`
+  - Means: For 1 ≤ n ≤ √2 and every incidence angle, the angle at which a once-reflected ray is seen (planar model) equals the signed primary quantity π − D₁ used by the earlier theorems.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: This is the primary observer-angle bridge. It licenses reading every earlier 'π − D₁' bound as an angle in the sky, but only for n ≤ √2 ≈ 1.414. For n > √2 the signed reading fails for grazing rays (proved at n = 1.9). Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.dev_one_grazing_gt_pi_of_sqrt_two_lt`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:196` · prime-proof branch only
+  - Lean: `{n : ℝ} (hn : √2 < n) : π < dev 1 n (π / 2)`
+  - Means: For every n > √2, the grazing once-reflected ray (i = π/2) has D₁ > π.
+  - Closest known: Elementary: D₁(π/2) = 2π − 4 arcsin(1/n) > π iff arcsin(1/n) < π/4 iff n > √2.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_dev_one_iff`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:217` · prime-proof branch only
+  - Lean: `{n : ℝ} (hn : 1 ≤ n) : (∀ i ∈ Set.Icc 0 (π / 2), viewAngle (dev 1 n i) = π - dev 1 n i) ↔ n ≤ √2`
+  - Means: For n ≥ 1: the signed primary reading π − D₁ equals the viewing angle at every incidence in [0, π/2] if and only if n ≤ √2.
+  - Closest known: The standard sky-angle convention for the primary bow (Adam 2002; textbook) made exact: it is valid precisely up to n = √2.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.dev_two_le_two_pi`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:231` · prime-proof branch only
+  - Lean: `{n i : ℝ} (hn : 1 ≤ n) (hn2 : n ≤ 2) (hi : i ∈ Set.Icc 0 (π / 2)) : dev 2 n i ≤ 2 * π`
+  - Means: For indices up to 2, the signed turning of every twice-reflected ray is at most 2π; equivalently i ≤ 3·refr n i.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Proof uses sin i = 3 sin(i/3) − 4 sin³(i/3) and sin(i/3) ≤ 1/2. Upper half of the condition π ≤ D₂ ≤ 2π for the secondary bridge. Sharpness of n ≤ 2 is not proved. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.dev_two_grazing_gt_two_pi_of_two_lt`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:268` · prime-proof branch only
+  - Lean: `{n : ℝ} (hn : 2 < n) : 2 * π < dev 2 n (π / 2)`
+  - Means: For every n > 2, the grazing twice-reflected ray has D₂ > 2π.
+  - Closest known: Elementary: D₂(π/2) = 3π − 6 arcsin(1/n) > 2π iff n > 2.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.pi_le_dev_two_of_red_le`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:286` · prime-proof branch only
+  - Lean: `{n i : ℝ} (hred : 1331 / 1000 ≤ n) (hn2 : n < 2) (hi : i ∈ Set.Icc 0 (π / 2)) : π ≤ dev 2 n i`
+  - Means: For 1.331 ≤ n < 2 every twice-reflected ray has D₂ ≥ π.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Weakening of the second conjunct of dark_band_of_red_le (D₂ − π > 50°). The lower limit 1.331 is inherited from that theorem's red index, not the numerically observed threshold ≈ 1.17996 for D₂ ≥ π; between 1.17996 and 1.331 nothing is proved here. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_dev_two`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:293` · prime-proof branch only
+  - Lean: `{n i : ℝ} (hred : 1331 / 1000 ≤ n) (hn2 : n < 2) (hi : i ∈ Set.Icc 0 (π / 2)) : viewAngle (dev 2 n i) = dev 2 n i - π`
+  - Means: For 1.331 ≤ n < 2 and every incidence angle, the angle at which a twice-reflected ray is seen (planar model) equals the signed secondary quantity D₂ − π.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: This is the secondary observer-angle bridge. Valid domain as proved: [1.331, 2). Below 1.331 the theorem is silent (numerically the identity holds down to ≈ 1.18; the proved failure at n = 1.1 is dev_two_grazing_lt_pi). Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.dark_band_viewAngle`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:309` · prime-proof branch only
+  - Lean: `{n i : ℝ} (hred : 1331 / 1000 ≤ n) (hn2 : n ≤ √2) (hi : i ∈ Set.Icc 0 (π / 2)) : viewAngle (dev 1 n i) < 43 * π / 180 ∧ 50 * π / 180 < viewAngle (dev 2 n i)`
+  - Means: For 1.331 ≤ n ≤ √2, every once-reflected ray is seen below 43° and every twice-reflected ray above 50° (viewing angles, planar model).
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Alexander's dark band stated for the angle actually seen. The domain is the intersection of the two bridges (n ≤ √2 from the primary, 1.331 ≤ n < 2 from the secondary). As in the signed version: geometric optics, point sun, no brightness, no external reflection or ≥3 reflections; it is a gap in two ray families, not darkness. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.colour_order_viewAngle`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:321` · prime-proof branch only
+  - Lean: 
+
+    ```lean
+    {nRed nViolet : ℝ} (hred : 1331 / 1000 ≤ nRed) (h2 : nRed < nViolet) (h3 : nViolet ≤ √2) : viewAngle (dev 1 nViolet (bowIncidence 1 nViolet)) < viewAngle (dev 1 nRed (bowIncidence 1 nRed)) ∧ viewAngle (dev 2 nRed (bowIncidence 2 nRed)) < viewAngle (dev 2 nViolet (bowIncidence 2 nViolet))
+    ```
+
+  - Means: If red has the smaller index and both indices lie in [1.331, √2], the violet primary bow is seen at a smaller angle than the red one (violet inside), and the violet secondary bow at a larger angle than the red one (violet outside).
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: colour_order transported through both bridges at the bow incidences (which lie in (0, π/2) by bowIncidence_mem). Requires nRed ≥ 1.331 (secondary bridge) and nViolet ≤ √2 (primary bridge); colour_order itself only needed 1 < nRed < nViolet < 2. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.water_colour_order_viewAngle`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:347` · prime-proof branch only
+  - Lean: 
+
+    ```lean
+    : viewAngle (dev 1 (1343 / 1000) (bowIncidence 1 (1343 / 1000))) < viewAngle (dev 1 (1331 / 1000) (bowIncidence 1 (1331 / 1000))) ∧ viewAngle (dev 2 (1331 / 1000) (bowIncidence 2 (1331 / 1000))) < viewAngle (dev 2 (1343 / 1000) (bowIncidence 2 (1343 / 1000)))
+    ```
+
+  - Means: At the indices 1.331 (red) and 1.343 (violet) used in VisibleBand.lean, violet is seen inside red in the primary bow and outside red in the secondary bow.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Instance of colour_order_viewAngle; needs 1.343² = 1.803649 ≤ 2. The indices are inputs (IAPWS values quoted in VisibleBand.lean), not theorems. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_lt_bow_one`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:359` · prime-proof branch only
+  - Lean: `{n i : ℝ} (hn : 1 < n) (hn2 : n ≤ √2) (hi : i ∈ Set.Icc 0 (π / 2)) (hne : i ≠ bowIncidence 1 n) : viewAngle (dev 1 n i) < viewAngle (dev 1 n (bowIncidence 1 n))`
+  - Means: For 1 < n ≤ √2, every once-reflected ray other than the bow ray is seen strictly inside the bow ray (smaller viewing angle).
+  - Closest known: Descartes: the primary bow is the outer edge of once-reflected light (dev_lt_of_ne read through the primary bridge).
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.bow_two_lt_viewAngle`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:370` · prime-proof branch only
+  - Lean: 
+
+    ```lean
+    {n i : ℝ} (hred : 1331 / 1000 ≤ n) (hn2 : n < 2) (hi : i ∈ Set.Icc 0 (π / 2)) (hne : i ≠ bowIncidence 2 n) : viewAngle (dev 2 n (bowIncidence 2 n)) < viewAngle (dev 2 n i)
+    ```
+
+  - Means: For 1.331 ≤ n < 2, every twice-reflected ray other than the bow ray is seen strictly outside the bow ray (larger viewing angle).
+  - Closest known: Descartes: the secondary bow is the inner edge of twice-reflected light (dev_lt_of_ne through the secondary bridge).
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.dev_one_grazing_gt_pi`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:383` · prime-proof branch only
+  - Lean: `: π < dev 1 (19 / 10) (π / 2)`
+  - Means: At n = 1.9 the grazing once-reflected ray has signed turning D₁ = 2π − 4 arcsin(10/19) greater than π.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Explicit witness that the hypothesis n ≤ √2 of dev_one_le_pi cannot simply be dropped. Numerically D₁ ≈ 232.97°, seen at ≈ 52.97°; π − D₁ ≈ −52.97° is not an angle in the sky. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_ne_signed_primary`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:399` · prime-proof branch only
+  - Lean: `: viewAngle (dev 1 (19 / 10) (π / 2)) ≠ π - dev 1 (19 / 10) (π / 2)`
+  - Means: At n = 1.9 the signed primary reading of the grazing ray differs from the viewing angle.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Direct corollary of dev_one_grazing_gt_pi via viewAngle_ne_of_pi_lt. Shows the physical interpretation of π − D₁ fails outside n ≤ √2. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.exists_once_reflected_seen_in_band`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:408` · prime-proof branch only
+  - Lean: `: ∃ i ∈ Set.Icc 0 (π / 2), viewAngle (dev 1 (19 / 10) i) ∈ Set.Icc (43 * π / 180) (50 * π / 180)`
+  - Means: At n = 1.9 there is an incidence angle whose once-reflected ray is seen inside the 43°–50° band (in fact at exactly 43°, by the intermediate value theorem on D₁ between D₁(0) = π and D₁(π/2) ≥ π + 43π/180).
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: The proof bounds arcsin(10/19) ≤ 137π/720 via sin y ≥ y − y³/6 and 3.14 < π < 3.15. It exhibits a ray in the band; it says nothing about brightness or whether the band would look dark at n = 1.9. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.forall_mem_band_exists_once_reflected_seen`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:446` · prime-proof branch only
+  - Lean: `: ∀ θ ∈ Set.Icc (43 * π / 180) (50 * π / 180), ∃ i ∈ Set.Icc 0 (π / 2), viewAngle (dev 1 (19 / 10) i) = θ`
+  - Means: At n = 1.9, every angle θ in [43°, 50°] is the viewing angle of some once-reflected ray with incidence in [0, π/2].
+  - Closest known: Intermediate value theorem on D₁ over [0, π/2]; the grazing ray at n = 1.9 is seen at about 53° (computed).
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.signed_gap_holds_but_ray_seen_in_band`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:481` · prime-proof branch only
+  - Lean: 
+
+    ```lean
+    : (∀ i ∈ Set.Icc 0 (π / 2), π - dev 1 (19 / 10) i < 43 * π / 180) ∧ ∃ i ∈ Set.Icc 0 (π / 2), viewAngle (dev 1 (19 / 10) i) ∈ Set.Icc (43 * π / 180) (50 * π / 180)
+    ```
+
+  - Means: At n = 1.9 the signed dark-band bound π − D₁ < 43° still holds for every once-reflected ray, yet some once-reflected ray is seen inside [43°, 50°].
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: The headline 'why the signed theorem's physical reading fails outside its domain': dark_band_of_red_le is true at n = 1.9 as a statement about π − D₁, but π − D₁ is no longer the viewing angle there. Water (n ≤ 1.343) is far from this regime. Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.dev_two_grazing_lt_pi`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:490` · prime-proof branch only
+  - Lean: `: dev 2 (11 / 10) (π / 2) < π`
+  - Means: At n = 1.1 the grazing twice-reflected ray has signed turning D₂ = 3π − 6 arcsin(10/11) less than π.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Explicit witness that the lower bound on n in viewAngle_dev_two cannot simply be dropped. Numerically D₂ ≈ 147.7°, so D₂ − π ≈ −32.3° is not an angle in the sky (the ray is seen at ≈ 32.3° on the primary side). Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
+- **`Wyrd.Rainbow.viewAngle_ne_signed_secondary`** · `experiments/wyrd-mathlib/WyrdMathlib/Rainbow/Viewing.lean:508` · prime-proof branch only
+  - Lean: `: viewAngle (dev 2 (11 / 10) (π / 2)) ≠ dev 2 (11 / 10) (π / 2) - π`
+  - Means: At n = 1.1 the signed secondary reading of the grazing ray differs from the viewing angle.
+  - Closest known: The textbook sky-angle conventions for the bows, π − D (primary) and D − π (secondary) (Adam, Phys. Rep. 356 (2002); Walker 1976), here given exact domains of validity in the planar model.
+  - In Mathlib: no (searched: rainbow, optics, Snell; the model is project-specific)
+  - Caveat: Direct corollary of dev_two_grazing_lt_pi and viewAngle_nonneg. Shows the physical interpretation of D₂ − π fails for low indices; the proved domain for it is [1.331, 2). Added 22 Oct 2026 (observer-angle bridge); planar model, no brightness.
 
 #### Body-water physiology models and Limits models
 
@@ -2494,6 +2694,24 @@ New statements about objects this project defines. Their truth is machine-checke
   - Closest known: 2π-periodicity of sin and cos (Real.sin_add_two_pi, Real.cos_add_two_pi).
   - In Mathlib: partial: Real.sin_add_two_pi, Real.cos_add_two_pi
   - Caveat: Routine.
+- **`Wyrd.PeriodicNS.Averages_I3_tm (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:141` · new-session branch only
+  - Lean: `(m : ℝ × ℝ × ℤ × ℤ × ℤ) : Averages_I3 (Averages_tm m) = (2 * π) ^ 3 * (if m.2.2 = (0, 0, 0) then m.1 else 0)`
+  - Means: The iterated integral over [0,2π]³ of one mode a cos(k·x) + b sin(k·x) is (2π)³·a if k = 0 and 0 otherwise.
+  - Closest known: Orthogonality of the trigonometric system on the 3-torus.
+  - In Mathlib: partial: the content (the mean of a trigonometric polynomial over a period cell is its zeroth Fourier coefficient) is mFourierCoeff f 0 on UnitAddTorus (orthonormal_mFourier, mFourierBasis); the statement is about the project's private List-of-modes encoding
+  - Caveat: Private helper stated for the project's mode encoding. Routine corollary of I3_cos and I3_sin. Duplicated as PhaseFamily_I3_tm.
+- **`Wyrd.PeriodicNS.Averages_I3_tp (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:163` · new-session branch only
+  - Lean: `(L : List (ℝ × ℝ × ℤ × ℤ × ℤ)) : Averages_I3 (Averages_tp L) = (2 * π) ^ 3 * Averages_c0 L`
+  - Means: The iterated integral over [0,2π]³ of a trigonometric polynomial, encoded as a list of modes, is (2π)³ times its constant coefficient.
+  - Closest known: The mean of a trigonometric polynomial over a period is its zeroth Fourier coefficient.
+  - In Mathlib: partial: the content (the mean of a trigonometric polynomial over a period cell is its zeroth Fourier coefficient) is mFourierCoeff f 0 on UnitAddTorus (orthonormal_mFourier, mFourierBasis); the statement is about the project's private List-of-modes encoding
+  - Caveat: Private helper. Duplicated as PhaseFamily_I3_tp.
+- **`Wyrd.PeriodicNS.Averages_avg_eq (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:177` · new-session branch only
+  - Lean: `{f : ℝ → ℝ → ℝ → ℝ} (L : List (ℝ × ℝ × ℤ × ℤ × ℤ)) (h : ∀ x y z, f x y z = Averages_tp L x y z) : avg f = Averages_c0 L`
+  - Means: If f agrees pointwise on ℝ³ with an encoded trigonometric polynomial L, then the normalised average of f over [0,2π]³ equals the constant coefficient of L.
+  - Closest known: The mean of a trigonometric polynomial over a period is its zeroth Fourier coefficient.
+  - In Mathlib: partial: the content (the mean of a trigonometric polynomial over a period cell is its zeroth Fourier coefficient) is mFourierCoeff f 0 on UnitAddTorus (orthonormal_mFourier, mFourierBasis); the statement is about the project's private List-of-modes encoding
+  - Caveat: Private helper. This is the engine behind every exact-average theorem here. Each use supplies the list L by hand and checks the pointwise identity with ring_nf. Duplicated as PhaseFamily_avg_eq.
 - **`Wyrd.PeriodicNS.quantities_v`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/Averages.lean:192` · new-session branch only
   - Lean: `: v.energy = 1 ∧ v.enstrophy = 5 / 4 ∧ v.palin = 7 / 2 ∧ v.stretching = 1 / 4 ∧ v.gradSq = 5 / 2`
   - Means: For v = (sin y, sin z, cos x − cos(x+y)), the normalised integrals over [0,2π]³ give E = ½⟨|v|²⟩ = 1, Z = ½⟨|ω|²⟩ = 5/4, D = ⟨|∇ω|²⟩ = 7/2, S = ⟨Σ ω_i ∂_j v_i ω_j⟩ = 1/4 and ⟨|∇v|²⟩ = 5/2.
@@ -2545,6 +2763,24 @@ New statements about objects this project defines. Their truth is machine-checke
   - Closest known: Hand calculus.
   - In Mathlib: no (project definitions)
   - Caveat: Private routine computation.
+- **`Wyrd.PeriodicNS.PhaseFamily_I3_tm (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:220` · new-session branch only
+  - Lean: `(m : ℝ × ℝ × ℤ × ℤ × ℤ) : PhaseFamily_I3 (PhaseFamily_tm m) = (2 * π) ^ 3 * (if m.2.2 = (0, 0, 0) then m.1 else 0)`
+  - Means: The integral over [0,2π]³ of one mode is (2π)³·a at k = 0 and 0 otherwise (a duplicate).
+  - Closest known: Orthogonality of the trigonometric system on the 3-torus.
+  - In Mathlib: partial: the content (the mean of a trigonometric polynomial over a period cell is its zeroth Fourier coefficient) is mFourierCoeff f 0 on UnitAddTorus (orthonormal_mFourier, mFourierBasis); the statement is about the project's private List-of-modes encoding
+  - Caveat: Duplicate of Averages_I3_tm.
+- **`Wyrd.PeriodicNS.PhaseFamily_I3_tp (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:242` · new-session branch only
+  - Lean: `(L : List (ℝ × ℝ × ℤ × ℤ × ℤ)) : PhaseFamily_I3 (PhaseFamily_tp L) = (2 * π) ^ 3 * PhaseFamily_c0 L`
+  - Means: The integral over [0,2π]³ of an encoded trigonometric polynomial is (2π)³ times its constant coefficient (a duplicate).
+  - Closest known: The mean of a trigonometric polynomial is its zeroth Fourier coefficient.
+  - In Mathlib: partial: the content (the mean of a trigonometric polynomial over a period cell is its zeroth Fourier coefficient) is mFourierCoeff f 0 on UnitAddTorus (orthonormal_mFourier, mFourierBasis); the statement is about the project's private List-of-modes encoding
+  - Caveat: Duplicate of Averages_I3_tp.
+- **`Wyrd.PeriodicNS.PhaseFamily_avg_eq (private)`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:257` · new-session branch only
+  - Lean: `{f : ℝ → ℝ → ℝ → ℝ} (L : List (ℝ × ℝ × ℤ × ℤ × ℤ)) (h : ∀ x y z, f x y z = PhaseFamily_tp L x y z) : avg f = PhaseFamily_c0 L`
+  - Means: If f equals an encoded trigonometric polynomial pointwise, then its normalised average over [0,2π]³ is the constant coefficient (a duplicate).
+  - Closest known: The mean of a trigonometric polynomial is its zeroth Fourier coefficient.
+  - In Mathlib: partial: the content (the mean of a trigonometric polynomial over a period cell is its zeroth Fourier coefficient) is mFourierCoeff f 0 on UnitAddTorus (orthonormal_mFourier, mFourierBasis); the statement is about the project's private List-of-modes encoding
+  - Caveat: Duplicate of Averages_avg_eq. Here the lists have φ-dependent coefficients.
 - **`Wyrd.PeriodicNS.quantities_vphi`** · `experiments/wyrd-mathlib/WyrdMathlib/PeriodicNS/PhaseFamily.lean:271` · new-session branch only
   - Lean: `(φ : ℝ) : (vphi φ).energy = 1 ∧ (vphi φ).enstrophy = 5 / 4 ∧ (vphi φ).palin = 7 / 2 ∧ (vphi φ).stretching = cos φ / 4`
   - Means: For every real φ, the field u_φ = (sin y, sin z, cos x − cos(x+y+φ)) has E = 1, Z = 5/4 and D = ⟨|∇ω|²⟩ = 7/2, independent of φ, and vortex stretching S = cos φ / 4 (genuine averages over [0,2π]³).
@@ -4001,7 +4237,7 @@ Each area was catalogued by one agent and checked by a second, adversarial one. 
 |---|---:|---:|---:|
 | Core wyrd: pangram encoding, primes, √2, minimality search; Mathlib bridge | 255 | 255 | 10 |
 | 250 = 37 phase lock and the mirror keys (prime-proof branch) | 62 | 62 | 12 |
-| Rainbow geometry (Descartes, Alexander’s dark band, spectrum) | 73 | 73 | 14 |
+| Rainbow geometry (Descartes, Alexander’s dark band, spectrum) | 103 | 103 | 14 |
 | Body-water physiology models and Limits models | 83 | 83 | 16 |
 | Periodic Navier–Stokes I: the phase family, symmetries, selection rules, averages | 60 | 60 | 12 |
 | Periodic Navier–Stokes II: scaling, blow-up rescalings, sign flip, Galerkin, Grönwall, quantifiers | 56 | 56 | 17 |

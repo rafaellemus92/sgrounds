@@ -6,3 +6,4 @@ import WyrdMathlib.Rainbow.Colours
 import WyrdMathlib.Rainbow.SpectrumPrimary
 import WyrdMathlib.Rainbow.SpectrumSecondary
 import WyrdMathlib.Rainbow.VisibleBand
+import WyrdMathlib.Rainbow.Viewing

@@ -1,6 +1,7 @@
 import WyrdMathlib
 /-! Run `lake env lean Audit.lean`: only `propext`, `Classical.choice`,
-`Quot.sound` should appear, never `sorryAx` or `Lean.ofReduceBool`. -/
+`Quot.sound` should appear, never `sorryAx` or any axiom containing `_native` (Lean 4.35
+removed `Lean.ofReduceBool`; native evaluation now adds a per-use `_native` axiom). -/
 #print axioms Wyrd.isPrime_iff
 #print axioms Wyrd.setOf_prime_infinite
 #print axioms Wyrd.solution_primes
@@ -27,6 +28,35 @@ import WyrdMathlib
 #print axioms Wyrd.Rainbow.water_colour_order
 #print axioms Wyrd.Rainbow.primary_spread
 #print axioms Wyrd.Rainbow.secondary_spread
+#print axioms Wyrd.Rainbow.viewAngle_nonneg
+#print axioms Wyrd.Rainbow.viewAngle_le_pi
+#print axioms Wyrd.Rainbow.viewAngle_add_two_pi
+#print axioms Wyrd.Rainbow.viewAngle_of_mem_Icc_zero_pi
+#print axioms Wyrd.Rainbow.viewAngle_of_mem_Icc_pi_two_pi
+#print axioms Wyrd.Rainbow.viewAngle_ne_of_pi_lt
+#print axioms Wyrd.Rainbow.refr_le_self
+#print axioms Wyrd.Rainbow.dev_one_nonneg
+#print axioms Wyrd.Rainbow.dev_one_le_pi
+#print axioms Wyrd.Rainbow.viewAngle_dev_one
+#print axioms Wyrd.Rainbow.dev_two_le_two_pi
+#print axioms Wyrd.Rainbow.pi_le_dev_two_of_red_le
+#print axioms Wyrd.Rainbow.viewAngle_dev_two
+#print axioms Wyrd.Rainbow.dark_band_viewAngle
+#print axioms Wyrd.Rainbow.colour_order_viewAngle
+#print axioms Wyrd.Rainbow.water_colour_order_viewAngle
+#print axioms Wyrd.Rainbow.dev_one_grazing_gt_pi
+#print axioms Wyrd.Rainbow.viewAngle_ne_signed_primary
+#print axioms Wyrd.Rainbow.exists_once_reflected_seen_in_band
+#print axioms Wyrd.Rainbow.signed_gap_holds_but_ray_seen_in_band
+#print axioms Wyrd.Rainbow.dev_two_grazing_lt_pi
+#print axioms Wyrd.Rainbow.viewAngle_ne_signed_secondary
+#print axioms Wyrd.Rainbow.viewAngle_neg
+#print axioms Wyrd.Rainbow.dev_one_grazing_gt_pi_of_sqrt_two_lt
+#print axioms Wyrd.Rainbow.viewAngle_dev_one_iff
+#print axioms Wyrd.Rainbow.dev_two_grazing_gt_two_pi_of_two_lt
+#print axioms Wyrd.Rainbow.viewAngle_lt_bow_one
+#print axioms Wyrd.Rainbow.bow_two_lt_viewAngle
+#print axioms Wyrd.Rainbow.forall_mem_band_exists_once_reflected_seen
 #print axioms Wyrd.BodyWater.dilution_overestimate
 #print axioms Wyrd.BodyWater.newborn_water_load
 #print axioms Wyrd.BodyWater.isotonic_stays_extracellular

@@ -20,7 +20,7 @@ jobs:
         working-directory: experiments/wyrd
         run: |
           lake env lean Audit.lean | tee audit.txt
-          if grep -E "sorryAx|ofReduceBool" audit.txt; then
+          if grep -E "sorryAx|ofReduceBool|_native" audit.txt; then
             echo "::error::A theorem depends on sorry or on trusting compiled code"
             exit 1
           fi
@@ -37,7 +37,7 @@ jobs:
         working-directory: experiments/wyrd-mathlib
         run: |
           lake env lean Audit.lean | tee audit.txt
-          if grep -E "sorryAx|ofReduceBool" audit.txt; then
+          if grep -E "sorryAx|ofReduceBool|_native" audit.txt; then
             echo "::error::A theorem depends on sorry or on trusting compiled code"
             exit 1
           fi

@@ -18,9 +18,11 @@ edge fails below `n ≈ 1.3296` (about 726 nm at 20 °C): there, twice-reflected
 rays of the deepest red do reach 43°–50°. Between `1.3296` and `1.331` the gap
 persists, but no theorem here says so.
 
-The bounds are on the signed angles. Read as angles seen from the antisolar
-point, they hold for `1.331 ≤ n < 1.777` (numerically); from `n ≈ 1.777`,
-grazing once-reflected rays have `π - D < 0` and are seen at `D - π ≥ 43°`.
+The bounds are on the signed angles. `Viewing.lean` proves that they are the
+angles seen from the antisolar point for `1.331 ≤ n ≤ √2` (`dark_band_viewAngle`).
+Numerically (not proved) the gap in viewing angle persists up to `n ≈ 1.777`; from
+there, grazing once-reflected rays have `π - D < 0` and are seen at `D - π ≥ 43°`
+(`signed_gap_holds_but_ray_seen_in_band` proves this at `n = 1.9`).
 
 The band is a gap in the once- and twice-reflected ray families, not an absence
 of all light (geometric optics, point-like sun, brightness not modelled). Light
@@ -34,7 +36,8 @@ open Real
 
 /-- **Red governs both edges**: for every index `1.331 ≤ n < 2`, once-reflected
 rays have `π - D < 43°` and twice-reflected rays have `D - π > 50°` (signed
-angles; as angles seen in the sky this holds for `n < 1.777`, numerically). -/
+angles; `dark_band_viewAngle` in `Viewing.lean` reads them as angles seen for
+`n ≤ √2`). -/
 theorem dark_band_of_red_le {n i : ℝ} (hred : 1331 / 1000 ≤ n) (hn2 : n < 2)
     (hi : i ∈ Set.Icc 0 (π / 2)) :
     π - dev 1 n i < 43 * π / 180 ∧ 50 * π / 180 < dev 2 n i - π := by
